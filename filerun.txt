@@ -1,0 +1,16 @@
+in backend 
+conda deactivate
+cd "d:\Program\git-repo\k_agent (4)\k-agent"
+
+& .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\python.exe -m pip install python-dotenv
+uvicorn backend.app.main:app --reload
+
+& ".venv\Scripts\python.exe" -m uvicorn backend.app.main:app --reload
+
+
+for front-end
+cd D:\Program\git-repo\k_agent\frontend\web
+npm run dev -- --force 
+
+D:\Program\git-repo\k_agent (4)\k-agent\backend

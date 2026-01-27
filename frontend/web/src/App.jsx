@@ -4,7 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import Signup from "./pages/Signup.jsx";
 import ChatHistory from "./pages/ChatHistory";
 import { useAuth } from "./hooks/useAuth";
-
+import { useUser } from "./contexts/UserContext";
 
 // Translation data - Updated with DatalethealthcareTM
 const translations = {
@@ -655,6 +655,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
 };
 
 const [originalProfile, setOriginalProfile] = useState(null);
+
 const [profile, setProfile] = useState(emptyProfile);
 
   // const [profile, setProfile] = useState({ ...originalProfile });
@@ -664,32 +665,7 @@ const [profile, setProfile] = useState(emptyProfile);
   const [previewImage, setPreviewImage] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
-  const [prescriptions, setPrescriptions] = useState([
-    {
-      id: 1,
-      name: "Blood Test Report.pdf",
-      url: "#",
-      uploadDate: "2024-01-15",
-      size: 2457600, // 2.4 MB in bytes
-      type: "application/pdf"
-    },
-    {
-      id: 2,
-      name: "Doctor Prescription.jpg",
-      url: "#",
-      uploadDate: "2024-01-10",
-      size: 1536000, // 1.5 MB
-      type: "image/jpeg"
-    },
-    {
-      id: 3,
-      name: "Lab Results.pdf",
-      url: "#",
-      uploadDate: "2024-01-05",
-      size: 3145728, // 3 MB
-      type: "application/pdf"
-    }
-  ]);
+  const [prescriptions, setPrescriptions] = useState([]);
   const [prescriptionToDelete, setPrescriptionToDelete] = useState(null);
   const [viewingPrescription, setViewingPrescription] = useState(null);
 
@@ -860,6 +836,8 @@ useEffect(() => {
 }, []);
 
 
+
+
 const handleMedicalSave = async () => {
   const token = localStorage.getItem("token");
 
@@ -997,6 +975,7 @@ const handleMedicalDataChange = (key, value) => {
 
 
 useEffect(() => {
+  
   const token = localStorage.getItem("token");
   if (!token) return;
 
@@ -1057,6 +1036,59 @@ useEffect(() => {
 
 
 
+// useEffect(() => {
+//   if (activeTab !== "profile") return;
+
+//   const token = localStorage.getItem("token");
+//   if (!token) return;
+
+//   fetch("http://localhost:4000/api/user/profile/basic", {
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//     },
+//   })
+//     .then(res => res.json())
+//     .then(data => {
+//       setProfile({
+//         fullName: data.full_name || "",
+//         email: data.email || "",
+//         phone: data.mobile || "",
+//         dateOfBirth: data.dob || "",
+//         gender: data.gender || "Other",
+//         height: data.height || "",
+//         weight: data.weight || "",
+//         bloodGroup: data.blood_group || "",
+//         address: data.address || "",
+//         city: data.city || "",
+//         state: data.state || "",
+//         zipCode: data.zip_code || "",
+//         country: data.country || "",
+//         emergencyContact: {
+//           name: data.emergency_contact_name || "N/A",
+//           phone: data.emergency_contact_phone || "N/A",
+//           relationship: data.emergency_contact_relationship || "N/A",
+//         },
+//         medicalConditions: ["kidney"],
+//         profilePicture: null,
+//       });
+
+//       setOriginalProfile({
+//         ...data,
+//         emergencyContact: {
+//           name: data.emergency_contact_name || "N/A",
+//           phone: data.emergency_contact_phone || "N/A",
+//           relationship: data.emergency_contact_relationship || "N/A",
+//         },
+//       });
+//     })
+//     .catch(console.error);
+
+// }, [activeTab]);
+
+
+
+
+
   // Check for changes
   useEffect(() => {
     const profileChanged = JSON.stringify(profile) !== JSON.stringify(originalProfile);
@@ -1066,17 +1098,97 @@ useEffect(() => {
     setHasUnsavedChanges(profileChanged || medicalDataChanged || conditionChanged);
   }, [profile, medicalData, selectedCondition, originalProfile, originalMedicalData]);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-        setProfile(prev => ({ ...prev, profilePicture: file }));
-      };
-      reader.readAsDataURL(file);
+  const { user, setUser } = useUser();
+
+const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return; // no file selected
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("You are not logged in!");
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append("image", e.target.files[0]);
+
+
+  try {
+    // If you are not using a proxy, replace "/api/..." with your backend URL like:
+    // "http://localhost:4000/api/user/profile-image"
+    const res = await fetch("http://localhost:4000/api/user/profile-image", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error("Upload failed:", errorData);
+      alert("Error uploading image: " + (errorData.message || res.statusText));
+      return;
+    }
+
+    const data = await res.json();
+    console.log("Upload successful:", data);
+
+    // Update user state with new profile image
+    setUser({ ...user, profileImage: data.image });
+
+    alert("Profile image updated successfully!");
+  } catch (err) {
+    console.error("Upload error:", err);
+    alert("Error uploading image. Please try again.");
+  }
+
+
+};
+
+
+
+
+
+useEffect(() => {
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch("http://localhost:4000/api/user/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch user");
+
+      const data = await res.json();
+      setUser((prev) => ({
+        ...prev,
+        profileImage: data.profile_image,
+        fullName: data.full_name,
+        email: data.email,
+      }));
+    } catch (err) {
+      console.error("Error fetching user:", err);
     }
   };
+
+  fetchUserProfile();
+}, []);
+
+  // const handleImageUpload = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       setPreviewImage(reader.result);
+  //       setProfile(prev => ({ ...prev, profilePicture: file }));
+  //     };
+  //     reader.readAsDataURL(file);
+  //   }
+  // };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1098,75 +1210,171 @@ useEffect(() => {
   //   setMedicalData(prev => ({ ...prev, [id]: parseFloat(value) || 0 }));
   // };
 
-  const handlePrescriptionUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const newPrescription = {
-        id: Date.now(),
-        name: file.name,
-        url: URL.createObjectURL(file),
-        uploadDate: new Date().toISOString(),
-        size: file.size,
-        type: file.type
-      };
-      setPrescriptions(prev => [...prev, newPrescription]);
+  // const handlePrescriptionUpload = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     const newPrescription = {
+  //       id: Date.now(),
+  //       name: file.name,
+  //       url: URL.createObjectURL(file),
+  //       uploadDate: new Date().toISOString(),
+  //       size: file.size,
+  //       type: file.type
+  //     };
+  //     setPrescriptions(prev => [...prev, newPrescription]);
+  //   }
+  // };
+
+
+//   const handlePrescriptionUpload = async (e) => {
+//   const file = e.target.files[0];
+//   if (!file) return;
+
+//   const token = localStorage.getItem("token");
+//   const formData = new FormData();
+//   formData.append("file", file);
+
+//   const res = await fetch("http://localhost:4000/api/user/prescriptions", {
+//     method: "POST",
+//     headers: { Authorization: `Bearer ${token}` },
+//     body: formData
+//   });
+
+//   const data = await res.json();
+
+//   setPrescriptions(prev => [
+//     {
+//       ...data,
+//       url: `http://localhost:4000${data.url}`
+//     },
+//     ...prev
+//   ]);
+// };
+
+const handlePrescriptionUpload = async (e) => {
+  const files = Array.from(e.target.files); // convert FileList to array
+  if (files.length === 0) return;
+
+  const formData = new FormData();
+
+  // Validate each file and append to FormData
+  for (const file of files) {
+    const sizeMB = file.size / (1024 * 1024);
+    if (sizeMB < 2 || sizeMB > 100) {
+      alert(`File ${file.name} must be between 2MB and 100MB`);
+      return; // stop upload if any file is invalid
     }
+    formData.append("images", file); // matches backend .array("images")
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:4000/api/user/prescriptions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Upload failed");
+      return;
+    }
+
+    // Update state: prepend uploaded files to prescriptions
+    setPrescriptions((prev) => [
+      ...data.map((file) => ({
+        ...file,
+        url: `http://localhost:4000${file.url}`, // add full URL for frontend
+      })),
+      ...prev,
+    ]);
+  } catch (err) {
+    console.error(err);
+    alert("Upload failed, please try again.");
+  }
+};
+
+
+
+
+useEffect(() => {
+  const fetchPrescriptions = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(
+      "http://localhost:4000/api/user/prescriptions",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+
+    setPrescriptions(
+      data.map(p => ({
+        id: p.id,
+        name: p.file_name,
+        url: `http://localhost:4000${p.file_path}`,
+        uploadDate: p.upload_date,
+        size: p.file_size,
+        type: p.file_type
+      }))
+    );
   };
+
+  fetchPrescriptions();
+}, []);
+
+
+
+
+
+
+
+
+
+
 
   const handleDeletePrescription = (id) => {
     setPrescriptionToDelete(id);
   };
 
-  const confirmDeletePrescription = () => {
-    setPrescriptions(prev => prev.filter(p => p.id !== prescriptionToDelete));
+  // const confirmDeletePrescription = () => {
+  //   setPrescriptions(prev => prev.filter(p => p.id !== prescriptionToDelete));
+  //   setPrescriptionToDelete(null);
+  // };
+
+  const confirmDeletePrescription = async () => {
+  try {
+    const token = localStorage.getItem("token");
+
+    await fetch(
+      `http://localhost:4000/api/user/prescriptions/${prescriptionToDelete}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    setPrescriptions(prev =>
+      prev.filter(p => p.id !== prescriptionToDelete)
+    );
+  } catch (err) {
+    console.error("Delete failed", err);
+    alert("Failed to delete prescription");
+  } finally {
     setPrescriptionToDelete(null);
-  };
+  }
+};
+
 
   const handleViewPrescription = (prescription) => {
     setViewingPrescription(prescription);
   };
 
-  // const handleSave = async () => {
-  //   setIsSaving(true);
-  //   // Simulate API call
-  //   setTimeout(() => {
-  //     setOriginalProfile({ ...profile });
-  //     setOriginalMedicalData({ ...medicalData });
-  //     setIsSaving(false);
-  //     setIsEditing(false);
-  //     setHasUnsavedChanges(false);
-  //     alert(t('profileUpdated'));
-  //   }, 1500);
-  // };
-
-//   const handleSave = async () => {
-//   setIsSaving(true);
-//   const token = localStorage.getItem("token");
-//   try {
-//     const res = await fetch("http://localhost:4000/api/user/profile/update", {
-//       method: "PUT",
-//       headers: {
-//         "Content-Type": "application/json",
-//         Authorization: `Bearer ${token}`,
-//       },
-//       body: JSON.stringify(profile), // profile object now includes emergencyContact
-//     });
-
-//     if (!res.ok) throw new Error("Failed to update profile");
-
-//     const data = await res.json();
-//     setOriginalProfile({ ...data.profile });
-//     setProfile({ ...data.profile });
-//     setIsSaving(false);
-//     setIsEditing(false);
-//     setHasUnsavedChanges(false);
-//     alert("Profile updated successfully!");
-//   } catch (err) {
-//     console.error(err);
-//     setIsSaving(false);
-//     alert("Error updating profile");
-//   }
-// };
 
 
 
@@ -1183,44 +1391,6 @@ const handleSave = async () => {
       : null,
   };
 
-  // try {
-  //   const res = await fetch("http://localhost:4000/api/user/profile/update", {
-  //     method: "PUT",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${token}`,
-  //     },
-  //     body: JSON.stringify(profile),
-  //   });
-
-  //   if (!res.ok) throw new Error("Failed to update profile");
-
-  //   const data = await res.json();
-
-  //   // ensure emergencyContact is always an object
-  //   const updatedProfile = {
-  //     ...profile,
-  //     ...data.profile,
-      
-  //     emergencyContact: {
-  //       name: data.profile.emergency_contact_name || "N/A",
-  //       phone: data.profile.emergency_contact_phone || "N/A",
-  //       relationship: data.profile.emergency_contact_relationship || "N/A",
-  //     },
-  //     profilePicture: null
-  //   };
-
-  //   setOriginalProfile(updatedProfile);
-  //   setProfile(updatedProfile);
-  //   setIsSaving(false);
-  //   setIsEditing(false);
-  //   setHasUnsavedChanges(false);
-  //   alert("Profile updated successfully!");
-  // } catch (err) {
-  //   console.error(err);
-  //   setIsSaving(false);
-  //   alert("Error updating profile");
-  // }
   try {
     const res = await fetch("http://localhost:4000/api/user/profile/update", {
       method: "PUT",
@@ -1359,7 +1529,7 @@ const handleCombinedSave = async () => {
         t={t}
       />
 
-      {viewingPrescription && (
+      {/* {viewingPrescription && (
         <div className="prescription-viewer-overlay" onClick={() => setViewingPrescription(null)}>
           <div className="prescription-viewer-content" onClick={(e) => e.stopPropagation()}>
             <div className="viewer-header">
@@ -1368,11 +1538,12 @@ const handleCombinedSave = async () => {
             </div>
             <div className="viewer-body">
               {viewingPrescription.type.startsWith('image/') ? (
-                <img src={viewingPrescription.url} alt="Prescription" className="prescription-image" />
+                <img src={viewingPrescription.url}
+          alt={viewingPrescription.name} className="prescription-image" />
               ) : (
                 <div className="pdf-placeholder">
                   <div className="pdf-icon">📄</div>
-                  <p>PDF Document Preview</p>
+                  <p>Prescription Document Preview</p>
                   <a href={viewingPrescription.url} download className="download-btn">
                     {t('downloadPrescription')}
                   </a>
@@ -1381,7 +1552,62 @@ const handleCombinedSave = async () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
+
+      {/* {viewingPrescription && viewingPrescription.type.startsWith("image/") && (
+        <div className="prescription-viewer-overlay" onClick={() => setViewingPrescription(null)}>
+          <div className="prescription-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <div className="viewer-header">
+              <h3>{viewingPrescription.name}</h3>
+              <button className="close-viewer-btn" onClick={() => setViewingPrescription(null)}>×</button>
+            </div>
+             <div className="viewer-body">
+            <div className="viewer-body">
+              {viewingPrescription.type.startsWith('image/') ? (
+                <img src={viewingPrescription.url}
+          alt={viewingPrescription.name} className="prescription-image" />
+              ) : (
+                <div className="pdf-placeholder">
+                  <div className="pdf-icon">📄</div>
+                  <p>Prescription Document Preview</p>
+                  <a href={viewingPrescription.url} download className="download-btn">
+                    {t('downloadPrescription')}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )} */}
+      {viewingPrescription && viewingPrescription.type.startsWith("image/") && (
+  <div
+    className="prescription-viewer-overlay"
+    onClick={() => setViewingPrescription(null)}
+  >
+    <div
+      className="prescription-viewer-content"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="viewer-header">
+        <h3>{viewingPrescription.name}</h3>
+        <button
+          className="close-viewer-btn"
+          onClick={() => setViewingPrescription(null)}
+        >
+          ×
+        </button>
+      </div>
+      <div className="viewer-body">
+        <img
+          src={viewingPrescription.url}
+          alt={viewingPrescription.name}
+          className="prescription-image"
+        />
+      </div>
+    </div>
+  </div>
+)}
+
 
       <div className="profile-modal-overlay" onClick={handleClose}>
         <div className="profile-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1394,13 +1620,35 @@ const handleCombinedSave = async () => {
             <div className="profile-sidebar">
               <div className="profile-picture-section">
                 <div className="profile-picture-container">
-                  {previewImage ? (
+                  {/* {previewImage ? (
                     <img src={previewImage} alt="Profile" className="profile-picture" />
                   ) : (
                     <div className="profile-picture-placeholder">
                       <span className="profile-initials">{getInitials()}</span>
                     </div>
-                  )}
+                  )} */}
+                  {/* {user?.profile_image ? (
+    <img
+      src={user.profile_image}
+      className="profile-picture"
+      alt="Profile"
+    />
+  ) : (
+    <div className="profile-picture-placeholder">
+      <span className="profile-initials">{getInitials()}</span>
+    </div>
+  )} */}
+  {user?.profileImage ? (
+    <img
+      src={`http://localhost:4000${user.profileImage}`} // full URL
+      className="profile-picture"
+      alt="Profile"
+    />
+  ) : (
+    <div className="profile-picture-placeholder">
+      <span className="profile-initials">{getInitials()}</span>
+    </div>
+  )}
                 </div>
                 
                 <div className="upload-section">
@@ -1419,7 +1667,7 @@ const handleCombinedSave = async () => {
               </div>
 
               <div className="quick-info">
-                <h3>{profile.firstName} {profile.lastName}</h3>
+                <h3>{profile.fullName}</h3>
                 <p className="user-email">{profile.email}</p>
                 <div className="user-plan-badge">Premium Plan</div>
                 
@@ -1686,7 +1934,8 @@ const handleCombinedSave = async () => {
                   <input
                     type="file"
                     id="prescription-upload"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    accept="image/*"
+                    multiple 
                     onChange={handlePrescriptionUpload}
                     className="file-input"
                     disabled={!isEditing}
@@ -1703,15 +1952,24 @@ const handleCombinedSave = async () => {
                       <p>{t('noPrescriptions')}</p>
                     </div>
                   ) : (
-                    prescriptions.map((prescription) => (
-                      <PrescriptionItem
-                        key={prescription.id}
-                        prescription={prescription}
-                        onView={handleViewPrescription}
-                        onDelete={handleDeletePrescription}
-                        t={t}
-                      />
-                    ))
+                    // prescriptions.map((prescription) => (
+                    //   <PrescriptionItem
+                    //     key={prescription.id}
+                    //     prescription={prescription}
+                    //     onView={handleViewPrescription}
+                    //     onDelete={handleDeletePrescription}
+                    //     t={t}
+                    //   />
+                    // ))
+                    prescriptions.map((p) => (
+    <div key={p.id} className="prescription-item">
+      <span>{p.name}</span>
+      {p.type.startsWith("image/") && (
+        <button onClick={() => setViewingPrescription(p)}>View</button>
+      )}
+      <button onClick={() => handleDeletePrescription(p.id)}>Delete</button>
+    </div>
+  ))
                   )}
                 </div>
               </div>
@@ -2459,6 +2717,13 @@ const AccountDropdown = ({ t, onClose }) => {
   const [showProfile, setShowProfile] = useState(false);
   const { logout } = useAuth();
 
+
+
+  // Read user Input
+const { user, setUser } = useUser();
+
+
+
   return (
     <>
       <div className="account-dropdown-container">
@@ -2468,9 +2733,48 @@ const AccountDropdown = ({ t, onClose }) => {
           onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
         >
           <div className="account-avatar">
-            <span className="avatar-initials">P</span>
+            {/* <span className="avatar-initials">
+              {user?.full_name
+    ?.split(" ")
+    .map(n => n[0])
+    .join("")
+    .toUpperCase() || "U"}
+            </span> */}
+             {/* {user?.profileImage ? (
+    <img
+      src={user.profile_image}
+      className="avatar-img"
+      alt="Profile"
+    />
+  ) : (
+    <span className="avatar-initials">
+      {user?.full_name
+        ?.split(" ")
+        .map(n => n[0])
+        .join("")
+        .toUpperCase() || "U"}
+    </span>
+  )} */}
+  {user?.profileImage ? (
+  <img
+    src={`http://localhost:4000${user.profileImage}`}
+    className="avatar-img"
+    alt="Profile"
+  />
+) : (
+  <span className="avatar-initials">
+    {user?.full_name
+      ?.split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase() || "U"}
+  </span>
+)}
           </div>
-          <span className="account-name">Prtish</span>
+          {/* <span className="account-name">Prtish</span> */}
+          <span className="account-name">
+           {user?.full_name || "User"}
+          </span>
           <span className="dropdown-arrow">▼</span>
         </button>
 
@@ -2479,11 +2783,33 @@ const AccountDropdown = ({ t, onClose }) => {
             <div className="dropdown-header">
               <div className="user-info">
                 <div className="user-avatar-large">
-                  <span className="avatar-initials-large">P</span>
+                  {/* <span className="avatar-initials-large">
+                    {user?.full_name
+    ?.split(" ")
+    .map(n => n[0])
+    .join("")
+    .toUpperCase() || "U"}
+                  </span> */}
+                  {user?.profileImage ? (
+  <img
+    src={`http://localhost:4000${user.profileImage}`}
+    className="avatar-img"
+    alt="Profile"
+  />
+) : (
+  <span className="avatar-initials">
+    {user?.full_name
+      ?.split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase() || "U"}
+  </span>
+)}
                 </div>
                 <div className="user-details">
-                  <h4>Prtish</h4>
-                  <p className="user-email">prtish@example.com</p>
+                  {/* <h4>Prtish</h4> */}
+                  <h4>{user?.full_name || "User"}</h4>
+                  {/* <p className="user-email">{user?.email || "Email"}</p> */}
                   <span className="user-plan-badge">Premium Plan</span>
                 </div>
               </div>
@@ -2691,7 +3017,10 @@ const PricingModal = ({ isOpen, onClose, t, currentPlan = "premium" }) => {
 };
 
 function AppContent() {
-  const [patients, setPatients] = useState([{ id: 1, name: "prtish", diagnosis: "Kidney disease", age: 26 }]);
+
+const [patients, setPatients] = useState([]);
+
+  // const [patients, setPatients] = useState([{ id: 1, name: "prtish", diagnosis: "Kidney disease", age: 26 }]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [lab, setLab] = useState({ creatinine: 1.6, potassium: 5.2, sodium: 138, urea: 40 });
   const [question, setQuestion] = useState("");
@@ -2713,14 +3042,72 @@ function AppContent() {
 
   const { language, setLanguage, t } = useLanguage();
 
+
   useEffect(() => {
     document.title = t('dataletHealthcareDashboard');
   }, [language, t]);
 
+  // useEffect(() => {
+  //   setSelectedPatient(patients[0]);
+  //   setIsInitialized(true);
+  // }, []);
+
+  const calculateAge = (dob) => {
+  if (!dob) return null;
+
+  const birthDate = new Date(dob);
+  if (isNaN(birthDate)) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age;
+};
+
+
+
   useEffect(() => {
-    setSelectedPatient(patients[0]);
-    setIsInitialized(true);
-  }, []);
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/user/profile/basic", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Profile fetch failed");
+
+      const data = await res.json();
+
+      console.log("DOB from backend:", data.dob);
+      console.log("Parsed DOB:", new Date(data.dob));
+
+      const userAsPatient = {
+        id: data.id || "me",
+        name: data.full_name,
+        diagnosis: data.disease || "—",
+        age: calculateAge(data.dob)
+      };
+
+      setPatients([userAsPatient]);
+      setSelectedPatient(userAsPatient);
+      setIsInitialized(true);
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+    }
+  };
+
+  fetchProfile();
+}, []);
+
 
   const handleAsk = async (e) => {
     e?.preventDefault();
@@ -2963,12 +3350,12 @@ const endpoints = [
             >
               {t('dashboard')}
             </button>
-            {/* <button
+            <button
               className={`nav-tab ${activeTab === "patients" ? "active" : ""}`}
               onClick={() => setActiveTab("patients")}
             >
               {t('patients')}
-            </button> */}
+            </button>
             <button
               className={`nav-tab ${activeTab === "pricing" ? "active" : ""}`}
               onClick={() => {
@@ -3122,7 +3509,11 @@ const endpoints = [
                   <div className="patient-diagnosis">{p.diagnosis || '—'}</div>
                   <div className="patient-conditions">{(conditionMap[p.id] || []).map(d => (<span key={d} className="condition-tag">{t(d)}</span>))}</div>
                 </div>
-                <div className="patient-age">{p.age || '—'} {t('years')}</div>
+                {/* <div className="patient-age">{p.age || '—'} {t('years')}</div> */}
+                <div className="patient-age">
+                      {p.age !== null ? `${p.age} ${t('years')}` : `— ${t('years')}`}
+</div>
+
               </div>
             ))}
           </div>
@@ -3425,7 +3816,7 @@ const endpoints = [
         }
         
         .language-selector select {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(15, 23, 42, 0.95);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 6px;
           color: #f8fafc;
@@ -3466,7 +3857,15 @@ const endpoints = [
           justify-content: center;
           font-weight: 600;
           font-size: 0.875rem;
+          overflow: hidden; 
         }
+
+        .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop, don’t stretch */
+  border-radius: 50%;
+}
         
         .avatar-initials {
           color: white;

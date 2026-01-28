@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 export const uploadPrescription = multer({
   storage,
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB MAX
+    fileSize: 100 * 1024 // 100KB MAX
   },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
@@ -25,3 +25,4 @@ export const uploadPrescription = multer({
     }
   }
 });
+

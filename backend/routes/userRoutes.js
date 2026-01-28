@@ -82,12 +82,19 @@ router.post(
       const insertedFiles = [];
 
       for (const file of req.files) {
-        const sizeMB = file.size / (1024 * 1024); // convert bytes to MB
+        // const sizeMB = file.size / (1024 * 1024); // convert bytes to MB
 
-        // Check size limits
-        if (sizeMB < 2 || sizeMB > 100) {
+        // // Check size limits
+        // if (sizeMB < 2 || sizeMB > 100) {
+        //   return res.status(400).json({
+        //     message: `File ${file.originalname} must be between 2MB and 100MB`
+        //   });
+        // }
+        const sizeKB = file.size / 1024; // convert bytes to KB
+
+        if (sizeKB < 10 || sizeKB > 100) {
           return res.status(400).json({
-            message: `File ${file.originalname} must be between 2MB and 100MB`
+            message: `File ${file.originalname} must be between 10KB and 100KB`
           });
         }
 

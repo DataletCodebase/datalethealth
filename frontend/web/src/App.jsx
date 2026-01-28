@@ -1259,11 +1259,12 @@ const handlePrescriptionUpload = async (e) => {
 
   // Validate each file and append to FormData
   for (const file of files) {
-    const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB < 2 || sizeMB > 100) {
-      alert(`File ${file.name} must be between 2MB and 100MB`);
+    const sizeKB = file.size / 1024;
+    if (sizeKB < 10 || sizeKB > 100) {
+      alert(`File ${file.name} must be between 10KB and 100KB`);
       return; // stop upload if any file is invalid
     }
+
     formData.append("images", file); // matches backend .array("images")
   }
 

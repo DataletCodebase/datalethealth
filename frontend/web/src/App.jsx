@@ -3022,7 +3022,8 @@ const [patients, setPatients] = useState([]);
 
   // const [patients, setPatients] = useState([{ id: 1, name: "prtish", diagnosis: "Kidney disease", age: 26 }]);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [lab, setLab] = useState({ creatinine: 1.6, potassium: 5.2, sodium: 138, urea: 40 });
+  // const [lab, setLab] = useState({ creatinine: 1.6, potassium: 5.2, sodium: 138, urea: 40 });
+  const [lab, setLab] = useState(null);
   const [question, setQuestion] = useState("");
   const [aiResponse, setAiResponse] = useState(null);
   const [waterLogs, setWaterLogs] = useState([
@@ -3304,6 +3305,127 @@ const endpoints = [
   }, [selectedPatient]);
 
 
+const LAB_DEFINITIONS = {
+    kidney: [
+      { id: 'creatinine', label: t('creatinine'), type: 'number', unit: 'mg/dL', normalRange: '0.6-1.3' },
+      { id: 'potassium', label: t('potassium'), type: 'number', unit: 'mmol/L', normalRange: '3.5-5.1' },
+      { id: 'sodium', label: t('sodium'), type: 'number', unit: 'mmol/L', normalRange: '135-145' },
+      { id: 'urea', label: t('urea'), type: 'number', unit: 'mg/dL', normalRange: '7-20' },
+      { id: 'estimatedGFR', label: t('estimatedGFR'), type: 'number', unit: 'mL/min/1.73m²', normalRange: '>60' },
+      { id: 'albumin', label: t('albumin'), type: 'number', unit: 'g/dL', normalRange: '3.4-5.4' },
+      { id: 'calcium', label: t('calcium'), type: 'number', unit: 'mg/dL', normalRange: '8.5-10.2' },
+      { id: 'phosphate', label: t('phosphate'), type: 'number', unit: 'mg/dL', normalRange: '2.5-4.5' },
+      { id: 'uricAcid', label: t('uricAcid'), type: 'number', unit: 'mg/dL', normalRange: '3.4-7.0' }
+    ],
+    heart: [
+      { id: 'cholesterolTotal', label: t('cholesterolTotal'), type: 'number', unit: 'mg/dL', normalRange: '<200' },
+      { id: 'cholesterolLDL', label: t('cholesterolLDL'), type: 'number', unit: 'mg/dL', normalRange: '<100' },
+      { id: 'cholesterolHDL', label: t('cholesterolHDL'), type: 'number', unit: 'mg/dL', normalRange: '>40' },
+      { id: 'triglycerides', label: t('triglycerides'), type: 'number', unit: 'mg/dL', normalRange: '<150' },
+      { id: 'bloodPressureSystolic', label: t('systolic'), type: 'number', unit: 'mmHg', normalRange: '<120' },
+      { id: 'bloodPressureDiastolic', label: t('diastolic'), type: 'number', unit: 'mmHg', normalRange: '<80' },
+      { id: 'heartRate', label: t('heartRate'), type: 'number', unit: 'bpm', normalRange: '60-100' },
+      { id: 'bmi', label: t('bmi'), type: 'number', unit: 'kg/m²', normalRange: '18.5-24.9' }
+    ],
+    diabetes: [
+      { id: 'fastingGlucose', label: t('fastingGlucose'), type: 'number', unit: 'mg/dL', normalRange: '70-100' },
+      { id: 'postprandialGlucose', label: t('postprandialGlucose'), type: 'number', unit: 'mg/dL', normalRange: '<140' },
+      { id: 'hba1c', label: t('hba1c'), type: 'number', unit: '%', normalRange: '<5.7' },
+      { id: 'cholesterolTotal', label: t('cholesterolTotal'), type: 'number', unit: 'mg/dL', normalRange: '<200' },
+      { id: 'triglycerides', label: t('triglycerides'), type: 'number', unit: 'mg/dL', normalRange: '<150' },
+      { id: 'bmi', label: t('bmi'), type: 'number', unit: 'kg/m²', normalRange: '18.5-24.9' },
+      { id: 'bloodPressureSystolic', label: t('systolic'), type: 'number', unit: 'mmHg', normalRange: '<120' },
+      { id: 'bloodPressureDiastolic', label: t('diastolic'), type: 'number', unit: 'mmHg', normalRange: '<80' }
+    ],
+    normalAdult: [
+      { id: 'bloodPressureSystolic', label: t('systolic'), type: 'number', unit: 'mmHg', normalRange: '<120' },
+      { id: 'bloodPressureDiastolic', label: t('diastolic'), type: 'number', unit: 'mmHg', normalRange: '<80' },
+      { id: 'heartRate', label: t('heartRate'), type: 'number', unit: 'bpm', normalRange: '60-100' },
+      { id: 'bmi', label: t('bmi'), type: 'number', unit: 'kg/m²', normalRange: '18.5-24.9' },
+      { id: 'cholesterolTotal', label: t('cholesterolTotal'), type: 'number', unit: 'mg/dL', normalRange: '<200' },
+      { id: 'fastingGlucose', label: t('fastingGlucose'), type: 'number', unit: 'mg/dL', normalRange: '70-100' },
+      { id: 'creatinine', label: t('creatinine'), type: 'number', unit: 'mg/dL', normalRange: '0.6-1.3' }
+    ]
+  };
+
+
+  const activeDomains = conditionMap[selectedPatient?.id] || [];
+
+const activeLabs = React.useMemo(() => {
+  if (!activeDomains.length) return [];
+
+  const mergedFields = activeDomains.flatMap(
+    domain => LAB_DEFINITIONS[domain] || []
+  );
+
+  // Remove duplicates (same lab appearing in multiple conditions)
+  return Array.from(
+    new Map(mergedFields.map(field => [field.id, field])).values()
+  );
+}, [activeDomains]);
+
+
+
+useEffect(() => {
+  const fetchMedicalData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("http://localhost:4000/api/medical/data", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch medical data");
+
+      const data = await res.json();
+      setLab(data);
+    } catch (err) {
+      console.error("Medical fetch error:", err);
+      setLab({});
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchMedicalData();
+}, []);
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
   if (!isInitialized) return <LoadingSpinner />;
@@ -3557,7 +3679,7 @@ const endpoints = [
               <div className="lab-summary-header">
                 <h3>{t('latestLabs')}</h3>
               </div>
-              {(!lab || Object.keys(lab).length === 0) ? (
+              {/* {(!lab || Object.keys(lab).length === 0) ? (
                 <div className="lab-empty"><small>{t('noData')}</small></div>
               ) : (
                 <div className="lab-grid">
@@ -3567,7 +3689,40 @@ const endpoints = [
                   <LabBadge label="urea" value={lab?.urea} normalRange="7-20" unit="mg/dL" />
                   
                 </div>
-              )}
+              )} */}
+              {loading ? (
+    <div className="lab-empty">
+      <small>{t('loading')}</small>
+    </div>
+  ) : !selectedPatient ? (
+    <div className="lab-empty">
+      <small>{t('noPatient')}</small>
+    </div>
+  ) : !activeLabs.length ? (
+    <div className="lab-empty">
+      <small>{t('selectCondition')}</small>
+    </div>
+  ) : !lab || Object.values(lab).every(v => v === null) ? (
+    <div className="lab-empty">
+      <small>{t('noData')}</small>
+    </div>
+  ) : (
+    <div className="lab-scroll-container">
+    <div className="lab-grid">
+      {activeLabs
+        .filter(field => lab[field.id] !== null)
+        .map(field => (
+          <LabBadge
+            key={field.id}
+            label={field.label}
+            value={lab[field.id]}
+            normalRange={field.normalRange}
+            unit={field.unit}
+          />
+        ))}
+    </div>
+    </div>
+  )}
             </div>
           </div>
 
@@ -4388,6 +4543,33 @@ const endpoints = [
           from { opacity: 0; }
           to { opacity: 1; }
         }
+
+
+        .lab-scroll-container {
+  max-height: 220px;          /* shows exactly 4 cards (2 rows) */
+  overflow-y: auto;
+  padding-right: 6px;         /* space for scrollbar */
+}
+
+/* Optional: nicer scrollbar */
+.lab-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lab-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+}
+
+.lab-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox */
+.lab-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
         
         .lab-summary-card {
           background: rgba(255, 255, 255, 0.03);
@@ -4403,11 +4585,14 @@ const endpoints = [
           margin-bottom: 1rem;
           color: #94a3b8;
         }
-        
+
+             
         .lab-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
+          grid-auto-rows: 100px;
           gap: 0.75rem;
+
         }
         
         .lab-badge {

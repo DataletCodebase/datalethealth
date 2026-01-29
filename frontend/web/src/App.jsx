@@ -550,7 +550,7 @@ const PrescriptionItem = ({ prescription, onView, onDelete, t }) => {
           border-color: rgba(255, 255, 255, 0.1);
           background: rgba(255, 255, 255, 0.05);
         }
-        
+       
         .prescription-info {
           flex: 1;
         }
@@ -597,7 +597,7 @@ const PrescriptionItem = ({ prescription, onView, onDelete, t }) => {
           border: 1px solid rgba(239, 68, 68, 0.3);
           color: #fca5a5;
         }
-        
+       
         .delete-btn:hover {
           background: rgba(239, 68, 68, 0.2);
         }
@@ -1259,11 +1259,12 @@ const handlePrescriptionUpload = async (e) => {
 
   // Validate each file and append to FormData
   for (const file of files) {
-    const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB < 2 || sizeMB > 100) {
-      alert(`File ${file.name} must be between 2MB and 100MB`);
+    const sizeKB = file.size / 1024;
+    if (sizeKB < 10 || sizeKB > 100) {
+      alert(`File ${file.name} must be between 10KB and 100KB`);
       return; // stop upload if any file is invalid
     }
+
     formData.append("images", file); // matches backend .array("images")
   }
 
@@ -1293,6 +1294,17 @@ const handlePrescriptionUpload = async (e) => {
       })),
       ...prev,
     ]);
+
+    //Sangram
+    // ✅ ADD THIS PART BELOW
+    const medRes = await fetch("http://localhost:4000/api/medical/data", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const medData = await medRes.json();
+    setMedicalData(medData);
+    //Sangram End
+    
   } catch (err) {
     console.error(err);
     alert("Upload failed, please try again.");

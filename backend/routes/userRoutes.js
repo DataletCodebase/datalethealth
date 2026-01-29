@@ -1,5 +1,8 @@
 import express from "express";
 import fs from "fs";
+import { runOCR } from "../utils/ocr.js";
+// import { extractMedicalValues } from "../utils/medicalParser.js";
+import { extractMedicalValuesFromTables } from "../utils/medicalParser.js";
 // import db from "../db.js";
 import { db } from "../server.js";
 import authMiddleware from "../middleware/auth.js";
@@ -69,10 +72,69 @@ router.post(
 //     });
 //   }
 // );
+
+
+
+
+
+//Swarup
+// router.post(
+//   "/prescriptions",
+//   authMiddleware,
+//   uploadPrescription.array("images", 5), // allow max 5 images at a time
+//   async (req, res) => {
+//     try {
+//       if (!req.files || req.files.length === 0) {
+//         return res.status(400).json({ message: "No files uploaded" });
+//       }
+
+//       const insertedFiles = [];
+
+//       for (const file of req.files) {
+//         const sizeKB = file.size / 1024; // convert bytes to KB
+
+//         if (sizeKB < 10 || sizeKB > 100) {
+//           return res.status(400).json({
+//             message: `File ${file.originalname} must be between 10KB and 100KB`
+//           });
+//         }
+
+//         const path = `/uploads/prescriptions/${file.filename}`;
+
+//         // Insert into DB
+//         const [result] = await db.query(
+//           `INSERT INTO prescriptions (user_id, file_path, file_type, file_size, uploaded_at)
+//            VALUES (?, ?, ?, ?, NOW())`,
+//           [req.user.id, path, file.mimetype, file.size]
+//         );
+
+//         insertedFiles.push({
+//           id: result.insertId,
+//           name: file.originalname,
+//           url: path,
+//           type: file.mimetype,
+//           size: file.size
+//         });
+//       }
+
+//       res.json(insertedFiles); // return all successfully uploaded images
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ message: "Server error" });
+//     }
+//   }
+// );
+
+
+
+
+
+
+//Sangram
 router.post(
   "/prescriptions",
   authMiddleware,
-  uploadPrescription.array("images", 5), // allow max 5 images at a time
+  uploadPrescription.array("images", 5),
   async (req, res) => {
     try {
       if (!req.files || req.files.length === 0) {
@@ -82,16 +144,7 @@ router.post(
       const insertedFiles = [];
 
       for (const file of req.files) {
-        // const sizeMB = file.size / (1024 * 1024); // convert bytes to MB
-
-        // // Check size limits
-        // if (sizeMB < 2 || sizeMB > 100) {
-        //   return res.status(400).json({
-        //     message: `File ${file.originalname} must be between 2MB and 100MB`
-        //   });
-        // }
-        const sizeKB = file.size / 1024; // convert bytes to KB
-
+        const sizeKB = file.size / 1024;
         if (sizeKB < 10 || sizeKB > 100) {
           return res.status(400).json({
             message: `File ${file.originalname} must be between 10KB and 100KB`
@@ -99,13 +152,137 @@ router.post(
         }
 
         const path = `/uploads/prescriptions/${file.filename}`;
+        const fullPath = `.${path}`;
 
-        // Insert into DB
+        // 1️⃣ Save prescription file
         const [result] = await db.query(
           `INSERT INTO prescriptions (user_id, file_path, file_type, file_size, uploaded_at)
            VALUES (?, ?, ?, ?, NOW())`,
           [req.user.id, path, file.mimetype, file.size]
         );
+
+        // 2️⃣ Run OCR
+        // const extractedText = await runOCR(fullPath);
+        const document = await runOCR(fullPath);
+
+        // console.log("OCR TEXT ======");
+        // console.log(extractedText);
+        // console.log(document);
+        // const document = await runOCR(fullPath);
+
+        console.log("PAGES:", document.pages?.length);
+        console.log("TABLES:", document.pages?.[0]?.tables);
+
+
+        // 3️⃣ Parse ALL medical values
+        // const medicalData = extractMedicalValues(extractedText);
+        const medicalData = extractMedicalValuesFromTables(document);
+
+        console.log("PARSED DATA ======");
+        console.log(medicalData);
+
+        // 4️⃣ Save extracted medical data (UPDATE if exists, else INSERT)
+        const [rows] = await db.query(
+          "SELECT id FROM medical_data WHERE user_id = ?",
+          [req.user.id]
+        );
+
+        if (rows.length === 0) {
+          // INSERT first time
+          await db.query(
+            `INSERT INTO medical_data
+            (user_id,
+            creatinine, potassium, sodium, urea, estimated_gfr,
+            albumin, calcium, phosphate, uric_acid,
+            cholesterol_total, cholesterol_ldl, cholesterol_hdl,
+            triglycerides, blood_pressure_systolic, blood_pressure_diastolic,
+            heart_rate, bmi,
+            fasting_glucose, postprandial_glucose, hba1c)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              req.user.id,
+              medicalData.creatinine || null,
+              medicalData.potassium || null,
+              medicalData.sodium || null,
+              medicalData.urea || null,
+              medicalData.estimatedGFR || null,
+
+              medicalData.albumin || null,
+              medicalData.calcium || null,
+              medicalData.phosphate || null,
+              medicalData.uricAcid || null,
+
+              medicalData.cholesterolTotal || null,
+              medicalData.cholesterolLDL || null,
+              medicalData.cholesterolHDL || null,
+              medicalData.triglycerides || null,
+
+              medicalData.bloodPressureSystolic || null,
+              medicalData.bloodPressureDiastolic || null,
+              medicalData.heartRate || null,
+              medicalData.bmi || null,
+
+              medicalData.fastingGlucose || null,
+              medicalData.postprandialGlucose || null,
+              medicalData.hba1c || null
+            ]
+          );
+        } else {
+          // UPDATE existing row
+          await db.query(
+            `UPDATE medical_data SET
+              creatinine = ?,
+              potassium = ?,
+              sodium = ?,
+              urea = ?,
+              estimated_gfr = ?,
+              albumin = ?,
+              calcium = ?,
+              phosphate = ?,
+              uric_acid = ?,
+              cholesterol_total = ?,
+              cholesterol_ldl = ?,
+              cholesterol_hdl = ?,
+              triglycerides = ?,
+              blood_pressure_systolic = ?,
+              blood_pressure_diastolic = ?,
+              heart_rate = ?,
+              bmi = ?,
+              fasting_glucose = ?,
+              postprandial_glucose = ?,
+              hba1c = ?
+            WHERE user_id = ?`,
+            [
+              medicalData.creatinine || null,
+              medicalData.potassium || null,
+              medicalData.sodium || null,
+              medicalData.urea || null,
+              medicalData.estimatedGFR || null,
+
+              medicalData.albumin || null,
+              medicalData.calcium || null,
+              medicalData.phosphate || null,
+              medicalData.uricAcid || null,
+
+              medicalData.cholesterolTotal || null,
+              medicalData.cholesterolLDL || null,
+              medicalData.cholesterolHDL || null,
+              medicalData.triglycerides || null,
+
+              medicalData.bloodPressureSystolic || null,
+              medicalData.bloodPressureDiastolic || null,
+              medicalData.heartRate || null,
+              medicalData.bmi || null,
+
+              medicalData.fastingGlucose || null,
+              medicalData.postprandialGlucose || null,
+              medicalData.hba1c || null,
+
+              req.user.id
+            ]
+          );
+        }
+
 
         insertedFiles.push({
           id: result.insertId,
@@ -118,7 +295,7 @@ router.post(
 
       res.json(insertedFiles); // return all successfully uploaded images
     } catch (err) {
-      console.error(err);
+      console.error("OCR error:", err);
       res.status(500).json({ message: "Server error" });
     }
   }

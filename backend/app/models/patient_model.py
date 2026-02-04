@@ -1,17 +1,31 @@
-from sqlmodel import SQLModel, Field, Column
-from sqlalchemy import String
+from sqlmodel import SQLModel, Field
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 class Patient(SQLModel, table=True):
+    __tablename__ = "users"   # IMPORTANT: matches real table name
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    # put index and unique on the SA Column instead of using Field(index=True)
-    patient_code: Optional[str] = Field(
-        default=None,
-        sa_column=Column("patient_code", String, unique=True, index=True)
-    )
-    name: str
-    age: Optional[int] = None
-    gender: Optional[str] = None
-    diagnosis: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    full_name: str
+    email: str
+    mobile: str
+
+    dob: Optional[date] = None
+    address: Optional[str] = None
+    disease: Optional[str] = None
+
+    role: Optional[str] = "USER"
+
+    password_hash: str
+
+    created_at: Optional[datetime] = None
+
+    customer_id: Optional[str] = None
+    gender: Optional[str] = "NA"
+
+    height: Optional[int] = 0
+    weight: Optional[int] = 0
+
+    blood_group: Optional[str] = "NA"
+    city: Optional[str] = "NA"

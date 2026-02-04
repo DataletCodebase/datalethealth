@@ -16,3 +16,9 @@ npm run dev -- --force
 D:\Program\git-repo\k_agent (4)\k-agent\backend
 
 npm install @google-cloud/documentai(for using Document AI, run inside root backend folder)
+
+> node server.js     
+
+
+Login : test555@gmail.com
+pw: Test@1234

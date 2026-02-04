@@ -5,56 +5,7 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-// GET medical data for the logged-in user
-// router.get("/data",authMiddleware, async (req, res) => {
-//   try {
-//     const userId = req.user.id; // authMiddleware sets req.user
 
-//     const [rows] = await db.query(
-//       "SELECT * FROM medical_data WHERE user_id = ? LIMIT 1",
-//       [userId]
-//     );
-
-//     // If no row exists, create default 0 row
-//     if (rows.length === 0) {
-//       const defaultData = {
-//         user_id: userId,
-//         creatinine: 0,
-//         potassium: 0,
-//         sodium: 0,
-//         urea: 0,
-//         estimated_gfr: 0,
-//         albumin: 0,
-//         calcium: 0,
-//         phosphate: 0,
-//         uric_acid: 0,
-//         cholesterol_total: 0,
-//         cholesterol_ldl: 0,
-//         cholesterol_hdl: 0,
-//         triglycerides: 0,
-//         blood_pressure_systolic: 0,
-//         blood_pressure_diastolic: 0,
-//         heart_rate: 0,
-//         bmi: 0,
-//         fasting_glucose: 0,
-//         postprandial_glucose: 0,
-//         hba1c: 0
-//       };
-
-//       await db.query(
-//         "INSERT INTO medical_data SET ?",
-//         [defaultData]
-//       );
-
-//       return res.json(defaultData);
-//     }
-
-//     res.json(rows[0]);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to fetch medical data" });
-//   }
-// });
 router.get("/data", authMiddleware, async (req, res) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.set("Pragma", "no-cache");
@@ -146,41 +97,7 @@ router.get("/data", authMiddleware, async (req, res) => {
   }
 });
 
-// UPDATE medical data (only update provided fields)
-// router.put("/update",authMiddleware, async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const updateFields = req.body; // only fields sent from frontend
 
-//     // Build dynamic query
-//     const fields = Object.keys(updateFields)
-//       .filter(key => updateFields[key] !== undefined)
-//       .map(key => `${key} = ?`)
-//       .join(", ");
-
-//     const values = Object.keys(updateFields)
-//       .filter(key => updateFields[key] !== undefined)
-//       .map(key => updateFields[key]);
-
-//     if (fields.length > 0) {
-//       await db.query(
-//         `UPDATE medical_data SET ${fields} WHERE user_id = ?`,
-//         [...values, userId]
-//       );
-//     }
-
-//     // Return updated data
-//     const [rows] = await db.query(
-//       "SELECT * FROM medical_data WHERE user_id = ? LIMIT 1",
-//       [userId]
-//     );
-
-//     res.json({ medicalData: rows[0] });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to update medical data" });
-//   }
-// });
 
 const fieldMap = {
   estimatedGFR: "estimated_gfr",
@@ -265,41 +182,7 @@ router.put("/update", authMiddleware, async (req, res) => {
 
 
 
-// router.put("/update", authMiddleware, async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const updateFields = req.body;
 
-//     // Map frontend keys to DB columns
-//     const dbFields = Object.keys(updateFields)
-//       .filter(key => updateFields[key] !== undefined)
-//       .map(key => `${fieldMap[key] || key} = ?`)
-//       .join(", ");
-
-//     const values = Object.keys(updateFields)
-//       .filter(key => updateFields[key] !== undefined)
-//       .map(key => updateFields[key]);
-
-//     if (dbFields.length > 0) {
-//       await db.query(
-//         `UPDATE medical_data SET ${dbFields} WHERE user_id = ?`,
-//         [...values, userId]
-//       );
-//     }
-
-//     // Return latest updated data
-//     const [rows] = await db.query(
-//       "SELECT * FROM medical_data WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
-//       [userId]
-//     );
-
-//     res.json({ medicalData: rows[0] });
-
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to update medical data" });
-//   }
-// });
 
 
 export default router;

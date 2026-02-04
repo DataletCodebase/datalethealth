@@ -1,9 +1,5 @@
 import express from "express";
 import fs from "fs";
-import { runOCR } from "../utils/ocr.js";
-// import { extractMedicalValues } from "../utils/medicalParser.js";
-import { extractMedicalValuesFromTables } from "../utils/medicalParser.js";
-// import db from "../db.js";
 import { db } from "../server.js";
 import authMiddleware from "../middleware/auth.js";
 import { uploadProfile } from "../middleware/upload.js";
@@ -43,94 +39,10 @@ router.post(
   }
 );
 
-// router.post(
-//   "/prescriptions",
-//   authMiddleware,
-//   uploadPrescription.array("images", 5),
-//   async (req, res) => {
-//     const size = req.file.size;
-
-//     // 🔒 Enforce 50MB minimum
-//     if (size < 50 * 1024 * 1024) {
-//       return res.status(400).json({
-//         message: "Image must be at least 50MB"
-//       });
-//     }
-
-//     const path = `/uploads/prescriptions/${req.file.filename}`;
-
-//     await db.query(
-//       `INSERT INTO prescriptions (user_id, file_path, file_type, file_size)
-//        VALUES (?, ?, ?, ?)`,
-//       [req.user.id, path, req.file.mimetype, file.size]
-//     );
-
-//     res.json({
-//       url: path,
-//       type: req.file.mimetype,
-//       size
-//     });
-//   }
-// );
 
 
 
 
-
-//Swarup
-// router.post(
-//   "/prescriptions",
-//   authMiddleware,
-//   uploadPrescription.array("images", 5), // allow max 5 images at a time
-//   async (req, res) => {
-//     try {
-//       if (!req.files || req.files.length === 0) {
-//         return res.status(400).json({ message: "No files uploaded" });
-//       }
-
-//       const insertedFiles = [];
-
-//       for (const file of req.files) {
-//         const sizeKB = file.size / 1024; // convert bytes to KB
-
-//         if (sizeKB < 10 || sizeKB > 100) {
-//           return res.status(400).json({
-//             message: `File ${file.originalname} must be between 10KB and 100KB`
-//           });
-//         }
-
-//         const path = `/uploads/prescriptions/${file.filename}`;
-
-//         // Insert into DB
-//         const [result] = await db.query(
-//           `INSERT INTO prescriptions (user_id, file_path, file_type, file_size, uploaded_at)
-//            VALUES (?, ?, ?, ?, NOW())`,
-//           [req.user.id, path, file.mimetype, file.size]
-//         );
-
-//         insertedFiles.push({
-//           id: result.insertId,
-//           name: file.originalname,
-//           url: path,
-//           type: file.mimetype,
-//           size: file.size
-//         });
-//       }
-
-//       res.json(insertedFiles); // return all successfully uploaded images
-//     } catch (err) {
-//       console.error(err);
-//       res.status(500).json({ message: "Server error" });
-//     }
-//   }
-// );
-
-
-
-
-
-
-//Sangram
 router.post(
   "/prescriptions",
   authMiddleware,
@@ -302,37 +214,6 @@ router.post(
 );
 
 
-/* FETCH PRESCRIPTIONS */
-// router.get("/prescriptions", authMiddleware, async (req, res) => {
-//   const [rows] = await db.query(
-//     "SELECT * FROM prescriptions WHERE user_id = ? ORDER BY uploaded_at DESC",
-//     [req.user.id]
-//   );
-//   res.json(rows);
-// });
-
-
-// router.get("/prescriptions", authMiddleware, async (req, res) => {
-//   try {
-//     const [rows] = await db.query(
-//       `SELECT 
-//         id,
-//         file_path AS url,
-//         file_type AS type,
-//         file_size AS size,
-//         uploaded_at
-//        FROM prescriptions
-//        WHERE user_id = ?
-//        ORDER BY uploaded_at DESC`,
-//       [req.user.id]
-//     );
-
-//     res.json(rows);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
 
 
 router.get("/prescriptions", authMiddleware, async (req, res) => {

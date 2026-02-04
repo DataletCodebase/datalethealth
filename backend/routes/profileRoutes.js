@@ -106,4 +106,38 @@ WHERE id = ?;
   }
 });
 
+router.get("/all", authMiddleware, async (req, res) => {
+  try {
+    // OPTIONAL: only allow admin
+    if (req.user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const [rows] = await db.query(`
+      SELECT 
+        id AS userId,
+        full_name,
+        email,
+        mobile,
+        gender,
+        dob,
+        disease,
+        height,
+        weight,
+        blood_group,
+        city,
+        state,
+        country,
+        created_at
+      FROM users
+      ORDER BY created_at DESC
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Fetch all users error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;

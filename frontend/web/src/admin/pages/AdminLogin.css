@@ -1,0 +1,65 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #1b2236; /* dark navy background */
+  font-family: 'Arial', sans-serif;
+}
+
+/* Centered login card */
+.login-card {
+  background: #1e2a4a; /* slightly lighter than bg */
+  padding: 40px 30px;
+  border-radius: 12px;
+  width: 350px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  color: #fff;
+}
+
+/* Header */
+.login-card h2 {
+  color: #4ac6f7;
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.login-card .sub-title {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 25px;
+  color: #b0b8c1;
+}
+
+/* Inputs */
+.login-card input {
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: none;
+  border-radius: 6px;
+  background: #2b3a63;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.login-card input::placeholder {
+  color: #8890a6;
+}
+
+/* Button */
+.login-card button {
+  padding: 12px 15px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #4ac6f7, #2ed573);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.login-card button:hover {
+  opacity: 0.9;
+}

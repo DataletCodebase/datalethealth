@@ -1,0 +1,861 @@
+import { useEffect, useState } from "react";
+import "./AdminDashboard.css";
+import { useNavigate } from "react-router-dom";
+
+
+export default function AdminDashboard() {
+const [activeTab, setActiveTab] = useState("patients");
+const [patients, setPatients] = useState([]);
+const [loading, setLoading] = useState(true);
+
+
+const [selectedPatient, setSelectedPatient] = useState(null);
+const [formData, setFormData] = useState({});
+const [showEditModal, setShowEditModal] = useState(false);
+
+// 🔹 Prescription states
+const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+const [prescriptions, setPrescriptions] = useState([]);
+const [loadingPrescriptions, setLoadingPrescriptions] = useState(false);
+const [viewingPrescription, setViewingPrescription] = useState(null);
+
+const navigate = useNavigate();
+
+const [popup, setPopup] = useState({
+  show: false,
+  message: "",
+  type: "success", // success | error
+});
+
+  // Fetch patients + medical data
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const res = await fetch("http://localhost:4000/admin/users-medical", {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("adminToken"),
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch users");
+
+        const data = await res.json();
+
+        // Map backend fields to frontend table
+        const mappedPatients = data.map((p) => ({
+          id: p.userId,
+          medicalId: p.medicalId,
+          name: p.full_name,
+          gender: p.gender,
+          condition: p.disease || p.condition_type || "N/A",
+          creatinine: p.creatinine,
+          potassium: p.potassium,
+          sodium: p.sodium,
+          urea: p.urea,
+          estimatedGFR: p.estimated_gfr,
+          albumin: p.albumin,
+          calcium: p.calcium,
+          phosphate: p.phosphate,
+          uricAcid:p.uric_acid,
+          cholesterolTotal: p.cholesterol_total,
+          cholesterolLDL: p.cholesterol_ldl,
+          cholesterolHDL: p.cholesterol_hdl,
+          triglycerides: p.triglycerides,
+          bloodPressureSystolic: p.blood_pressure_systolic,
+          bloodPressureDiastolic: p.blood_pressure_diastolic,
+          heartRate: p.heart_rate,
+          bmi: p.bmi,
+          fastingGlucose: p.fasting_glucose,
+          postprandialGlucose: p.postprandial_glucose,
+          hba1c: p.hba1c,
+        }));
+
+        setPatients(mappedPatients);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPatients();
+  }, []);
+
+  
+
+
+
+
+const handleEdit = (patient) => {
+  // console.log("Edit patient:", patient);
+
+  // later:
+  setSelectedPatient(patient)
+  setFormData({ ...patient });
+  setShowEditModal(true)
+
+};
+
+  const handleCancel = () => {
+    setEditingRowId(null);
+    setFormData({});
+  };
+
+
+
+
+
+const handleSaveMedical = async () => {
+    try {
+      const token = localStorage.getItem("adminToken");
+
+      await fetch(
+        `http://localhost:4000/admin/medical/${selectedPatient.medicalId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            creatinine: formData.creatinine,
+            potassium: formData.potassium,
+            sodium: formData.sodium,
+            urea: formData.urea,
+            estimated_gfr: formData.estimatedGFR,
+            albumin: formData.albumin,
+            calcium: formData.calcium,
+            phosphate: formData.phosphate,
+            uric_acid: formData.uricAcid,
+            cholesterol_total: formData.cholesterolTotal,
+            cholesterol_ldl: formData.cholesterolLDL,
+            cholesterol_hdl: formData.cholesterolHDL,
+            triglycerides: formData.triglycerides,
+            blood_pressure_systolic: formData.bloodPressureSystolic,
+            blood_pressure_diastolic: formData.bloodPressureDiastolic,
+            heart_rate: formData.heartRate,
+            bmi: formData.bmi,
+            fasting_glucose: formData.fastingGlucose,
+            postprandial_glucose: formData.postprandialGlucose,
+            hba1c: formData.hba1c,
+          }),
+        }
+      );
+
+      // UI update
+      setPatients((prev) =>
+        prev.map((p) =>
+          p.id === selectedPatient.id ? { ...p, ...formData } : p
+        )
+      );
+
+      setShowEditModal(false);
+      setSelectedPatient(null);
+
+      // ✅ SHOW SUCCESS POPUP
+    setPopup({
+      show: true,
+      message: "Medical data updated successfully ✅",
+      type: "success",
+    });
+
+
+    } catch (err) {
+      console.error(err);
+      // alert("Medical update failed");
+      setPopup({
+      show: true,
+      message: "Failed to update medical data ❌",
+      type: "error",
+    });
+    }
+  };
+
+
+
+
+// const handleUpdatePatient = async () => {
+//   try {
+//     const token = localStorage.getItem("adminToken");
+
+//     // 🔹 Build payloads INSIDE save handler
+//     const profilePayload = {
+//       full_name: formData.name,
+//       gender: formData.gender,
+//       disease: formData.condition,
+//     };
+
+//     const medicalPayload = {
+//       creatinine: formData.creatinine,
+//       potassium: formData.potassium,
+//       sodium: formData.sodium,
+//       urea: formData.urea,
+//       estimated_gfr: formData.estimatedGFR,
+//       albumin: formData.albumin,
+//       calcium: formData.calcium,
+//       phosphate: formData.phosphate,
+//       cholesterol_total: formData.cholesterolTotal,
+//       cholesterol_ldl: formData.cholesterolLDL,
+//       cholesterol_hdl: formData.cholesterolHDL,
+//       triglycerides: formData.triglycerides,
+//       blood_pressure_systolic: formData.bloodPressureSystolic,
+//       blood_pressure_diastolic: formData.bloodPressureDiastolic,
+//       heart_rate: formData.heartRate,
+//       bmi: formData.bmi,
+//       fasting_glucose: formData.fastingGlucose,
+//       postprandial_glucose: formData.postprandialGlucose,
+//       hba1c: formData.hba1c,
+//     };
+
+//     // 1️⃣ Update USER table
+//     await fetch(
+//       `http://localhost:4000/api/admin/users/${selectedPatient.id}`,
+//       {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify(profilePayload),
+//       }
+//     );
+
+//     // 2️⃣ Update MEDICAL table
+//     await fetch(
+//       `http://localhost:4000/api/admin/medical/${selectedPatient.medicalId}`,
+//       {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify(medicalPayload),
+//       }
+//     );
+
+//     // 3️⃣ Update UI instantly (optimistic update)
+//     setPatients((prev) =>
+//       prev.map((p) =>
+//         p.id === selectedPatient.id
+//           ? { ...p, ...formData }
+//           : p
+//       )
+//     );
+
+//     setShowEditModal(false);
+//     setSelectedPatient(null);
+//   } catch (err) {
+//     console.error("Update failed:", err);
+//     alert("Update failed");
+//   }
+// };
+
+
+
+
+
+const handleDelete = async (userId) => {
+  if (!window.confirm("Are you sure you want to delete this patient?")) return;
+
+  try {
+    const token = localStorage.getItem("adminToken");
+
+    const res = await fetch(
+      `http://localhost:4000/admin/users/${userId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Failed to delete patient");
+      return;
+    }
+
+    // ✅ Update UI instantly (no refetch needed)
+    setPatients((prev) => prev.filter((p) => p.id !== userId));
+
+    // alert("Patient deleted successfully");
+
+    // ✅ SHOW SUCCESS POPUP
+    setPopup({
+      show: true,
+      message: "Medical data Deleted successfully ✅",
+      type: "success",
+    });
+
+
+  } catch (err) {
+    console.error("Delete error:", err);
+    // alert("Server error while deleting");
+    setPopup({
+      show: true,
+      message: "Failed to Delete the User Record ❌",
+      type: "error",
+    });
+  }
+  
+};
+
+
+// const handleLogout = () => {
+//     localStorage.removeItem("adminToken"); // remove JWT
+//     navigate("/admin/login"); // redirect to login
+//   };
+
+
+
+const handleLogout = async () => {
+  try {
+    await fetch("http://localhost:4000/admin/logout", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+    });
+  } catch (err) {
+    console.error("Logout error", err);
+  } finally {
+    localStorage.removeItem("adminToken");
+    navigate("/admin/login");
+  }
+};
+
+
+const openPrescriptionViewer = (file) => {
+  setViewingPrescription({
+    name: file.file_name,
+    type: file.file_type || "image/jpeg",
+    url: `http://localhost:4000${file.file_path}`,
+  });
+};
+
+
+ /* ================= VIEW PRESCRIPTIONS ================= */
+  const handleViewPrescriptions = async (patient) => {
+    setSelectedPatient(patient);
+    setShowPrescriptionModal(true);
+    setLoadingPrescriptions(true);
+
+    try {
+      const res = await fetch(
+        `http://localhost:4000/admin/users/${patient.id}/prescriptions`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      setPrescriptions(data);
+    } catch (err) {
+      console.error("Prescription fetch error", err);
+    } finally {
+      setLoadingPrescriptions(false);
+    }
+  };
+
+
+
+  
+
+  return (
+    <div className="admin-layout">
+      {/* Sidebar */}
+      <aside className="sidebar1">
+        <div className="sidebar-header">
+          <div className="header-content">
+            <div className="avatar">AD</div>
+            <h2>Patient Admin</h2>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
+          <ul>
+            <li>
+              <button className={`nav-item ${activeTab === "patients" ? "active" : ""}`} onClick={() => setActiveTab("patients")}>
+                <span className="nav-icon">👥</span>
+                <span className="nav-text">Patients</span>
+              </button>
+            </li>
+            <li>
+              <button className={`nav-item ${activeTab === "diet" ? "active" : ""}`} onClick={() => setActiveTab("diet")}>
+                <span className="nav-icon">🍎</span>
+                <span className="nav-text">Patient Diet</span>
+              </button>
+            </li>
+            <li>
+              <button className={`nav-item ${activeTab === "reports" ? "active" : ""}`} onClick={() => setActiveTab("reports")}>
+                <span className="nav-icon">📊</span>
+                <span className="nav-text">Reports</span>
+              </button>
+            </li>
+            <li>
+              <button className={`nav-item ${activeTab === "settings" ? "active" : ""}`} onClick={() => setActiveTab("settings")}>
+                <span className="nav-icon">⚙️</span>
+                <span className="nav-text">Settings</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <div className="sidebar-footer">
+          {/* <div className="user-profile">
+            <div className="avatar">AD</div>
+            <div className="user-details">
+              <span className="user-name">Admin User</span>
+              <span className="user-role">Administrator</span>
+            </div>
+          </div> */}
+           <button className="logout-btn" onClick={handleLogout}>
+            Logout  ➜]
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="main-content">
+        <header className="header">
+          <h1>Admin Dashboard</h1>
+          <div className="user-info">Welcome, Admin</div>
+        </header>
+
+        <div className="content-wrapper">
+          {/* Patients */}
+          {activeTab === "patients" && (
+            <div className="dashboard-container active">
+              {loading ? (
+                <p>Loading patients...</p>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Gender</th>
+                      <th>Condition</th>
+                      <th>Creatinine</th>
+                      <th>Potassium</th>
+                      <th>Sodium</th>
+                      <th>Urea</th>
+                      <th>Estimated GFR</th>
+                      <th>Albumin</th>
+                      <th>Calcium</th>
+                      <th>Phosphate</th>
+                      <th>Uric Acid</th>
+                      <th>Cholesterol Total</th>
+                      <th>Cholesterol LDL</th>
+                      <th>Cholesterol HDL</th>
+                      <th>Triglycerides</th>
+                      <th>BP Systolic</th>
+                      <th>BP Diastolic</th>
+                      <th>Heart Rate</th>
+                      <th>BMI</th>
+                      <th>Fasting Glucose</th>
+                      <th>Postprandial Glucose</th>
+                      <th>HbA1c</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patients.map((p, i) => (
+                      <tr key={p.id}>
+                        <td>{i + 1}</td>
+                        <td>{p.name}</td>
+                        <td>{p.gender}</td>
+                        <td>
+                          <span className={`condition-badge ${p.condition.toLowerCase()}`}>
+                            {p.condition}
+                          </span>
+                        </td>
+                        <td>{p.creatinine ?? "-"}</td>
+                        <td>{p.potassium ?? "-"}</td>
+                        <td>{p.sodium ?? "-"}</td>
+                        <td>{p.urea ?? "-"}</td>
+                        <td>{p.estimatedGFR ?? "-"}</td>
+                        <td>{p.albumin ?? "-"}</td>
+                        <td>{p.calcium ?? "-"}</td>
+                        <td>{p.phosphate ?? "-"}</td>
+                        <td>{p.uricAcid ?? "-"}</td>
+                        <td>{p.cholesterolTotal ?? "-"}</td>
+                        <td>{p.cholesterolLDL ?? "-"}</td>
+                        <td>{p.cholesterolHDL ?? "-"}</td>
+                        <td>{p.triglycerides ?? "-"}</td>
+                        <td>{p.bloodPressureSystolic ?? "-"}</td>
+                        <td>{p.bloodPressureDiastolic ?? "-"}</td>
+                        <td>{p.heartRate ?? "-"}</td>
+                        {/* <td>{p.bmi?.toFixed(1) ?? "-"}</td> */}
+                        <td>{p.bmi ?? "-"}</td>
+                        <td>{p.fastingGlucose ?? "-"}</td>
+                        <td>{p.postprandialGlucose ?? "-"}</td>
+                        <td>{p.hba1c ?? "-"}</td>
+                        
+                        <td className="actions-cell">
+                         <div className="action-buttons">
+                         <button className="edit-btn2" onClick={() => handleEdit(p)}>Edit</button>
+                         <button className="delete-btn2" onClick={() => handleDelete(p.id)}>Delete</button>
+                         <button className="view-btn" onClick={() => handleViewPrescriptions(p)}>
+                           View
+                         </button>
+                         </div>
+                        </td>
+                      </tr>
+                    ))}
+                    
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* Diet */}
+          {/* {activeTab === "diet" && (
+            <div className="dashboard-container active">
+              <div className="dashboard-cards">
+                <div className="dashboard-card">
+                  <div className="card-icon diet">🍎</div>
+                  <div className="card-content">
+                    <h3>Active Diet Plans</h3>
+                    <p>{diets.filter(d => d.status === "Active").length}</p>
+                  </div>
+                </div>
+
+                <div className="dashboard-card">
+                  <div className="card-icon diet">🔥</div>
+                  <div className="card-content">
+                    <h3>Avg. Calories</h3>
+                    <p>{Math.round(diets.reduce((s, d) => s + d.calories, 0) / diets.length)}</p>
+                  </div>
+                </div>
+
+                <div className="dashboard-card">
+                  <div className="card-icon diet">📋</div>
+                  <div className="card-content">
+                    <h3>Diet Types</h3>
+                    <p>{new Set(diets.map(d => d.dietPlan)).size}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )} */}
+
+          {/* Reports & Settings */}
+          {(activeTab === "reports" || activeTab === "settings" || activeTab === "diet") && (
+            <div className="coming-soon">
+              <h2>{activeTab.toUpperCase()}</h2>
+              <p>This section is under development</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* ================= EDIT MEDICAL MODAL ================= */}
+{showEditModal && (
+  <div className="modal-overlay">
+    <div className="modal modal-large">
+      <h2>Edit Medical Data</h2>
+
+      <div className="modal-grid">
+        
+        {/* <input type="number" placeholder="Creatinine"
+          value={formData.creatinine || ""}
+          onChange={(e) => setFormData({ ...formData, creatinine: e.target.value })}
+        /> */}
+        <div className="form-group">
+          <label>Creatinine</label>
+          <input type="number" placeholder="Creatinine"
+            value={formData.creatinine || ""}
+            onChange={(e) => setFormData({ ...formData, creatinine: e.target.value })}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Potassium</label>
+          <input type="number" placeholder="Potassium"
+          value={formData.potassium || ""}
+          onChange={(e) => setFormData({ ...formData, potassium: e.target.value })}
+        />
+        </div>
+
+        
+        <div className="form-group">
+          <label>Sodium</label>
+          <input type="number" placeholder="Sodium"
+          value={formData.sodium || ""}
+          onChange={(e) => setFormData({ ...formData, sodium: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Urea</label>
+          <input type="number" placeholder="Urea"
+          value={formData.urea || ""}
+          onChange={(e) => setFormData({ ...formData, urea: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Estimated GFR</label>
+          <input type="number" placeholder="Estimated GFR"
+          value={formData.estimatedGFR || ""}
+          onChange={(e) => setFormData({ ...formData, estimatedGFR: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Albumin</label>
+          <input type="number" placeholder="Albumin"
+          value={formData.albumin || ""}
+          onChange={(e) => setFormData({ ...formData, albumin: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Calcium</label>
+          <input type="number" placeholder="Calcium"
+          value={formData.calcium || ""}
+          onChange={(e) => setFormData({ ...formData, calcium: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Phosphate</label>
+          <input type="number" placeholder="Phosphate"
+          value={formData.phosphate || ""}
+          onChange={(e) => setFormData({ ...formData, phosphate: e.target.value })}
+        />
+        </div>
+
+
+        <div className="form-group">
+          <label>Uric Acid</label>
+          <input type="number" placeholder="Uric Acid"
+          value={formData.uricAcid || ""}
+          onChange={(e) => setFormData({ ...formData, uricAcid: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Cholesterol Total</label>
+          <input type="number" placeholder="Cholesterol Total"
+          value={formData.cholesterolTotal || ""}
+          onChange={(e) => setFormData({ ...formData, cholesterolTotal: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Cholesterol LDL</label>
+          <input type="number" placeholder="Cholesterol LDL"
+          value={formData.cholesterolLDL || ""}
+          onChange={(e) => setFormData({ ...formData, cholesterolLDL: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Cholesterol HDL</label>
+          <input type="number" placeholder="Cholesterol HDL"
+          value={formData.cholesterolHDL || ""}
+          onChange={(e) => setFormData({ ...formData, cholesterolHDL: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Triglycerides</label>
+          <input type="number" placeholder="Triglycerides"
+          value={formData.triglycerides || ""}
+          onChange={(e) => setFormData({ ...formData, triglycerides: e.target.value })}
+        />
+        </div>
+
+        
+        <div className="form-group">
+          <label>BP Systolic</label>
+          <input type="number" placeholder="BP Systolic"
+          value={formData.bloodPressureSystolic || ""}
+          onChange={(e) => setFormData({ ...formData, bloodPressureSystolic: e.target.value })}
+        />
+        </div>
+
+        
+        <div className="form-group">
+          <label>BP Diastolic</label>
+          <input type="number" placeholder="BP Diastolic"
+          value={formData.bloodPressureDiastolic || ""}
+          onChange={(e) => setFormData({ ...formData, bloodPressureDiastolic: e.target.value })}
+        />
+        </div>
+
+
+        <div className="form-group">
+          <label>Heart Rate</label>
+          <input type="number" placeholder="Heart Rate"
+          value={formData.heartRate || ""}
+          onChange={(e) => setFormData({ ...formData, heartRate: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>BMI</label>
+          <input type="number" placeholder="BMI"
+          value={formData.bmi || ""}
+          onChange={(e) => setFormData({ ...formData, bmi: e.target.value })}
+        />
+        </div>
+        
+
+        <div className="form-group">
+          <label>Fasting Glucose</label>
+          <input type="number" placeholder="Fasting Glucose"
+          value={formData.fastingGlucose || ""}
+          onChange={(e) => setFormData({ ...formData, fastingGlucose: e.target.value })}
+        /> 
+        </div>
+
+        <div className="form-group">
+          <label>Postprandial Glucose</label>
+          <input type="number" placeholder="Postprandial Glucose"
+          value={formData.postprandialGlucose || ""}
+          onChange={(e) => setFormData({ ...formData, postprandialGlucose: e.target.value })}
+        />
+        </div>
+
+        
+        <div className="form-group">
+          <label>HbA1c</label>
+          <input type="number" placeholder="HbA1c"
+          value={formData.hba1c || ""}
+          onChange={(e) => setFormData({ ...formData, hba1c: e.target.value })}
+        />
+          
+        </div>
+      </div>
+
+      <div className="modal-actions">
+        <button className="edit-btn" onClick={handleSaveMedical}>
+          Save
+        </button>
+        <button className="delete-btn" onClick={() => setShowEditModal(false)}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+{/* ================= PRESCRIPTION MODAL ================= */}
+      {showPrescriptionModal && (
+        <div className="modal-overlay">
+          <div className="modal modal-large">
+            <h2>
+              Prescriptions – {selectedPatient?.name}
+            </h2>
+
+            {loadingPrescriptions ? (
+              <p>Loading prescriptions...</p>
+            ) : prescriptions.length === 0 ? (
+              <p>No prescriptions uploaded.</p>
+            ) : (
+              <div className="prescription-grid">
+                {prescriptions.map((file) => (
+                
+                  <div
+  key={file.id}
+  className="prescription-card"
+  onClick={() => openPrescriptionViewer(file)}
+  style={{ cursor: "pointer" }}
+>
+  <p>{file.file_name}</p>
+
+  
+  {file.file_type.startsWith("image") ? (
+                <img
+                  src={`http://localhost:4000${file.file_path}`}
+                  alt={file.file_name}
+                  className="prescription-image"
+                />
+              ) : (
+                <a
+                  href={`http://localhost:4000${file.file_path}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View PDF
+                </a>
+              )}
+</div>
+                ))}
+              </div>
+            )}
+
+            <button onClick={() => setShowPrescriptionModal(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+
+      {viewingPrescription &&
+  viewingPrescription.type.startsWith("image/") && (
+    <div
+      className="prescription-viewer-overlay"
+      onClick={() => setViewingPrescription(null)}
+    >
+      <div
+        className="prescription-viewer-content"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="viewer-header">
+          <h3>{viewingPrescription.name}</h3>
+          <button
+            className="close-viewer-btn"
+            onClick={() => setViewingPrescription(null)}
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="viewer-body">
+          <img
+            src={viewingPrescription.url}
+            alt={viewingPrescription.name}
+            className="prescription-image"
+          />
+        </div>
+      </div>
+    </div>
+)}
+
+
+{popup.show && (
+  <div className="popup-overlay">
+    <div className={`popup-modal ${popup.type}`}>
+      <p>{popup.message}</p>
+      <button onClick={() => setPopup({ ...popup, show: false })}>
+        OK
+      </button>
+    </div>
+  </div>
+)}
+
+
+    </div>
+  );
+}

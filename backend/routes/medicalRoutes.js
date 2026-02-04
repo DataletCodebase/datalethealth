@@ -171,20 +171,6 @@ router.put("/update", authMiddleware, async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export default router;
 
 

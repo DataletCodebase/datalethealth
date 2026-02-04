@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "./config/env.js"
 
 import express from "express";
 import cors from "cors";
@@ -12,6 +11,9 @@ import medicalRoutes from "./routes/medicalRoutes.js";
 import authMiddleware from "./middleware/auth.js"; 
 import userRoutes from "./routes/userRoutes.js";
 import chatbotRoutes from "./routes/chatbot.js";
+import adminAuthRoutes from "./routes/adminAuth.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import adminAuth from "./middleware/adminAuth.js";
 
 
 
@@ -50,11 +52,13 @@ app.get("/api/db-test", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/user", profileRoutes);
-app.use("/api/medical",authMiddleware, medicalRoutes);
+app.use("/api/medical", authMiddleware, medicalRoutes);
 app.use("/api/user", userRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/chatbot", chatbotRoutes);
-
+app.use("/admin", adminAuthRoutes);
+// app.use("/admin", adminAuth, adminRoutes);
+app.use("/admin", adminRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

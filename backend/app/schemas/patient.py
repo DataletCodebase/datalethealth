@@ -1,31 +1,53 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 # ✅ Create schema for creating a new patient
 class PatientCreate(BaseModel):
-    patient_code: Optional[str] = None
-    name: str
-    age: Optional[int] = None
+    full_name: str
+    email: str
+    mobile: str
+    password: str
+    dob: Optional[date] = None
+    address: Optional[str] = None
+    disease: Optional[str] = None
     gender: Optional[str] = None
-    diagnosis: Optional[str] = None
+    height: Optional[int] = None
+    weight: Optional[int] = None
+    blood_group: Optional[str] = None
+    city: Optional[str] = None
 
 # ✅ Schema for reading patient data (response)
 class PatientRead(BaseModel):
     id: int
-    patient_code: Optional[str] = None
-    name: str
-    age: Optional[int] = None
+    full_name: str
+    email: str
+    mobile: str
+    dob: Optional[date] = None
+    address: Optional[str] = None
+    disease: Optional[str] = None
+    role: Optional[str] = None
+    created_at: Optional[datetime] = None
+    customer_id: Optional[str] = None
     gender: Optional[str] = None
-    diagnosis: Optional[str] = None
-    created_at: datetime
+    height: Optional[int] = None
+    weight: Optional[int] = None
+    blood_group: Optional[str] = None
+    city: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # Pydantic v2 support (was orm_mode)
 
 # ✅ Schema for updating existing patient
 class PatientUpdate(BaseModel):
-    name: Optional[str] = None
-    age: Optional[int] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    mobile: Optional[str] = None
+    dob: Optional[date] = None
+    address: Optional[str] = None
+    disease: Optional[str] = None
     gender: Optional[str] = None
-    diagnosis: Optional[str] = None
+    height: Optional[int] = None
+    weight: Optional[int] = None
+    blood_group: Optional[str] = None
+    city: Optional[str] = None

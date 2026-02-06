@@ -5,12 +5,25 @@ from sqlalchemy.orm import sessionmaker
 from backend.app.models.lead_model import Lead
 
 import os
+import urllib.parse
 from dotenv import load_dotenv
 from backend.app.models.water_intake_model import WaterIntakeLog
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./backend/app/db/k_agent.db")
+# ✅ Load MySQL Config
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAME = os.getenv("DB_NAME", "dataletdblocal")
+DB_PORT = os.getenv("DB_PORT", "3306")
+
+encoded_password = urllib.parse.quote_plus(DB_PASSWORD) if DB_PASSWORD else ""
+
+# Construct Async MySQL URL
+DATABASE_URL = f"mysql+aiomysql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+print(f"🔥 [DB] Connecting to: {DB_NAME} at {DB_HOST}")
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

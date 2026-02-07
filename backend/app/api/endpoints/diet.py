@@ -228,7 +228,42 @@ def generate_diet(patient_id: int, db: Session = Depends(get_db)):
 
             db.add(meal)
 
+    return {
+        "message": "Diet plan generated successfully ✅",
+        "diet_plan_id": plan.id,
+        "total_calories": total_calories,
+        "diet_preview": ai_response
+    }
+
+@router.post("/approve/{diet_plan_id}")
+def approve_diet(
+    diet_plan_id: int,
+    db: Session = Depends(get_db)
+):
+    plan = db.query(DietPlan).filter(DietPlan.id == diet_plan_id).first()
+
+    if not plan:
+        raise HTTPException(status_code=404, detail="Diet plan not found")
+
+    if plan.status == "approved":
+        return {"message": "Diet plan is already approved"}
+
+    plan.status = "approved"
+    plan.approved_at = datetime.utcnow()
+    # If we had a current user (dietician), we would set approved_by here
+    # plan.approved_by = current_user.full_name 
+    
     db.commit()
+    db.refresh(plan)
+
+    return {
+        "success": True,
+        "message": f"Diet plan {diet_plan_id} approved successfully ✅",
+        "status": "approved",
+        "approved_at": plan.approved_at
+    }
+
+
 @router.get("/user/{user_id}")
 def get_user_diets(user_id: int, db: Session = Depends(get_db)):
     diets = db.query(DietPlan).filter(DietPlan.patient_id == user_id).all()
@@ -237,11 +272,4 @@ def get_user_diets(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No diet plans found")
 
     return diets
-
-    return {
-        "message": "Diet plan generated successfully ✅",
-        "diet_plan_id": plan.id,
-        "total_calories": total_calories,
-        "diet_preview": ai_response
-    }
     

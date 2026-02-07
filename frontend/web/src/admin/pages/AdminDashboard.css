@@ -620,3 +620,134 @@
     opacity: 1;
   }
 }
+
+
+
+
+/* ================= DIET MODAL STYLING ================= */
+
+/* Header bar */
+.diet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Status badge */
+.diet-status {
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.diet-status.pending {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.diet-status.approved {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+/* Action buttons */
+.diet-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.approve-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.approve-btn:hover {
+  box-shadow: 0 6px 14px rgba(34,197,94,0.4);
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  box-shadow: 0 6px 14px rgba(37,99,235,0.4);
+}
+
+/* ================= DIET TABLE ================= */
+
+.diet-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  border: 1px solid #d1d5db;
+}
+
+.diet-table th,
+.diet-table td {
+  border: 1px solid #e5e7eb;
+  padding: 10px;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.diet-table thead th {
+  background: #f1f5f9;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.diet-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* Inputs while editing */
+.diet-table input {
+  width: 100%;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #cbd5f5;
+  font-size: 13px;
+}
+
+/* ================= FOOTER ================= */
+
+.diet-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.close-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  box-shadow: 0 6px 14px rgba(239,68,68,0.4);
+}

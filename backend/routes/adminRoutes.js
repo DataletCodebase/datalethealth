@@ -20,6 +20,7 @@ router.get("/users-medical", adminAuth, async (req, res) => {
       SELECT
         u.id AS userId,
         u.full_name,
+        u.customer_id,
         u.email,
         u.mobile,
         u.gender,

@@ -20,12 +20,102 @@ const [loadingPrescriptions, setLoadingPrescriptions] = useState(false);
 const [viewingPrescription, setViewingPrescription] = useState(null);
 
 const navigate = useNavigate();
+const [showDietModal, setShowDietModal] = useState(false);
+const [dietPlan, setDietPlan] = useState(null);
+const [editMode, setEditMode] = useState(false);
+const [editablePlan, setEditablePlan] = useState(null);
+const [selectedUser, setSelectedUser] = useState(null);
 
 const [popup, setPopup] = useState({
   show: false,
   message: "",
   type: "success", // success | error
 });
+
+
+// const handleOpenDiet = async (userId) => {
+//   const res = await fetch(`http://localhost:8000/diet/user/${userId}`);
+//   const data = await res.json();
+
+//   const latestPlan = data[data.length - 1]; // latest week
+//   const parsedPlan = JSON.parse(latestPlan.ai_generated_plan);
+
+//   setDietPlan(latestPlan);
+//   setEditablePlan(parsedPlan);
+//   setShowDietModal(true);
+// };
+
+
+
+// const handleOpenDiet = async (patient) => {
+//   try {
+//     setSelectedPatient(patient);
+
+//     const res = await fetch(
+//       `http://localhost:8000/diet/user/${patient.id}`
+//     );
+
+//     if (!res.ok) {
+//       throw new Error("Failed to fetch diet plan");
+//     }
+
+//     const data = await res.json();
+
+//     // take latest plan
+//     const latestPlan = data[data.length - 1];
+
+//     const parsedPlan = JSON.parse(latestPlan.ai_generated_plan);
+
+//     setDietPlan(latestPlan);
+//     setEditablePlan(parsedPlan);
+//     setEditMode(false);
+//     setShowDietModal(true);
+
+//   } catch (err) {
+//     console.error("Open diet error:", err);
+//   }
+// };
+
+
+const handleOpenDiet = async (user) => {
+  try {
+    setSelectedUser(user);
+
+    const res = await fetch(
+      `http://localhost:8000/diet/user/${user.id}`
+    );
+
+    if (!res.ok) throw new Error("Failed to fetch diet");
+
+    const diets = await res.json();
+
+    // take latest diet (last generated)
+    const latestDiet = diets[diets.length - 1];
+
+    const parsedPlan = JSON.parse(latestDiet.ai_generated_plan);
+
+    setDietPlan(latestDiet);
+    setEditablePlan(parsedPlan);
+    setEditMode(false);
+    setShowDietModal(true);
+
+  } catch (err) {
+    console.error("Open diet error:", err);
+  }
+};
+
+
+
+
+
+const handleDietDraftSave = () => {
+  setEditMode(false);
+};
+
+
+
+
+
 
   // Fetch patients + medical data
   useEffect(() => {
@@ -44,6 +134,7 @@ const [popup, setPopup] = useState({
         // Map backend fields to frontend table
         const mappedPatients = data.map((p) => ({
           id: p.userId,
+          customerId: p.customer_id,
           medicalId: p.medicalId,
           name: p.full_name,
           gender: p.gender,
@@ -174,81 +265,6 @@ const handleSaveMedical = async () => {
 
 
 
-// const handleUpdatePatient = async () => {
-//   try {
-//     const token = localStorage.getItem("adminToken");
-
-//     // 🔹 Build payloads INSIDE save handler
-//     const profilePayload = {
-//       full_name: formData.name,
-//       gender: formData.gender,
-//       disease: formData.condition,
-//     };
-
-//     const medicalPayload = {
-//       creatinine: formData.creatinine,
-//       potassium: formData.potassium,
-//       sodium: formData.sodium,
-//       urea: formData.urea,
-//       estimated_gfr: formData.estimatedGFR,
-//       albumin: formData.albumin,
-//       calcium: formData.calcium,
-//       phosphate: formData.phosphate,
-//       cholesterol_total: formData.cholesterolTotal,
-//       cholesterol_ldl: formData.cholesterolLDL,
-//       cholesterol_hdl: formData.cholesterolHDL,
-//       triglycerides: formData.triglycerides,
-//       blood_pressure_systolic: formData.bloodPressureSystolic,
-//       blood_pressure_diastolic: formData.bloodPressureDiastolic,
-//       heart_rate: formData.heartRate,
-//       bmi: formData.bmi,
-//       fasting_glucose: formData.fastingGlucose,
-//       postprandial_glucose: formData.postprandialGlucose,
-//       hba1c: formData.hba1c,
-//     };
-
-//     // 1️⃣ Update USER table
-//     await fetch(
-//       `http://localhost:4000/api/admin/users/${selectedPatient.id}`,
-//       {
-//         method: "PUT",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token}`,
-//         },
-//         body: JSON.stringify(profilePayload),
-//       }
-//     );
-
-//     // 2️⃣ Update MEDICAL table
-//     await fetch(
-//       `http://localhost:4000/api/admin/medical/${selectedPatient.medicalId}`,
-//       {
-//         method: "PUT",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token}`,
-//         },
-//         body: JSON.stringify(medicalPayload),
-//       }
-//     );
-
-//     // 3️⃣ Update UI instantly (optimistic update)
-//     setPatients((prev) =>
-//       prev.map((p) =>
-//         p.id === selectedPatient.id
-//           ? { ...p, ...formData }
-//           : p
-//       )
-//     );
-
-//     setShowEditModal(false);
-//     setSelectedPatient(null);
-//   } catch (err) {
-//     console.error("Update failed:", err);
-//     alert("Update failed");
-//   }
-// };
 
 
 
@@ -302,11 +318,6 @@ const handleDelete = async (userId) => {
   
 };
 
-
-// const handleLogout = () => {
-//     localStorage.removeItem("adminToken"); // remove JWT
-//     navigate("/admin/login"); // redirect to login
-//   };
 
 
 
@@ -406,13 +417,6 @@ const openPrescriptionViewer = (file) => {
         </nav>
 
         <div className="sidebar-footer">
-          {/* <div className="user-profile">
-            <div className="avatar">AD</div>
-            <div className="user-details">
-              <span className="user-name">Admin User</span>
-              <span className="user-role">Administrator</span>
-            </div>
-          </div> */}
            <button className="logout-btn" onClick={handleLogout}>
             Logout  ➜]
           </button>
@@ -514,39 +518,143 @@ const openPrescriptionViewer = (file) => {
             </div>
           )}
 
-          {/* Diet */}
-          {/* {activeTab === "diet" && (
-            <div className="dashboard-container active">
-              <div className="dashboard-cards">
-                <div className="dashboard-card">
-                  <div className="card-icon diet">🍎</div>
-                  <div className="card-content">
-                    <h3>Active Diet Plans</h3>
-                    <p>{diets.filter(d => d.status === "Active").length}</p>
-                  </div>
-                </div>
+          {activeTab === "diet" && (
+  <div className="dashboard-container active">
+    <table className="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Customer ID</th>
+          <th>Weekly Diet</th>
+        </tr>
+      </thead>
 
-                <div className="dashboard-card">
-                  <div className="card-icon diet">🔥</div>
-                  <div className="card-content">
-                    <h3>Avg. Calories</h3>
-                    <p>{Math.round(diets.reduce((s, d) => s + d.calories, 0) / diets.length)}</p>
-                  </div>
-                </div>
+      <tbody>
+        {patients.map((p, index) => (
+    <tr key={p.id}>
+      <td>{index + 1}</td>
+      <td>{p.name}</td>
+      <td>{p.customerId || "-"}</td>
+      <td>
+        <button
+          className="view-btn"
+          onClick={() => handleOpenDiet(p)}
+        >
+          View
+        </button>
+      </td>
+    </tr>
+  ))}
+      </tbody>
+    </table>
+  </div>
+)}
 
-                <div className="dashboard-card">
-                  <div className="card-icon diet">📋</div>
-                  <div className="card-content">
-                    <h3>Diet Types</h3>
-                    <p>{new Set(diets.map(d => d.dietPlan)).size}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )} */}
 
-          {/* Reports & Settings */}
-          {(activeTab === "reports" || activeTab === "settings" || activeTab === "diet") && (
+{showDietModal && editablePlan && (
+  <div className="modal-overlay">
+    <div className="modal modal-large">
+
+      <h2>
+        Weekly Diet Plan — {selectedPatient?.name} ({selectedPatient?.customerId})
+      </h2>
+
+      <div className="diet-header">
+  <span className={`diet-status ${dietPlan?.status}`}>
+    Status: {dietPlan?.status?.toUpperCase()}
+  </span>
+
+  {!editMode && (
+    <div className="diet-actions">
+      <button className="approve-btn">Approve</button>
+      <button className="edit-btn" onClick={() => setEditMode(true)}>
+        Edit
+      </button>
+    </div>
+  )}
+</div>
+
+      {/* ===== DIET TABLE START ===== */}
+      <table className="diet-table">
+        <thead>
+          <tr>
+            <th>Day</th>
+            {Object.keys(editablePlan.Monday).map(time => (
+              <th key={time}>{time}</th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {Object.entries(editablePlan).map(([day, meals]) => (
+            <tr key={day}>
+              <td><strong>{day}</strong></td>
+
+              {Object.entries(meals).map(([time, meal]) => (
+                <td key={time}>
+                  {editMode ? (
+                    <input
+                      value={meal.meal}
+                      onChange={(e) =>
+                        setEditablePlan(prev => ({
+                          ...prev,
+                          [day]: {
+                            ...prev[day],
+                            [time]: {
+                              ...meal,
+                              meal: e.target.value
+                            }
+                          }
+                        }))
+                      }
+                    />
+                  ) : (
+                    <>
+                      <div>{meal.meal}</div>
+                      <small>{meal.quantity}</small><br />
+                      <small>{meal.cal} cal</small>
+                    </>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {/* ===== DIET TABLE END ===== */}
+
+      {editMode && (
+        <div className="diet-edit-actions">
+          <button className="save-btn" onClick={handleDietDraftSave}>Save</button>
+          <button
+            className="cancel-btn"
+            onClick={() => {
+              setEditablePlan(JSON.parse(dietPlan.ai_generated_plan));
+              setEditMode(false);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* <button className="close-btn" onClick={() => setShowDietModal(false)}>
+        Close
+      </button> */}
+      <div className="diet-footer">
+  <button className="close-btn" onClick={() => setShowDietModal(false)}>
+    Close
+  </button>
+</div>
+    </div>
+  </div>
+)}
+
+
+
+          {/* Reports & Settings $ Diet*/}
+          {(activeTab === "reports" || activeTab === "settings" ) && (
             <div className="coming-soon">
               <h2>{activeTab.toUpperCase()}</h2>
               <p>This section is under development</p>

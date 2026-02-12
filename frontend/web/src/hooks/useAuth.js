@@ -19,16 +19,9 @@ export function useAuth() {
 
     saveToken(data.token);
 
-    // changes made by swarup
+   
+  localStorage.setItem("user", JSON.stringify(data.user));
 
-     localStorage.setItem(
-    "user",
-    JSON.stringify({
-      full_name: data.full_name,
-      email: data.email,
-      // role: data.role,
-    })
-  );
 
 
 

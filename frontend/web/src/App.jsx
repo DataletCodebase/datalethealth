@@ -922,55 +922,7 @@ const handleMedicalDataChange = (key, value) => {
   
 
 
-// useEffect(() => {
-//   const token = localStorage.getItem("token");
-//   if (!token) return;
 
-//   fetch("http://localhost:4000/api/user/profile/basic", {
-//     method: "GET",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${token}`,
-//     },
-//   })
-//     .then(async (res) => {
-//       if (res.status === 304) return null;
-//       if (!res.ok) throw new Error("Unauthorized");
-//       return res.json();
-//     })
-//     .then((data) => {
-//       if (!data) return;
-
-//       const mappedProfile = {
-//         fullName: data.full_name,
-//         email: data.email,
-//         phone: data.mobile,
-//         dateOfBirth: data.dob,
-//         address: data.address,
-//         // medicalConditions: "kidney",
-//         gender: data.gender || "N/A",
-//         height: data.height || 0,
-//         weight: data.weight || 0,
-//         bloodGroup: data.blood_group || "N/A",
-//         city: data.city || "N/A",
-//         state: data.state || "N/A",
-//         zipCode: data.zip_code || "N/A",
-//         country: data.country || "N/A",
-//         emergencyContact: {
-//           name: data.emergency_contact_name || "N/A",
-//           phone: data.emergency_contact_phone || "N/A",
-//           relationship: data.emergency_contact_relationship || "N/A",
-//         },
-//         medicalConditions: ["kidney"], // static
-//         profilePicture: null
-
-//       };
-
-//       setOriginalProfile(mappedProfile);
-//       setProfile(mappedProfile);
-//     })
-//     .catch(console.error);
-// }, []);
 
 
 
@@ -1036,54 +988,7 @@ useEffect(() => {
 
 
 
-// useEffect(() => {
-//   if (activeTab !== "profile") return;
 
-//   const token = localStorage.getItem("token");
-//   if (!token) return;
-
-//   fetch("http://localhost:4000/api/user/profile/basic", {
-//     headers: {
-//       Authorization: `Bearer ${token}`,
-//     },
-//   })
-//     .then(res => res.json())
-//     .then(data => {
-//       setProfile({
-//         fullName: data.full_name || "",
-//         email: data.email || "",
-//         phone: data.mobile || "",
-//         dateOfBirth: data.dob || "",
-//         gender: data.gender || "Other",
-//         height: data.height || "",
-//         weight: data.weight || "",
-//         bloodGroup: data.blood_group || "",
-//         address: data.address || "",
-//         city: data.city || "",
-//         state: data.state || "",
-//         zipCode: data.zip_code || "",
-//         country: data.country || "",
-//         emergencyContact: {
-//           name: data.emergency_contact_name || "N/A",
-//           phone: data.emergency_contact_phone || "N/A",
-//           relationship: data.emergency_contact_relationship || "N/A",
-//         },
-//         medicalConditions: ["kidney"],
-//         profilePicture: null,
-//       });
-
-//       setOriginalProfile({
-//         ...data,
-//         emergencyContact: {
-//           name: data.emergency_contact_name || "N/A",
-//           phone: data.emergency_contact_phone || "N/A",
-//           relationship: data.emergency_contact_relationship || "N/A",
-//         },
-//       });
-//     })
-//     .catch(console.error);
-
-// }, [activeTab]);
 
 
 
@@ -1178,17 +1083,7 @@ useEffect(() => {
   fetchUserProfile();
 }, []);
 
-  // const handleImageUpload = (e) => {
-  //   const file = e.target.files[0];
-  //   if (file) {
-  //     const reader = new FileReader();
-  //     reader.onloadend = () => {
-  //       setPreviewImage(reader.result);
-  //       setProfile(prev => ({ ...prev, profilePicture: file }));
-  //     };
-  //     reader.readAsDataURL(file);
-  //   }
-  // };
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1206,50 +1101,7 @@ useEffect(() => {
     }
   };
 
-  // const handleMedicalDataChange = (id, value) => {
-  //   setMedicalData(prev => ({ ...prev, [id]: parseFloat(value) || 0 }));
-  // };
-
-  // const handlePrescriptionUpload = (e) => {
-  //   const file = e.target.files[0];
-  //   if (file) {
-  //     const newPrescription = {
-  //       id: Date.now(),
-  //       name: file.name,
-  //       url: URL.createObjectURL(file),
-  //       uploadDate: new Date().toISOString(),
-  //       size: file.size,
-  //       type: file.type
-  //     };
-  //     setPrescriptions(prev => [...prev, newPrescription]);
-  //   }
-  // };
-
-
-//   const handlePrescriptionUpload = async (e) => {
-//   const file = e.target.files[0];
-//   if (!file) return;
-
-//   const token = localStorage.getItem("token");
-//   const formData = new FormData();
-//   formData.append("file", file);
-
-//   const res = await fetch("http://localhost:4000/api/user/prescriptions", {
-//     method: "POST",
-//     headers: { Authorization: `Bearer ${token}` },
-//     body: formData
-//   });
-
-//   const data = await res.json();
-
-//   setPrescriptions(prev => [
-//     {
-//       ...data,
-//       url: `http://localhost:4000${data.url}`
-//     },
-//     ...prev
-//   ]);
-// };
+  
 
 const handlePrescriptionUpload = async (e) => {
   const files = Array.from(e.target.files); // convert FileList to array
@@ -1541,56 +1393,7 @@ const handleCombinedSave = async () => {
         t={t}
       />
 
-      {/* {viewingPrescription && (
-        <div className="prescription-viewer-overlay" onClick={() => setViewingPrescription(null)}>
-          <div className="prescription-viewer-content" onClick={(e) => e.stopPropagation()}>
-            <div className="viewer-header">
-              <h3>{viewingPrescription.name}</h3>
-              <button className="close-viewer-btn" onClick={() => setViewingPrescription(null)}>×</button>
-            </div>
-            <div className="viewer-body">
-              {viewingPrescription.type.startsWith('image/') ? (
-                <img src={viewingPrescription.url}
-          alt={viewingPrescription.name} className="prescription-image" />
-              ) : (
-                <div className="pdf-placeholder">
-                  <div className="pdf-icon">📄</div>
-                  <p>Prescription Document Preview</p>
-                  <a href={viewingPrescription.url} download className="download-btn">
-                    {t('downloadPrescription')}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {/* {viewingPrescription && viewingPrescription.type.startsWith("image/") && (
-        <div className="prescription-viewer-overlay" onClick={() => setViewingPrescription(null)}>
-          <div className="prescription-viewer-content" onClick={(e) => e.stopPropagation()}>
-            <div className="viewer-header">
-              <h3>{viewingPrescription.name}</h3>
-              <button className="close-viewer-btn" onClick={() => setViewingPrescription(null)}>×</button>
-            </div>
-             <div className="viewer-body">
-            <div className="viewer-body">
-              {viewingPrescription.type.startsWith('image/') ? (
-                <img src={viewingPrescription.url}
-          alt={viewingPrescription.name} className="prescription-image" />
-              ) : (
-                <div className="pdf-placeholder">
-                  <div className="pdf-icon">📄</div>
-                  <p>Prescription Document Preview</p>
-                  <a href={viewingPrescription.url} download className="download-btn">
-                    {t('downloadPrescription')}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )} */}
+     
       {viewingPrescription && viewingPrescription.type.startsWith("image/") && (
   <div
     className="prescription-viewer-overlay"
@@ -1632,24 +1435,7 @@ const handleCombinedSave = async () => {
             <div className="profile-sidebar">
               <div className="profile-picture-section">
                 <div className="profile-picture-container">
-                  {/* {previewImage ? (
-                    <img src={previewImage} alt="Profile" className="profile-picture" />
-                  ) : (
-                    <div className="profile-picture-placeholder">
-                      <span className="profile-initials">{getInitials()}</span>
-                    </div>
-                  )} */}
-                  {/* {user?.profile_image ? (
-    <img
-      src={user.profile_image}
-      className="profile-picture"
-      alt="Profile"
-    />
-  ) : (
-    <div className="profile-picture-placeholder">
-      <span className="profile-initials">{getInitials()}</span>
-    </div>
-  )} */}
+                  
   {user?.profileImage ? (
     <img
       src={`http://localhost:4000${user.profileImage}`} // full URL
@@ -1731,17 +1517,7 @@ const handleCombinedSave = async () => {
                     />
                   </div>
 
-                  {/* <div className="form-group">
-                    <label>{t('lastName')}</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={profile.lastName}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="form-input"
-                    />
-                  </div> */}
+                  
 
                   <div className="form-group">
                     <label>{t('emailAddress')}</label>
@@ -3406,39 +3182,360 @@ useEffect(() => {
 }, []);
 
 
+const PatientsSection = () => {
+  return (
+    <div className="patients-section">
+      <h2>Welcome to the Diet Section</h2>
+      <p>
+        Here you can manage patient diets, nutrition plans, and personalized
+        health recommendations.
+      </p>
+    </div>
+  );
+};
+
+
+
+const [dietPlan, setDietPlan] = useState(null);
+const [dietStatus, setDietStatus] = useState(null); // pending | approved
+
+
+
+// ===== FETCH DIET PLAN =====
+const fetchDietPlan = async () => {
+  try {
+
+    const token = localStorage.getItem("token");
+    
+    const res = await fetch("http://localhost:4000/diet/my", {
+    headers: {
+        Authorization: `Bearer ${token}`,
+      },
+  });
+
+  if (!res.ok) throw new Error("Unauthorized");
+
+    const data = await res.json();
+
+    const latestPlan = data[data.length - 1]; // latest diet
+    setDietPlan(JSON.parse(latestPlan.ai_generated_plan));
+    setDietStatus(latestPlan.status);
+  } catch (err) {
+    console.log("No diet found");
+  }
+};
+
+// ===== GENERATE DIET =====
+
+
+
+const generateDiet = async () => {
+  try {
+    setLoading(true);
+
+    const res = await fetch("http://localhost:4000/diet/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Diet generation failed");
+    }
+
+    setDietPlan(data.diet_preview);
+    setDietStatus("pending");
+  } catch (err) {
+    console.error(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
+
+// ===== LOAD ON TAB OPEN =====
+useEffect(() => {
+  if (activeTab === "patients") {
+    fetchDietPlan();
+  }
+}, [activeTab]);
+
+
+
+
+
+const today = new Date().toISOString().split("T")[0];
+
+const [trackingMeals, setTrackingMeals] = useState([]);
+const [dietPlanId, setDietPlanId] = useState(null);
+
+// useEffect(() => {
+//   const userId = localStorage.getItem("user_id");
+
+//   fetch(`http://localhost:4000/diet/meal/user/${userId}`)
+//     .then(res => res.json())
+//     .then(data => {
+//       setDietPlanId(data.diet_plan_id);
+//       setTrackingMeals(data.meals);
+//     })
+//     .catch(err => console.error("Tracking fetch error:", err));
+// }, []);
+
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  fetch("http://localhost:4000/diet/meal/user/" + JSON.parse(atob(token.split('.')[1])).id, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("Unauthorized");
+      return res.json();
+    })
+    .then(data => {
+      console.log("TRACKING DATA:", data);
+      console.log("FULL TRACKING RESPONSE:", data);
+  console.log("MEALS ARRAY:", data.meals);
+  console.log("FIRST MEAL:", data.meals?.[0]);
+      setDietPlanId(data.diet_plan_id);
+      setTrackingMeals(data.meals || []);
+    })
+    .catch(err => console.error("Tracking fetch error:", err));
+}, []);
+
+
+
+const handleMealComplete = (day, time) => {
+
+  const trackingMeal = trackingMeals.find(
+    m => m.day === day && m.time === time
+  );
+
+  if (!trackingMeal) {
+    console.error("Tracking meal not found");
+    return;
+  }
+
+  const payload = {
+    diet_plan_id: trackingMeal.diet_plan_id,
+    diet_meal_id: trackingMeal.diet_meal_id,
+    meal_date: new Date().toISOString().split("T")[0]
+  };
+
+  console.log("SENDING:", payload);
+
+  fetch("http://localhost:4000/diet/meal/complete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("Completed:", data);
+  })
+  .catch(err => console.error("Complete error:", err));
+};
+
+
+
+const handleMealSkip = (day, time) => {
+
+  const trackingMeal = trackingMeals.find(
+    m => m.day === day && m.time === time
+  );
+
+  if (!trackingMeal) {
+    console.error("Tracking meal not found");
+    return;
+  }
+
+  const payload = {
+    diet_plan_id: trackingMeal.diet_plan_id,
+    diet_meal_id: trackingMeal.diet_meal_id,
+    meal_date: new Date().toISOString().split("T")[0]
+  };
+
+  console.log("SENDING SKIP:", payload);
+
+  fetch("http://localhost:4000/diet/meal/skip", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("Skipped:", data);
+  })
+  .catch(err => console.error("Skip error:", err));
+};
+
+
+
+
+
+
+// const handleAlternateMeal = async (day,time) => {
+
+//   const trackingMeal = trackingMeals.find(m => m.day === day && m.time === time);
+//   if (!trackingMeal) return alert("Meal not found");
+
+//   const food = prompt("Enter what you ate instead:");
+
+//   if (!food) return;
+
+//    const payload = {
+//     diet_plan_id: trackingMeal.diet_plan_id,
+//     diet_meal_id: trackingMeal.diet_meal_id,
+//     meal_date: today,
+//     actual_meal: food,
+//   };
+
+//   try {
+//     const res = await fetch("http://localhost:4000/diet/meal/alternate", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${localStorage.getItem("token")}`,
+//       },
+//       body: JSON.stringify({
+//         diet_plan_id: meal.diet_plan_id,
+//         diet_meal_id: meal.id,
+//         meal_date: today,
+//         actual_meal: food,
+//       }),
+//     });
+
+//     const data = await res.json();
+
+//     if (!res.ok) throw new Error(data.detail);
+
+//     alert(`Skipped with ${data.actual_calories} calories 🔥`);
+
+//   } catch (err) {
+//     alert(err.message);
+//   }
+// };
+
+
+
+
+
+
+
+
+const handleAlternateMeal = async (day, time) => {
+  // Look up the meal from backend-tracking array
+  const trackingMeal = trackingMeals.find(
+    m => m.day === day && m.time === time
+  );
+
+  if (!trackingMeal) {
+    alert("Meal not found in tracking list!");
+    return;
+  }
+
+  const food = prompt("Enter what you ate instead:");
+  if (!food) return;
+
+  const payload = {
+    diet_plan_id: trackingMeal.diet_plan_id,
+    diet_meal_id: trackingMeal.diet_meal_id,
+    meal_date: today,
+    actual_meal: food,
+  };
+
+  try {
+    const res = await fetch("http://localhost:4000/diet/meal/alternate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.detail || "Meal alternate failed");
+
+    // alert(`Skipped with ${data.actual_calories} calories 🔥`);
+    // console.log("Alternate meal success:", data);
+    //  setTrackingMeals(prev => prev.map(m => {
+    //   if (m.day === day && m.time === time) {
+    //     return {
+    //       ...m,
+    //       meal_name: data.actual_meal, // update displayed meal
+    //       calories: data.actual_calories, // update calories
+    //       status: data.status // optional, 'skipped'
+    //     };
+    //   }
+    //   return m;
+    // }));
+    // setDietPlan(prev => {
+    //   const newPlan = { ...prev };
+    //   // Find the day and time in the dietPlan
+    //   Object.keys(newPlan).forEach(day => {
+    //     Object.keys(newPlan[day]).forEach(time => {
+    //       if (newPlan[day][time].id === meal.id) {
+    //         newPlan[day][time] = {
+    //           ...newPlan[day][time],
+    //           meal: data.actual_meal,
+    //           cal: data.actual_calories,
+    //         };
+    //       }
+    //     });
+    //   });
+    //   return newPlan;
+    // }); 
+
+    setDietPlan(prev => {
+  const newPlan = { ...prev };
+  Object.keys(newPlan).forEach(d => {
+    Object.keys(newPlan[d]).forEach(t => {
+      if (newPlan[d][t].id === trackingMeal.diet_meal_id) {
+        newPlan[d][t] = {
+          ...newPlan[d][t],
+          meal: data.actual_meal,       // update meal name
+          cal: data.actual_calories     // update calories
+          // quantity stays the same
+        };
+      }
+    });
+  });
+  return newPlan;
+});
+
+  } catch (err) {
+    alert(err.message);
+    console.error("Alternate meal error:", err);
+  }
+};
+
+
+
+
+
+
+
+
 
   
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 
   if (!isInitialized) return <LoadingSpinner />;
 
@@ -3490,7 +3587,7 @@ useEffect(() => {
             >
               {t('patients')}
             </button>
-            <button
+            {/* <button
               className={`nav-tab ${activeTab === "pricing" ? "active" : ""}`}
               onClick={() => {
                 setShowPricing(true);
@@ -3498,7 +3595,7 @@ useEffect(() => {
               }}
             >
               {t('pricing')}
-            </button>
+            </button> */}
           </div>
 
           <div className="nav-actions">
@@ -3596,6 +3693,12 @@ useEffect(() => {
         )}
       </nav>
 
+
+
+      {/* Dashboard Section */}
+
+
+      {activeTab === "dashboard" && (
       <div className="dashboard-content">
         <div className="sidebar">
           <h2 className="sidebar-title">{t('patientsTitle')}</h2>
@@ -3841,8 +3944,577 @@ useEffect(() => {
           </footer>
         </main>
       </div>
+      )}
+
+
+{/* Patinet Diet Section */}
+
+
+    {activeTab === "patients" && (
+   <div className="patients-section">
+
+    {/* NO DIET YET */}
+    {/* {!dietPlan && !loading && (
+      <div className="generate-card">
+        <h2>Generate Your Diet Plan</h2>
+        <p>
+          Your personalized diet plan will be created based on your
+          medical condition and lab reports.
+        </p>
+
+        <button className="generate-btn" onClick={generateDiet}>
+          Generate Diet Plan
+        </button>
+      </div>
+    )} */}
+    {!dietPlan && !loading && (
+  <div className="generate-section">
+    <div className="generate-card">
+      <div className="card-icon">
+        🥗
+      </div>
+      <h2 className="card-title">Generate Your Personalized Diet Plan</h2>
+      <p className="card-description">
+        Get a customized diet plan tailored to your specific medical condition, 
+        lab reports, and health goals. Our AI-powered system creates optimal 
+        nutrition plans for your wellness journey.
+      </p>
+      
+      <div className="features-list">
+        <div className="feature-item">
+          <span className="feature-icon">✓</span>
+          <span>Based on medical conditions</span>
+        </div>
+        <div className="feature-item">
+          <span className="feature-icon">✓</span>
+          <span>Personalized calorie calculation</span>
+        </div>
+        <div className="feature-item">
+          <span className="feature-icon">✓</span>
+          <span>Doctor & dietician approved</span>
+        </div>
+        <div className="feature-item">
+          <span className="feature-icon">✓</span>
+          <span>Weekly meal scheduling</span>
+        </div>
+      </div>
+
+      <button className="generate-btn" onClick={generateDiet}>
+        <span className="btn-icon">✨</span>
+        Generate Diet Plan
+        <span className="btn-arrow">→</span>
+      </button>
+      
+      <div className="card-footer">
+        <span className="footer-text">Approved by certified dietitians</span>
+        <span className="footer-dot">•</span>
+        <span className="footer-text">100% personalized</span>
+      </div>
+    </div>
+  </div>
+)}
+
+    {/* GENERATING */}
+    {loading && (
+      <div className="generating">
+        <h3>Generating your personalized diet plan…</h3>
+        <p>Please wait ⏳</p>
+      </div>
+    )}
+
+  
+{dietPlan && (
+  <div className="diet-container">
+    {dietStatus === "pending" && (
+      <div className="pending-overlay">
+        <h3>Waiting for Dietician Approval 🕒</h3>
+        <p>Your diet plan is under review</p>
+      </div>
+    )}
+
+    {(() => {
+      const days = Object.keys(dietPlan);
+      const timeSlots = Object.keys(dietPlan[days[0]]);
+
+      return (
+        <div className={`diet-table-wrapper ${dietStatus === "pending" ? "blurred" : ""}`}>
+          <table className="diet-table weekly">
+            <thead>
+              <tr>
+                <th className="day-header">Day</th>
+                {timeSlots.map(time => (
+                  <th key={time} className="time-header">{time}</th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {days.map(day => (
+                <tr key={day} className="day-row">
+                  <td className="day-cell">
+                    <div className="day-name">{day}</div>
+                  </td>
+
+                  {timeSlots.map(time => {
+                    const meal = dietPlan[day][time];
+                    return (
+                      <td key={time} className="meal-cell">
+                        <div className="meal-content">
+                          <div className="meal-name">{meal.meal}</div>
+                          <div className="meal-details">
+                            <span className="meal-quantity">{meal.quantity}</span>
+                            <span className="meal-calories">{meal.cal} cal</span>
+                          </div>
+                          {/* Action Buttons for each meal */}
+                          <div className="meal-actions">
+                            <label className="meal-action-checkbox">
+                              <input 
+                                type="checkbox" 
+                                className="completed-checkbox"
+                                // Add onChange handler here
+                                onChange={() => handleMealComplete(day,time)}
+                              />
+                              <span>Completed</span>
+                            </label>
+                            
+                            <label className="meal-action-checkbox">
+                              <input 
+                                type="checkbox" 
+                                className="skipped-checkbox"
+                                // Add onChange handler here
+                                onChange={() => handleMealSkip(day,time)}
+                              />
+                              <span>Skipped</span>
+                            </label>
+                            
+                            <button 
+                              className="meal-alternate-btn"
+                              // Add onClick handler here
+                              onClick={() => handleAlternateMeal(day,time)}
+                            >
+                              Alternate
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    })()}
+  </div>
+)}
+
+  </div>
+)}
 
       <style jsx>{`
+
+.generate-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 20px;
+}
+
+.generate-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(96, 102, 255, 0.1);
+  border: 1px solid rgba(96, 102, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.generate-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4CAF50, #2196F3, #9C27B0);
+  border-radius: 20px 20px 0 0;
+}
+
+.card-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.card-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 16px;
+  background: linear-gradient(90deg, #4CAF50, #2196F3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.card-description {
+  color: #5d6d7e;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.features-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 35px;
+  text-align: left;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: rgba(96, 102, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(96, 102, 255, 0.1);
+  font-size: 14px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  background: rgba(96, 102, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  color: #4CAF50;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.generate-btn {
+  background: linear-gradient(90deg, #4CAF50, #2196F3);
+  color: white;
+  border: none;
+  padding: 32px 32px;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.generate-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(33, 150, 243, 0.4);
+}
+
+.generate-btn:active {
+  transform: translateY(-1px);
+}
+
+.generate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.generate-btn:hover::before {
+  left: 100%;
+}
+
+.btn-icon {
+  font-size: 20px;
+}
+
+.btn-arrow {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.generate-btn:hover .btn-arrow {
+  transform: translateX(5px);
+}
+
+.card-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.footer-text {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.footer-dot {
+  color: #bdc3c7;
+  font-size: 20px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .generate-card {
+    padding: 30px 20px;
+  }
+  
+  .features-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-title {
+    font-size: 24px;
+  }
+}
+
+.diet-container {
+  position: relative;
+  margin: 20px 0;
+}
+
+.diet-table-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.diet-table-wrapper.blurred {
+  filter: blur(4px);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.pending-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  border: 1px solid #ff9800;
+  min-width: 300px;
+}
+
+.pending-overlay h3 {
+  color: #ff9800;
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.pending-overlay p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+
+.diet-table.weekly {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.diet-table.weekly th {
+  background-color: #f8f9fa;
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.diet-table.weekly .day-header {
+  width: 100px;
+  background-color: #e9f7ef;
+  color: #2e7d32;
+}
+
+.diet-table.weekly td {
+  padding: 10px 8px;
+  border: 1px solid #e0e0e0;
+  vertical-align: top;
+  height: 180px;
+  min-height: 150px; /* Added min-height */
+}
+
+.diet-table.weekly .day-cell {
+  background-color: #f1f8e9;
+  text-align: center;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.diet-table.weekly .meal-cell {
+  background-color: #fff;
+}
+
+.meal-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.meal-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+  line-height: 1.3;
+  font-size: 0.9rem;
+}
+
+.meal-details {
+  display: flex;
+  flex-direction: column;
+  // gap: 4px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.meal-quantity {
+  font-style: italic;
+}
+
+.meal-calories {
+  font-weight: 500;
+  color: #d32f2f;
+}
+
+/* Meal Actions Styles */
+.meal-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meal-action-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #555;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.meal-action-checkbox:hover {
+  background-color: #f5f5f5;
+}
+
+.meal-action-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #4CAF50; /* Green for completed */
+}
+
+.meal-action-checkbox .skipped-checkbox {
+  accent-color: #ff9800; /* Orange for skipped */
+}
+
+.completed-checkbox:checked + span {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.skipped-checkbox:checked + span {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.meal-alternate-btn {
+  background: linear-gradient(135deg, #3B82F6, #10B981);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.2s ease;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.meal-alternate-btn:hover {
+  background-color: #1976D2;
+}
+
+.diet-container {
+  position: relative;
+  margin: 20px 0;
+}
+
+.diet-container.blurred {
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.pending-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.pending-overlay h3 {
+  color: #ff9800;
+  margin-bottom: 10px;
+}
+
+.pending-overlay p {
+  color: #666;
+}
         .dashboard-container {
           min-height: 100vh;
           background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);

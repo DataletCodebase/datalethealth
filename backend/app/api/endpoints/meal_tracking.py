@@ -7,7 +7,7 @@ import openai
 
 from backend.app.models.mysql_models import SessionLocal
 from backend.app.models.meal_tracking_model import MealTracking, MealStatus
-
+from backend.app.models.mysql_models import DietPlan, DietMeal
 
 # ==========================
 # OpenAI setup
@@ -65,6 +65,52 @@ def already_tracked(db: Session, diet_meal_id: int, meal_date: date):
         MealTracking.diet_meal_id == diet_meal_id,
         MealTracking.meal_date == meal_date
     ).first()
+
+
+
+
+
+
+# ====================================================
+# 📥 Get latest diet plan + meals for tracking
+# ====================================================
+
+
+
+@router.get("/user/{user_id}")
+def get_user_meal_tracking(user_id: int, db: Session = Depends(get_db)):
+
+    # Get latest diet plan of user
+    diet = (
+        db.query(DietPlan)
+        .filter(DietPlan.patient_id == user_id)
+        .order_by(DietPlan.created_at.desc())
+        .first()
+    )
+
+    if not diet:
+        raise HTTPException(status_code=404, detail="No diet plan found")
+
+    return {
+        "diet_plan_id": diet.id,
+        "meals": [
+            {
+                "diet_meal_id": meal.id,
+                "diet_plan_id": meal.diet_plan_id,
+                "day": meal.day,
+                "time": meal.time,
+                "meal_name": meal.meal_name,
+                "quantity": meal.quantity,
+                "calories": meal.calories
+            }
+            for meal in diet.meals
+        ]
+    }
+
+
+
+
+
 
 
 # ====================================================

@@ -10,6 +10,7 @@ from backend.app.models.mysql_models import SessionLocal
 from backend.app.models.diet_model import DietPlan, DietMeal
 from backend.app.models.patient_model import Patient
 from backend.app.models.lab_report_model import LabReport
+from sqlmodel import Session, select
 
 
 # =====================================================
@@ -142,6 +143,7 @@ def call_ai(prompt: str):
         print(ai_text)
         print("====================================\n")
 
+
         # 🛡 Safety cleanup (remove text before JSON if exists)
         if ai_text.startswith("```"):
             ai_text = ai_text.strip("```json").strip("```")
@@ -238,9 +240,12 @@ def generate_diet(patient_id: int, db: Session = Depends(get_db)):
 @router.post("/approve/{diet_plan_id}")
 def approve_diet(
     diet_plan_id: int,
+    payload: dict,  
     db: Session = Depends(get_db)
 ):
     plan = db.query(DietPlan).filter(DietPlan.id == diet_plan_id).first()
+
+    plan.ai_generated_plan = json.dumps(payload["plan"])
 
     if not plan:
         raise HTTPException(status_code=404, detail="Diet plan not found")
@@ -266,7 +271,9 @@ def approve_diet(
 
 @router.get("/user/{user_id}")
 def get_user_diets(user_id: int, db: Session = Depends(get_db)):
-    diets = db.query(DietPlan).filter(DietPlan.patient_id == user_id).all()
+    diets = db.query(DietPlan).filter(DietPlan.patient_id == user_id).all()   
+
+
 
     if not diets:
         raise HTTPException(status_code=404, detail="No diet plans found")

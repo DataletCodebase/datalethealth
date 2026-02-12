@@ -14,6 +14,7 @@ import chatbotRoutes from "./routes/chatbot.js";
 import adminAuthRoutes from "./routes/adminAuth.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import adminAuth from "./middleware/adminAuth.js";
+import dietRoutes from "./routes/diet.js";
 
 
 
@@ -59,6 +60,7 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/admin", adminAuthRoutes);
 // app.use("/admin", adminAuth, adminRoutes);
 app.use("/admin", adminRoutes);
+app.use("/diet",  dietRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

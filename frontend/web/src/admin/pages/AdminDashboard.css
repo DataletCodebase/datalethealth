@@ -2,6 +2,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* gap: 1em 2em; */
 }
 
 .admin-layout {
@@ -98,17 +99,24 @@
 }
 
 /* Main */
-.main-content {
+.main-content-1 {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  
-  overflow-y: auto;
+  height: 100vh;
+  overflow: hidden; /* Prevent main content from scrolling */
+  /* overflow-y: auto; */
 }
 
 .header {
   background: white;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid #e1e5eb;
+  padding: 0.7rem;
+  /* border-bottom: 1px solid #e1e5eb; */
+  flex-shrink: 0;
+  z-index: 10;
+  position: sticky;
+  top: 0;
 }
 
 .header h1 {
@@ -116,10 +124,36 @@
 }
 
 .content-wrapper {
+  flex: 1;
+  overflow: auto; /* Scrollable area for the table */
   padding: 2rem;
+  background: transparent;
 }
 
 /* Cards */
+
+
+.dashboard-container.active {
+  /* padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  margin: 1rem;
+  overflow-x: auto;  */
+  padding: 0;
+  background: white;
+  border-radius: 16px;
+  margin: 0;
+  overflow-x: auto;
+  box-shadow: 
+    0 8px 30px rgba(30, 58, 138, 0.1),
+    0 2px 8px rgba(30, 58, 138, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  position: relative;
+  min-height: 400px;
+}
+
+
 .dashboard-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -135,19 +169,85 @@
 
 /* Table */
 .data-table {
+  min-width: 2000px; /* Or whatever minimum width you need */
   width: 100%;
   background: white;
-  border-collapse: collapse;
+  /* border-collapse: collapse; */
+  border-collapse: separate;
+  border-spacing: 0;
+  position: relative;
 }
 
-.data-table th,
-.data-table td {
-  padding: 1rem;
+.data-table thead {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+
+.data-table th
+ {
+  /* padding: 1rem;
   border-bottom: 1px solid #e1e5eb;
-  /* word-break: break-word; */
+  white-space: normal;
+  vertical-align: middle; */
+   padding: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   white-space: normal;
   vertical-align: middle;
+  position: relative;
+  background-clip: padding-box;
 }
+
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  white-space: normal;
+  vertical-align: middle;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.data-table tbody tr {
+  height: 56px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+}
+
+.data-table tbody tr:nth-child(odd) {
+  background: linear-gradient(135deg, #ffffff 0%, #fcfcfc 100%);
+}
+
+
+
+.data-table th:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: linear-gradient(to bottom, 
+    transparent, 
+    rgba(59, 130, 246, 0.3), 
+    transparent);
+}
+
+
+
 
 .data-table tr {
   height: 56px; /* or 60px */
@@ -409,6 +509,7 @@
   letter-spacing: 0.3px;
   transition: all 0.25s ease;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  margin: 5px;
 }
 
 /* ✅ SAVE BUTTON */
@@ -416,6 +517,9 @@
   background: linear-gradient(135deg, #4a90e2, #357abd);
   color: #fff;
 }
+
+
+
 
 .save-btn:hover {
   transform: translateY(-2px);
@@ -429,8 +533,8 @@
 
 /* ❌ CANCEL BUTTON */
 .cancel-btn {
-  background: linear-gradient(135deg, #f2f2f2, #dcdcdc);
-  color: #444;
+  background: #ef4444;
+  color:white;
 }
 
 .cancel-btn:hover {
@@ -680,7 +784,7 @@
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 28px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
@@ -750,4 +854,107 @@
 
 .close-btn:hover {
   box-shadow: 0 6px 14px rgba(239,68,68,0.4);
+}
+
+
+
+
+.diet-status.approved {
+  color: green;
+  font-weight: 600;
+}
+
+.diet-status.pending {
+  color: orange;
+}
+
+
+
+
+
+
+/* ================= DIET TABLE SPECIFIC STYLING ================= */
+
+/* Diet table (Patient Diet tab) */
+
+
+/* Make diet table columns more compact */
+.dashboard-container.active .data-table th,
+.dashboard-container.active .data-table td {
+  padding: 0.5rem 0.75rem; /* Reduced padding */
+  font-size: 0.9rem; /* Slightly smaller font */
+}
+
+/* Specific column widths for diet table */
+.dashboard-container.active .data-table th:nth-child(1), /* # */
+.dashboard-container.active .data-table td:nth-child(1) {
+  width: 5%;
+  min-width: 40px;
+  text-align: center;
+}
+
+.dashboard-container.active .data-table th:nth-child(2), /* Username */
+.dashboard-container.active .data-table td:nth-child(2) {
+  width: 40%;
+  min-width: 200px;
+  white-space: normal; /* Allow text to wrap */
+  word-break: break-word;
+  text-align: center;
+}
+
+.dashboard-container.active .data-table th:nth-child(3), /* Customer ID */
+.dashboard-container.active .data-table td:nth-child(3) {
+  width: 25%;
+  min-width: 120px;
+  text-align: center;
+}
+
+.dashboard-container.active .data-table th:nth-child(4), /* Weekly Diet */
+.dashboard-container.active .data-table td:nth-child(4) {
+  width: 30%;
+  min-width: 150px;
+  text-align: center;
+}
+
+/* Make View button more compact */
+.view-btn {
+  padding: 6px 12px !important;
+  font-size: 0.85rem !important;
+  /* min-width: 80px; */
+  background-color: #044078;
+  color: #f9fdff;
+}
+
+/* Alternative: Add a specific class to the diet table */
+/* In your JSX, add class "diet-table-compact" to the diet table */
+.diet-table-compact {
+  width: auto;
+  min-width: 100%;
+}
+
+.diet-table-compact th,
+.diet-table-compact td {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* Set specific widths for diet table columns */
+.diet-table-compact th:nth-child(1),
+.diet-table-compact td:nth-child(1) {
+  width: 5%;
+}
+
+.diet-table-compact th:nth-child(2),
+.diet-table-compact td:nth-child(2) {
+  width: 40%;
+}
+
+.diet-table-compact th:nth-child(3),
+.diet-table-compact td:nth-child(3) {
+  width: 25%;
+}
+
+.diet-table-compact th:nth-child(4),
+.diet-table-compact td:nth-child(4) {
+  width: 30%;
 }

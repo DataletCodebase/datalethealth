@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  base: '/app/',
   plugins: [
     react(),
 
@@ -17,7 +18,7 @@ export default defineConfig({
       manifest: {
         name: "Kidney Health App",
         short_name: "KidneyApp",
-        start_url: "/",
+        start_url: "/app/",
         display: "standalone",
         background_color: "#0b1220",
         theme_color: "#0ea5e9",
@@ -34,19 +35,19 @@ export default defineConfig({
     port: 5174,
     proxy: {
       "/api": {
-        target: "http://localhost:4000",
+        target: "http://localhost:8000",
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, "")
       }
     }
   }
-//   server: {
-//   proxy: {
-//     "/api": {
-//       target: "http://localhost:4000",
-//       changeOrigin: true,
-//       rewrite: path => path.replace(/^\/api/, "")
-//     }
-//   }
-// }
+  //   server: {
+  //   proxy: {
+  //     "/api": {
+  //       target: "http://localhost:4000",
+  //       changeOrigin: true,
+  //       rewrite: path => path.replace(/^\/api/, "")
+  //     }
+  //   }
+  // }
 });

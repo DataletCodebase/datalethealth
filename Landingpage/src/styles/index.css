@@ -1,0 +1,27 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  scroll-margin-top: 80px;
+}
+
+::selection {
+  background: rgba(139, 0, 220, 0.15);
+  color: #7B00CC;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF7FF;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #7B00CC, #CC00FF);
+  border-radius: 4px;
+}

@@ -31,12 +31,15 @@ import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 import "./styles/auth.css";
 import { UserProvider } from "./contexts/UserContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <UserProvider>
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
-  </UserProvider>
+  <LanguageProvider>
+    <UserProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </UserProvider>
+  </LanguageProvider>
 );

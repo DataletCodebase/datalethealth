@@ -1,0 +1,22 @@
+/* Datalet Healthcare — Light Theme (Purple Brand) */
+:root {
+  --bg-base: #FFFFFF;
+  --bg-surface: #FAF7FF;
+  --bg-card: #FFFFFF;
+  --border: rgba(139, 0, 220, 0.10);
+  --border-hover: rgba(139, 0, 220, 0.22);
+  --text-primary: #0D0D0D;
+  --text-secondary: #5A5A72;
+  --text-muted: #9898A8;
+  --accent: #8B00DC;
+  --accent-bright: #AA00FF;
+  --accent-dim: rgba(139, 0, 220, 0.08);
+  --purple-gradient: linear-gradient(135deg, #7B00CC 0%, #CC00FF 100%);
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

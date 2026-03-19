@@ -7,27 +7,27 @@ from backend.app.models.lead_model import Lead
 import os
 import urllib.parse
 from dotenv import load_dotenv
-from backend.app.models.water_intake_model import WaterIntakeLog
+from pathlib import Path
 
-load_dotenv()
+# Explicitly load backend/.env
+env_path = Path(__file__).resolve().parent.parent.parent.parent / "backend" / ".env"
+load_dotenv(dotenv_path=env_path)
 
-# ✅ Load MySQL Config
+# ✅ Always build MySQL URL from .env components (never trust system DATABASE_URL which may point to SQLite)
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-DB_NAME = os.getenv("DB_NAME", "dataletdblocal")
+DB_NAME = os.getenv("DB_NAME", "DataletDbLocal")
 DB_PORT = os.getenv("DB_PORT", "3306")
 
 encoded_password = urllib.parse.quote_plus(DB_PASSWORD) if DB_PASSWORD else ""
-
-# Construct Async MySQL URL
 DATABASE_URL = f"mysql+aiomysql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+print(f"[DB] Async engine connecting to MySQL: {DB_NAME} at {DB_HOST}:{DB_PORT}")
 
-print(f"🔥 [DB] Connecting to: {DB_NAME} at {DB_HOST}")
-
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+

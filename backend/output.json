@@ -1,0 +1,27 @@
+[
+  {
+    "day": "Monday",
+    "time": "5:30am",
+    "meal_name": "Warm water with lemon"
+  },
+  {
+    "day": "Monday",
+    "time": "7:30am",
+    "meal_name": "Oats porridge with nuts"
+  },
+  {
+    "day": "Monday",
+    "time": "8:30am",
+    "meal_name": "Bitter gourd juice"
+  },
+  {
+    "day": "Monday",
+    "time": "11:30am",
+    "meal_name": "Curd with flaxseeds"
+  },
+  {
+    "day": "Monday",
+    "time": "1:30pm",
+    "meal_name": "Mixed vegetable sabzi"
+  }
+]

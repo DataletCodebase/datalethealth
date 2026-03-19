@@ -1,5 +1,12 @@
 # backend/app/main.py
-# ✅ Load environment variables from .env early
+# Fix Windows console encoding for emoji/unicode in print() statements
+import sys
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
+# Load environment variables from .env early
 from dotenv import load_dotenv
 import os
 from pathlib import Path
@@ -8,9 +15,13 @@ from pathlib import Path
 env_path = Path(__file__).resolve().parent.parent.parent / "backend" / ".env"
 load_dotenv(dotenv_path=env_path)
 
-
 from typing import Optional
 import asyncio
+import sys
+
+# Fix for Windows Event Loop RuntimeError
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,13 +48,18 @@ app = FastAPI(title="Kidney Agent Backend")
 
 # 🌐 Enable CORS (for frontend)
 origins = [
+    # Local
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    "https://datalethealthcare.in",
-    "http://51.20.2.246:8000",
-    "http://51.20.2.246"
-]
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 
+    # Production
+    "https://datalethealthcare.in",
+    "https://datalethealthcare.in:8000",
+    "http://13.60.55.59",
+    "http://13.60.55.59:8000"
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -51,6 +67,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi.exceptions import RequestValidationError
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"❌ Validation Error for {request.url}")
+    print(f"   Body: {await request.body()}")
+    print(f"   Errors: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(exc.body)},
+    )
 
 # 🚀 Database initialization on startup
 @app.on_event("startup")

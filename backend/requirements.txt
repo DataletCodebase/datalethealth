@@ -12,3 +12,9 @@ passlib[bcrypt]
 pytest
 pytest-asyncio
 aiosqlite
+aiomysql
+aiohttp
+
+
+# cd backend
+# C:\Users\Asus\AppData\Local\Programs\Python\Python311\python.exe -m pip install -r requirements.txt

@@ -1,49 +1,64 @@
-import re
-import openai
+import base64
+import json
 import os
+import re
+from openai import OpenAI
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
+def analyze_food_image(image_bytes: bytes):
+    if not image_bytes:
+        return {"is_food_visible": False, "food_name": None, "estimated_calories": 0, "confidence": "low"}
 
-def ai_calorie_estimator(food: str) -> int:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    prompt = f"""
-    You are a nutrition expert.
+    base64_image = base64.b64encode(image_bytes).decode("utf-8")
 
-    Estimate calories for this food:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a professional nutrition expert."
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": """
+Analyze this food image.
 
-    {food}
+Return ONLY valid JSON:
+{
+  "is_food_visible": true/false,
+  "food_name": "string",
+  "estimated_calories": number,
+  "confidence": "low/medium/high"
+}
 
-    Respond with ONLY the calorie number (example: 420)
-    """
+If image is blurry or food not visible clearly,
+set is_food_visible to false.
+"""
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ],
+        temperature=0
+    )
 
-    try:
-        # Try new OpenAI v1.0+ way
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0
-        )
-        text = response.choices[0].message.content.strip()
-    except Exception as e1:
-        # Fallback to old OpenAI < 1.0 way
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            ) 
-            text = response.choices[0].message.content.strip()
-        except Exception as e2:
-            print(f"OpenAI Call Failed: {e1} | {e2}")
-            return 0
+    content = response.choices[0].message.content.strip()
 
-    # 🔍 Extract first number found
-    numbers = re.findall(r"\d+", text)
+    if not content:
+        return {"is_food_visible": False, "food_name": None, "estimated_calories": 0, "confidence": "low"}
 
-    if numbers:
-        return int(numbers[0])
+    # Strip ```json ... ``` or ``` ... ``` wrappers
+    content = re.sub(r'^```(?:json)?\s*', '', content)
+    content = re.sub(r'\s*```$', '', content)
 
-    return 0
+    return json.loads(content)

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 
 // NOTE: Vite exposes import.meta.env at build time; default to localhost for dev fallback.
-const API_BASE = "http://51.20.2.246:8000";
+// NOTE: Vite exposes import.meta.env at build time; default to localhost for dev fallback.
+const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL)
+  ? import.meta.env.VITE_API_URL
+  : "/api";
 
 async function postJSON(path, body) {
   const fullUrl = `${API_BASE}${path}`;
@@ -56,7 +59,7 @@ function extractTextFromBackendResponse(resp) {
     try {
       if (typeof resp.ai_raw === "string") return resp.ai_raw;
       if (typeof resp.ai_raw === "object") return JSON.stringify(resp.ai_raw);
-    } catch {}
+    } catch { }
   }
   try {
     return JSON.stringify(resp);
@@ -174,12 +177,12 @@ export default function ChatWidget({ onSubmitted, defaultConditionContext = [], 
     if (Array.isArray(defaultConditionContext) && defaultConditionContext.length) {
       setConditionContext(defaultConditionContext);
     }
-  }, [defaultConditionContext && defaultConditionContext.join(",")]);
+  }, [defaultConditionContext ? defaultConditionContext.join(",") : ""]);
 
   // notify parent when conditionContext changes
   useEffect(() => {
     onConditionChange && onConditionChange(conditionContext);
-  }, [conditionContext, onConditionChange]);
+  }, [conditionContext.join(","), onConditionChange]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -416,11 +419,11 @@ export default function ChatWidget({ onSubmitted, defaultConditionContext = [], 
   const HealthIcon = () => ( // Changed from KidneyIcon
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M8 16C8 16 9.5 14 12 14C14.5 14 16 16 16 16"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M9 10H9.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M15 10H15.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 10H9.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 10H15.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 
@@ -470,7 +473,7 @@ export default function ChatWidget({ onSubmitted, defaultConditionContext = [], 
     <div style={{
       position: "fixed",
       left: 60,
-bottom: 20,
+      bottom: 20,
 
       zIndex: 9999,
       width: 400,
@@ -478,7 +481,7 @@ bottom: 20,
       fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif",
     }} aria-live="polite">
       {!open && (
-<div style={{ display: "flex", justifyContent: "flex-start" }}>
+        <div style={{ display: "flex", justifyContent: "flex-start" }}>
           <button onClick={() => setOpen(true)} style={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "white", border: "none", padding: "14px 20px", borderRadius: "50px",
@@ -486,7 +489,7 @@ bottom: 20,
             display: "flex", alignItems: "center", gap: 8
           }} data-testid="open-chat">
             <HealthIcon /> {/* Changed */}
-             Diet Assistant
+            Diet Assistant
           </button>
         </div>
       )}

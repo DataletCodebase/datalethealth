@@ -124,13 +124,20 @@ router.put("/update", authMiddleware, async (req, res) => {
     const updateFields = req.body;
 
     // 1️⃣ Get latest medical record ID
-    const [[latest]] = await db.query(
+    let latest = null;
+    const [rows] = await db.query(
       "SELECT id FROM medical_data WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
       [userId]
     );
 
-    if (!latest) {
-      return res.status(404).json({ error: "No medical record found" });
+    if (rows.length === 0) {
+      const [insertResult] = await db.query(
+        "INSERT INTO medical_data (user_id) VALUES (?)",
+        [userId]
+      );
+      latest = { id: insertResult.insertId };
+    } else {
+      latest = rows[0];
     }
 
     // 2️⃣ Build UPDATE query dynamically

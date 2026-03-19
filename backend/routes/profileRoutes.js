@@ -13,7 +13,7 @@ router.get("/profile/basic", authMiddleware, async (req, res) => {
     const userId = req.user.id; // set by authMiddleware
     const [rows] = await db.query(
       `SELECT 
-        full_name, email, mobile, dob, address, disease,
+        id, full_name, email, mobile, dob, address, disease,
         gender, height, weight, blood_group, city, state, zip_code, country,
         emergency_contact_name, emergency_contact_phone, emergency_contact_relationship
       FROM users

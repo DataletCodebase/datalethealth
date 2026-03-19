@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useToken } from "./useToken";
 
-const API = "http://localhost:4000/api/auth";
+const API = "/api/auth";
 
 export function useAuth() {
   const navigate = useNavigate();
@@ -19,8 +19,8 @@ export function useAuth() {
 
     saveToken(data.token);
 
-   
-  localStorage.setItem("user", JSON.stringify(data.user));
+
+    localStorage.setItem("user", JSON.stringify(data.user));
 
 
 

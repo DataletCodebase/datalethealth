@@ -10,6 +10,11 @@ const navLinks = [
   { label: "Programs", href: "#how-it-works" },
 ];
 
+// @ts-ignore
+const loginUrl = import.meta.env.DEV ? "http://localhost:5174/app/login" : "/app/login";
+// @ts-ignore
+const signupUrl = import.meta.env.DEV ? "http://localhost:5174/app/signup" : "/app/signup";
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -33,8 +38,8 @@ export function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-white/95 backdrop-blur-xl border-b border-[#8B00DC]/10 shadow-sm shadow-[#8B00DC]/5"
-          : "bg-white/80 backdrop-blur-md"
+        ? "bg-white/95 backdrop-blur-xl border-b border-[#8B00DC]/10 shadow-sm shadow-[#8B00DC]/5"
+        : "bg-white/80 backdrop-blur-md"
         }`}
     >
       <div className="max-w-7xl mx-auto px-8 flex items-center justify-between" style={{ height: 72 }}>
@@ -73,7 +78,7 @@ export function Navbar() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
             whileHover={{ color: "#8B00DC" }}
-            onClick={() => window.location.href = "/app/login"}
+            onClick={() => window.location.href = loginUrl}
             className="px-5 py-2.5 text-sm text-[#5A5A72] rounded-xl font-medium transition-colors"
           >
             Sign In
@@ -84,7 +89,7 @@ export function Navbar() {
             transition={{ delay: 0.45, duration: 0.4 }}
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => window.location.href = "/app/"}
+            onClick={() => window.location.href = signupUrl}
             className="px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-lg shadow-[#8B00DC]/25"
             style={{ background: "linear-gradient(135deg, #7B00CC 0%, #CC00FF 100%)" }}
           >
@@ -134,7 +139,7 @@ export function Navbar() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.25, duration: 0.3 }}
-                  onClick={() => window.location.href = "/app/"}
+                  onClick={() => window.location.href = signupUrl}
                   className="block w-full py-3 text-sm font-semibold text-white rounded-xl text-center"
                   style={{ background: "linear-gradient(135deg, #7B00CC 0%, #CC00FF 100%)" }}
                 >

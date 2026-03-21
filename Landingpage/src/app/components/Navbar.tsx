@@ -88,7 +88,7 @@ export function Navbar() {
             className="px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-lg shadow-[#8B00DC]/25"
             style={{ background: "linear-gradient(135deg, #7B00CC 0%, #CC00FF 100%)" }}
           >
-            Signin
+            Get Started
           </motion.button>
         </div>
 

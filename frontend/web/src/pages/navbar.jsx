@@ -16,7 +16,7 @@ import AutoText from "../components/AutoText";
 // API base
 const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL)
     ? import.meta.env.VITE_API_URL
-    : "http://localhost:8000";
+    : "";
 
 // Helper: post with fallback across multiple urls
 async function postJsonWithFallback(urls = [], payload = {}, options = {}) {
@@ -407,7 +407,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        fetch("http://localhost:8000/api/medical/data", {
+        fetch("/api/medical/data", {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -471,7 +471,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
         if (Object.keys(updatedFields).length === 0) return;
 
         try {
-            await fetch("http://localhost:8000/api/medical/update", {
+            await fetch("/api/medical/update", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -512,7 +512,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
         const fetchProfile = async () => {
             try {
                 const res = await fetch(
-                    "http://localhost:8000/api/user/profile/basic",
+                    "/api/user/profile/basic",
                     {
                         method: "GET",
                         headers: {
@@ -605,8 +605,8 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
 
         try {
             // If you are not using a proxy, replace "/api/..." with your backend URL like:
-            // "http://localhost:8000/api/user/profile-image"
-            const res = await fetch("http://localhost:8000/api/user/profile-image", {
+            // "/api/user/profile-image"
+            const res = await fetch("/api/user/profile-image", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -643,7 +643,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
             if (!token) return;
 
             try {
-                const res = await fetch("http://localhost:8000/api/user/me", {
+                const res = await fetch("/api/user/me", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -704,7 +704,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
         try {
             const token = localStorage.getItem("token");
 
-            const res = await fetch("http://localhost:8000/api/user/prescriptions", {
+            const res = await fetch("/api/user/prescriptions", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -723,14 +723,14 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
             setPrescriptions((prev) => [
                 ...data.map((file) => ({
                     ...file,
-                    url: `http://localhost:8000${file.url}`, // add full URL for frontend
+                    url: `${file.url}`, // add full URL for frontend
                 })),
                 ...prev,
             ]);
 
             //Sangram
             // ✅ ADD THIS PART BELOW
-            const medRes = await fetch("http://localhost:8000/api/medical/data", {
+            const medRes = await fetch("/api/medical/data", {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -749,7 +749,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
         const fetchPrescriptions = async () => {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                "http://localhost:8000/api/user/prescriptions",
+                "/api/user/prescriptions",
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             const data = await res.json();
@@ -758,7 +758,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
                 data.map(p => ({
                     id: p.id,
                     name: p.file_name,
-                    url: `http://localhost:8000${p.file_path}`,
+                    url: `${p.file_path}`,
                     uploadDate: p.upload_date,
                     size: p.file_size,
                     type: p.file_type
@@ -782,7 +782,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
             const token = localStorage.getItem("token");
 
             await fetch(
-                `http://localhost:8000/api/user/prescriptions/${prescriptionToDelete}`,
+                `/api/user/prescriptions/${prescriptionToDelete}`,
                 {
                     method: "DELETE",
                     headers: {
@@ -820,7 +820,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
         };
 
         try {
-            const res = await fetch("http://localhost:8000/api/user/profile/update", {
+            const res = await fetch("/api/user/profile/update", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -1017,7 +1017,7 @@ const ProfileSection = ({ isOpen, onClose, t }) => {
 
                                     {user?.profileImage ? (
                                         <img
-                                            src={`http://localhost:8000${user.profileImage}`} // full URL
+                                            src={`${user.profileImage}`} // full URL
                                             className="profile-picture"
                                             alt="Profile"
                                         />
@@ -1452,7 +1452,7 @@ const AccountDropdown = ({ t, onClose }) => {
 
                         {user?.profileImage ? (
                             <img
-                                src={`http://localhost:8000${user.profileImage}`}
+                                src={`${user.profileImage}`}
                                 className="avatar-img"
                                 alt="Profile"
                             />
@@ -1496,7 +1496,7 @@ const AccountDropdown = ({ t, onClose }) => {
 
                                     {user?.profileImage ? (
                                         <img
-                                            src={`http://localhost:8000${user.profileImage}`}
+                                            src={`${user.profileImage}`}
                                             className="avatar-img"
                                             alt="Profile"
                                         />

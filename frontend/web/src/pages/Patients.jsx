@@ -33,7 +33,7 @@ export default function Patients({ activeTab }) {
     const fetchDietPlan = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:8000/diet/my", {
+            const res = await fetch("/diet/my", {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -86,7 +86,7 @@ export default function Patients({ activeTab }) {
                 throw new Error("Invalid token format");
             }
 
-            const res = await fetch(`http://localhost:8000/diet/generate/${userId}?diet_type=${dietType}`, {
+            const res = await fetch(`/diet/generate/${userId}?diet_type=${dietType}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -129,7 +129,7 @@ export default function Patients({ activeTab }) {
 
         const todayISO = new Date().toISOString().split("T")[0];
 
-        fetch(`http://localhost:8000/diet/meal/user/${userId}?look_date=${todayISO}`, {
+        fetch(`/diet/meal/user/${userId}?look_date=${todayISO}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -160,7 +160,7 @@ export default function Patients({ activeTab }) {
             meal_date: new Date().toISOString().split("T")[0],
         };
 
-        fetch("http://localhost:8000/diet/meal/complete", {
+        fetch("/diet/meal/complete", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -194,7 +194,7 @@ export default function Patients({ activeTab }) {
             meal_date: new Date().toISOString().split("T")[0],
         };
 
-        fetch("http://localhost:8000/diet/meal/skip", {
+        fetch("/diet/meal/skip", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -249,7 +249,7 @@ export default function Patients({ activeTab }) {
         if (alternatePhoto) formData.append("photo", alternatePhoto);
 
         try {
-            const res = await fetch("http://localhost:8000/meal-tracking/skip-with-food", {
+            const res = await fetch("/meal-tracking/skip-with-food", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,

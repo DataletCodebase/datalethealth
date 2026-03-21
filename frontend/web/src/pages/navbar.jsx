@@ -1777,7 +1777,7 @@ export default function Navbar({
                         onClick={() => setActiveTab("activity")}
                     >
                         {/* 🏃 Activity */}
-                        <AutoText>🏃 Activity</AutoText>
+                        <AutoText>🏃 workout</AutoText>
                     </button>
 
                 </div>

@@ -1746,164 +1746,164 @@ export default function Navbar({
 
     return (
         <>
-        <nav className="navbar">
-            <div className="nav-container">
-                <div className="nav-brand">
-                    <div className="logo-container">
-                        {/* <h1>{t('dataletHealthcareDashboard')}</h1> */}
-                        <h1>
-                            <AutoText>DataletHealthcareTM Dashboard</AutoText>
-                        </h1>
-                    </div>
-                </div>
-
-                <div className="nav-menu">
-                    <button
-                        className={`nav-tab ${activeTab === "dashboard" ? "active" : ""}`}
-                        onClick={() => setActiveTab("dashboard")}
-                    >
-                        {/* {t('dashboard')} */}
-                        <AutoText>Dashboard</AutoText>
-                    </button>
-                    <button
-                        className={`nav-tab ${activeTab === "patients" ? "active" : ""}`}
-                        onClick={() => setActiveTab("patients")}
-                    >
-                        {/* {t('patients')} */}
-                        <AutoText>Patients</AutoText>
-                    </button>
-                    <button
-                        className={`nav-tab ${activeTab === "activity" ? "active" : ""}`}
-                        onClick={() => setActiveTab("activity")}
-                    >
-                        {/* 🏃 Activity */}
-                        <AutoText>🏃 workout</AutoText>
-                    </button>
-
-                </div>
-
-                <div className="nav-actions">
-                    <button
-                        className="pricing-button"
-                        onClick={() => setShowPricing(true)}
-                        onMouseEnter={() => setPricingButtonHover(true)}
-                        onMouseLeave={() => setPricingButtonHover(false)}
-                        style={{
-                            animation: pricingButtonHover ? 'pricingPulse 2s infinite' : 'none'
-                        }}
-                    >
-                        <span className="pricing-icon">💎</span>
-                        {/* <span className="pricing-text">{t('pricing')}</span> */}
-                        <span className="pricing-text">
-                            <AutoText>Pricing</AutoText>
-                        </span>
-
-                        <span className="pricing-arrow">→</span>
-                    </button>
-
-                    <div className="language-selector">
-                        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                            <option value="en">EN</option>
-                            <option value="hi">HI</option>
-                            <option value="bn">BN</option>
-                            <option value="trp">KB</option>
-                        </select>
-                    </div>
-
-                    <div className="account-section">
-                        <AccountDropdown t={t} />
-                    </div>
-                </div>
-
-                <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                    <span></span><span></span><span></span>
-                </button>
-            </div>
-
-            {mobileMenuOpen && (
-                <div className="mobile-menu">
-                    <button
-                        className={`mobile-nav-tab ${activeTab === "dashboard" ? "active" : ""}`}
-                        onClick={() => {
-                            setActiveTab("dashboard");
-                            setMobileMenuOpen(false);
-                        }}
-                    >
-                        {/* {t('dashboard')} */}
-                        <AutoText>Dashboard</AutoText>
-                    </button>
-                    <button
-                        className={`mobile-nav-tab ${activeTab === "patients" ? "active" : ""}`}
-                        onClick={() => {
-                            setActiveTab("patients");
-                            setMobileMenuOpen(false);
-                        }}
-                    >
-                        {/* {t('patients')} */}
-                        <AutoText>Patients</AutoText>
-                    </button>
-                    <button
-                        className={`mobile-nav-tab ${activeTab === "activity" ? "active" : ""}`}
-                        onClick={() => {
-                            setActiveTab("activity");
-                            setMobileMenuOpen(false);
-                        }}
-                    >
-                        {/* 🏃 Activity */}
-                        <AutoText>🏃 Activity</AutoText>
-                    </button>
-                    <button
-                        className={`mobile-nav-tab ${activeTab === "pricing" ? "active" : ""}`}
-                        onClick={() => {
-                            setShowPricing(true);
-                            setActiveTab("pricing");
-                            setMobileMenuOpen(false);
-                        }}
-                    >
-                        {/* 💎 {t('pricing')} */}
-                        <AutoText>💎 Pricing</AutoText>
-                    </button>
-                    <div className="mobile-account-section">
-                        <div className="mobile-user-info">
-                            <div className="mobile-user-avatar">
-                                <span>P</span>
-                            </div>
-                            <div className="mobile-user-details">
-                                <h4>Prtish</h4>
-                                <p>Premium Plan</p>
-                            </div>
-                        </div>
-                        <div className="mobile-account-links">
-                            <a href="#" className="mobile-account-link" onClick={(e) => { e.preventDefault(); setShowProfile(true); setMobileMenuOpen(false); }}>
-                                {/* <span>👤</span> {t('profile')} */}
-                                <AutoText>👤 Profile</AutoText>
-                            </a>
-
-                            <a href="#" className="mobile-account-link">
-                                {/* <span>❓</span> {t('help')} */}
-                                <AutoText>❓ Help</AutoText>
-                            </a>
-                            <button className="mobile-logout-btn" onClick={logout}>
-                                {/* <span>🚪</span> {t('logout')} */}
-                                <AutoText>🚪 Logout</AutoText>
-                            </button>
+            <nav className="navbar">
+                <div className="nav-container">
+                    <div className="nav-brand">
+                        <div className="logo-container">
+                            {/* <h1>{t('dataletHealthcareDashboard')}</h1> */}
+                            <h1>
+                                <AutoText>DataletHealthcareTM Dashboard</AutoText>
+                            </h1>
                         </div>
                     </div>
+
+                    <div className="nav-menu">
+                        <button
+                            className={`nav-tab ${activeTab === "dashboard" ? "active" : ""}`}
+                            onClick={() => setActiveTab("dashboard")}
+                        >
+                            {/* {t('dashboard')} */}
+                            <AutoText>Dashboard</AutoText>
+                        </button>
+                        <button
+                            className={`nav-tab ${activeTab === "patients" ? "active" : ""}`}
+                            onClick={() => setActiveTab("patients")}
+                        >
+                            {/* {t('patients')} */}
+                            <AutoText>Patients</AutoText>
+                        </button>
+                        <button
+                            className={`nav-tab ${activeTab === "activity" ? "active" : ""}`}
+                            onClick={() => setActiveTab("activity")}
+                        >
+                            {/* 🏃 Activity */}
+                            <AutoText>🏃 workout</AutoText>
+                        </button>
+
+                    </div>
+
+                    <div className="nav-actions">
+                        <button
+                            className="pricing-button"
+                            onClick={() => setShowPricing(true)}
+                            onMouseEnter={() => setPricingButtonHover(true)}
+                            onMouseLeave={() => setPricingButtonHover(false)}
+                            style={{
+                                animation: pricingButtonHover ? 'pricingPulse 2s infinite' : 'none'
+                            }}
+                        >
+                            <span className="pricing-icon">💎</span>
+                            {/* <span className="pricing-text">{t('pricing')}</span> */}
+                            <span className="pricing-text">
+                                <AutoText>Pricing</AutoText>
+                            </span>
+
+                            <span className="pricing-arrow">→</span>
+                        </button>
+
+                        <div className="language-selector">
+                            <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                                <option value="en">EN</option>
+                                <option value="hi">HI</option>
+                                <option value="bn">BN</option>
+                                <option value="trp">KB</option>
+                            </select>
+                        </div>
+
+                        <div className="account-section">
+                            <AccountDropdown t={t} />
+                        </div>
+                    </div>
+
+                    <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                        <span></span><span></span><span></span>
+                    </button>
                 </div>
-            )}
-        </nav>
-        
-        <ProfileSection 
-            isOpen={showProfile} 
-            onClose={() => setShowProfile(false)} 
-            t={t} 
-        />
-        <PricingModal 
-            isOpen={showPricing} 
-            onClose={() => setShowPricing(false)} 
-            t={t}
-            currentPlan={currentPlan}
-        />
+
+                {mobileMenuOpen && (
+                    <div className="mobile-menu">
+                        <button
+                            className={`mobile-nav-tab ${activeTab === "dashboard" ? "active" : ""}`}
+                            onClick={() => {
+                                setActiveTab("dashboard");
+                                setMobileMenuOpen(false);
+                            }}
+                        >
+                            {/* {t('dashboard')} */}
+                            <AutoText>Dashboard</AutoText>
+                        </button>
+                        <button
+                            className={`mobile-nav-tab ${activeTab === "patients" ? "active" : ""}`}
+                            onClick={() => {
+                                setActiveTab("patients");
+                                setMobileMenuOpen(false);
+                            }}
+                        >
+                            {/* {t('patients')} */}
+                            <AutoText>Patients</AutoText>
+                        </button>
+                        <button
+                            className={`mobile-nav-tab ${activeTab === "activity" ? "active" : ""}`}
+                            onClick={() => {
+                                setActiveTab("activity");
+                                setMobileMenuOpen(false);
+                            }}
+                        >
+                            {/* 🏃 Activity */}
+                            <AutoText>🏃 Activity</AutoText>
+                        </button>
+                        <button
+                            className={`mobile-nav-tab ${activeTab === "pricing" ? "active" : ""}`}
+                            onClick={() => {
+                                setShowPricing(true);
+                                setActiveTab("pricing");
+                                setMobileMenuOpen(false);
+                            }}
+                        >
+                            {/* 💎 {t('pricing')} */}
+                            <AutoText>💎 Pricing</AutoText>
+                        </button>
+                        <div className="mobile-account-section">
+                            <div className="mobile-user-info">
+                                <div className="mobile-user-avatar">
+                                    <span>P</span>
+                                </div>
+                                <div className="mobile-user-details">
+                                    <h4>Prtish</h4>
+                                    <p>Premium Plan</p>
+                                </div>
+                            </div>
+                            <div className="mobile-account-links">
+                                <a href="#" className="mobile-account-link" onClick={(e) => { e.preventDefault(); setShowProfile(true); setMobileMenuOpen(false); }}>
+                                    {/* <span>👤</span> {t('profile')} */}
+                                    <AutoText>👤 Profile</AutoText>
+                                </a>
+
+                                <a href="#" className="mobile-account-link">
+                                    {/* <span>❓</span> {t('help')} */}
+                                    <AutoText>❓ Help</AutoText>
+                                </a>
+                                <button className="mobile-logout-btn" onClick={logout}>
+                                    {/* <span>🚪</span> {t('logout')} */}
+                                    <AutoText>🚪 Logout</AutoText>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </nav>
+
+            <ProfileSection
+                isOpen={showProfile}
+                onClose={() => setShowProfile(false)}
+                t={t}
+            />
+            <PricingModal
+                isOpen={showPricing}
+                onClose={() => setShowPricing(false)}
+                t={t}
+                currentPlan={currentPlan}
+            />
         </>
     );
 }

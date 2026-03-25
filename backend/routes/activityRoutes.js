@@ -264,7 +264,7 @@ router.get("/calorie-target", authMiddleware, async (req, res) => {
         const userId = req.user.id;
 
         const [[user]] = await db.query(
-            `SELECT weight, height, gender, dob, disease, bmi FROM users WHERE id = ?`,
+            `SELECT weight, height, gender, dob, disease FROM users WHERE id = ?`,
             [userId]
         );
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-
-const API = "/api";
+import { API_BASE } from "../apiConfig";
 
 // import { useLanguage } from "./navbar";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -35,7 +34,7 @@ export default function Patients({ activeTab }) {
     const fetchDietPlan = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`${API}/diet/my`, {
+            const res = await fetch(`${API_BASE}/diet/my`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -88,7 +87,7 @@ export default function Patients({ activeTab }) {
                 throw new Error("Invalid token format");
             }
 
-            const res = await fetch(`${API}/diet/generate/${userId}?diet_type=${dietType}`, {
+            const res = await fetch(`${API_BASE}/diet/generate/${userId}?diet_type=${dietType}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -131,7 +130,7 @@ export default function Patients({ activeTab }) {
 
         const todayISO = new Date().toISOString().split("T")[0];
 
-        fetch(`${API}/diet/meal/user/${userId}?look_date=${todayISO}`, {
+        fetch(`${API_BASE}/diet/meal/user/${userId}?look_date=${todayISO}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -162,7 +161,7 @@ export default function Patients({ activeTab }) {
             meal_date: new Date().toISOString().split("T")[0],
         };
 
-        fetch(`${API}/diet/meal/complete`, {
+        fetch(`${API_BASE}/diet/meal/complete`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -196,7 +195,7 @@ export default function Patients({ activeTab }) {
             meal_date: new Date().toISOString().split("T")[0],
         };
 
-        fetch(`${API}/diet/meal/skip`, {
+        fetch(`${API_BASE}/diet/meal/skip`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -251,7 +250,7 @@ export default function Patients({ activeTab }) {
         if (alternatePhoto) formData.append("photo", alternatePhoto);
 
         try {
-            const res = await fetch(`${API}/meal-tracking/skip-with-food`, {
+            const res = await fetch(`${API_BASE}/meal-tracking/skip-with-food`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,

@@ -151,6 +151,16 @@ app.use("/api/diet", dietRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/wellness", wellnessRoutes);
 
+// 🔹 Production Aliases (Handles stale frontend builds that omit /api)
+app.use("/diet", dietRoutes);
+app.use("/activity", activityRoutes);
+app.use("/wellness", wellnessRoutes);
+app.use("/meal-tracking", createProxyMiddleware({
+    target: "http://localhost:8001",
+    changeOrigin: true,
+    pathRewrite: (path) => "/meal-tracking" + path,
+}));
+
 /* ===========================
    SERVER START
 =========================== */

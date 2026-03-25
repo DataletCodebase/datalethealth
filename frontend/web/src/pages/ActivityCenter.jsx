@@ -283,7 +283,7 @@ export default function ActivityCenter() {
                 fetch(`${API}/api/activity/streak`, { headers: authHeaders() }),
                 fetch(`${API}/api/activity/monthly?year=${viewYear}&month=${viewMonth}`, { headers: authHeaders() }),
                 fetch(`${API}/api/activity/today`, { headers: authHeaders() }),
-                fetch(`${API}/diet/meal/user/${userId}?look_date=${new Date().toISOString().split("T")[0]}`, { headers: authHeaders() })
+                fetch(`${API}/api/diet/meal/user/${userId}?look_date=${new Date().toISOString().split("T")[0]}`, { headers: authHeaders() })
             ]);
 
             if (histRes.ok) setHistory(await histRes.json());

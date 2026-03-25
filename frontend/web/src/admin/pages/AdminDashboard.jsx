@@ -365,6 +365,20 @@ export default function AdminDashboard() {
       console.error("Logout error", err);
     } finally {
       localStorage.removeItem("adminToken");
+
+      // Clear browser cache
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => {
+            caches.delete(name);
+          });
+        });
+      }
+
+      // Clear all storage
+      sessionStorage.clear();
+      localStorage.clear();
+
       navigate("/admin/login");
     }
   };

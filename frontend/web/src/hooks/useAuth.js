@@ -44,6 +44,20 @@ export function useAuth() {
   const logout = () => {
     removeToken();
     localStorage.removeItem("user");
+
+    // Clear browser cache
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          caches.delete(name);
+        });
+      });
+    }
+
+    // Clear all storage
+    sessionStorage.clear();
+    localStorage.clear();
+
     navigate("/login");
   };
 

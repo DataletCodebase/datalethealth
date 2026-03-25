@@ -37,7 +37,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <LanguageProvider>
     <UserProvider>
-      <BrowserRouter basename={(import.meta.env.BASE_URL || "").replace(/\/$/, "") || "/"}>
+      <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
     </UserProvider>

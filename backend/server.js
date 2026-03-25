@@ -44,6 +44,10 @@ export const db = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
 });
 
 /* ===========================
@@ -69,7 +73,7 @@ app.use(
 
 /* ---- PHOTO ANALYSIS ---- */
 app.use(
-  "/ask/analyze-food-photo",
+  "/api/ask/analyze-food-photo",
   createProxyMiddleware({
     target: "http://localhost:8001",
     changeOrigin: true,
@@ -81,7 +85,7 @@ app.use(
 
 /* ---- WATER LOGS ---- */
 app.use(
-  "/water-logs",
+  "/api/water-logs",
   createProxyMiddleware({
     target: "http://localhost:8001",
     changeOrigin: true,
@@ -100,7 +104,7 @@ const pythonRoutes = [
 
 pythonRoutes.forEach((route) => {
   app.use(
-    route,
+    `/api${route}`,
     createProxyMiddleware({
       target: "http://localhost:8001",
       changeOrigin: true,
@@ -137,11 +141,12 @@ app.use("/api/user", userRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 
 app.use("/uploads", express.static("uploads"));
+app.use("/api/uploads", express.static("uploads"));
 
-app.use("/admin", adminAuthRoutes);
-app.use("/admin", adminRoutes);
+app.use("/api/admin", adminAuthRoutes);
+app.use("/api/admin", adminRoutes);
 
-app.use("/diet", dietRoutes);
+app.use("/api/diet", dietRoutes);
 app.use("/api/activity", activityRoutes);
 
 /* ===========================

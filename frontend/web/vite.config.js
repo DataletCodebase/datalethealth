@@ -30,15 +30,24 @@ export default defineConfig({
     })
   ],
 
-  // 🔹 your existing API proxy remains untouched
+  // 🔹 API proxies
   server: {
     port: 5174,
     proxy: {
       "/api": {
         target: "http://localhost:8000",
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api/, "")
-      }
+        changeOrigin: true
+      },
+      "/admin": { target: "http://localhost:8000", changeOrigin: true },
+      "/diet": { target: "http://localhost:8000", changeOrigin: true },
+      "/ask": { target: "http://localhost:8000", changeOrigin: true },
+      "/water-logs": { target: "http://localhost:8000", changeOrigin: true },
+      "/patient": { target: "http://localhost:8000", changeOrigin: true },
+      "/leads": { target: "http://localhost:8000", changeOrigin: true },
+      "/lab-report": { target: "http://localhost:8000", changeOrigin: true },
+      "/chat-memory": { target: "http://localhost:8000", changeOrigin: true },
+      "/meal-tracking": { target: "http://localhost:8000", changeOrigin: true },
+      "/uploads": { target: "http://localhost:8000", changeOrigin: true }
     }
   }
   //   server: {

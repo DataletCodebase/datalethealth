@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-// import { useLanguage } from "../pages/navbar.jsx";
 import AutoText from "../components/AutoText";
+import { SleepWellnessWidget } from "../components/DashboardGrid";
 
 export const SidebarContext = createContext();
 
@@ -25,37 +25,27 @@ export const SidebarProvider = ({ children }) => {
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
         return age;
     };
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (!token) {
-            setIsInitialized(true);
-            return;
-        }
+        if (!token) { setIsInitialized(true); return; }
 
         const fetchProfile = async () => {
             try {
                 const res = await fetch("/api/user/profile/basic", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 });
-
                 if (!res.ok) throw new Error("Profile fetch failed");
                 const data = await res.json();
-
                 const userAsPatient = {
                     id: data.id || "me",
                     name: data.full_name,
                     diagnosis: data.disease || "—",
                     age: calculateAge(data.dob)
                 };
-
                 setPatients([userAsPatient]);
                 setSelectedPatient(userAsPatient);
             } catch (err) {
@@ -82,60 +72,31 @@ export const SidebarProvider = ({ children }) => {
     );
 };
 
-export default function Sidebar({
-    activeTab,
-    setActiveTab
-}) {
-    // const { t } = useLanguage();
-    const {
-        patients,
-        selectedPatient,
-        setSelectedPatient,
-        conditionMap,
-        currentPlan,
-        setShowPricing
-    } = useSidebar();
+export default function Sidebar({ activeTab, setActiveTab }) {
+    const { currentPlan, setShowPricing } = useSidebar();
 
     return (
         <div className="sidebar">
-            {/* <h2 className="sidebar-title">{t("patientsTitle")}</h2> */}
-            <h2 className="sidebar-title">
-                <AutoText>Patients Title</AutoText>
-            </h2>
-
+            {/* Current Plan Card */}
             <div className="pricing-sidebar-card">
                 <div className="pricing-sidebar-header">
-                    {/* <h3>{t("currentPlan")}</h3> */}
-                    <h3>
-                        <AutoText>Current Plan</AutoText>
-                    </h3>
-                    <span
-                        className="plan-badge"
-                        style={{
-                            background:
-                                currentPlan === "premium"
-                                    ? "linear-gradient(135deg, #10B981, #10B98180)"
-                                    : currentPlan === "pro"
-                                        ? "linear-gradient(135deg, #8B5CF6, #8B5CF680)"
-                                        : "linear-gradient(135deg, #3B82F6, #3B82F680)",
-                        }}
-                    >
+                    <h3><AutoText>Current Plan</AutoText></h3>
+                    <span className="plan-badge" style={{
+                        background: currentPlan === "premium"
+                            ? "linear-gradient(135deg, #10B981, #10B98180)"
+                            : currentPlan === "pro"
+                                ? "linear-gradient(135deg, #8B5CF6, #8B5CF680)"
+                                : "linear-gradient(135deg, #3B82F6, #3B82F680)",
+                    }}>
                         {currentPlan.toUpperCase()}
                     </span>
                 </div>
                 <div className="pricing-sidebar-info">
                     <div className="plan-price">
                         <span className="price">
-                            {currentPlan === "basic"
-                                ? "₹6500"
-                                : currentPlan === "premium"
-                                    ? "₹7500"
-                                    : "₹10000"}
+                            {currentPlan === "basic" ? "₹6500" : currentPlan === "premium" ? "₹7500" : "₹10000"}
                         </span>
-                        {/* <span className="period">/6month</span> */}
-                        <span className="period">
-                            /6<AutoText>month</AutoText>
-                        </span>
+                        <span className="period">/6<AutoText>month</AutoText></span>
                     </div>
                     <p className="plan-desc">
                         {currentPlan === "basic"
@@ -144,53 +105,15 @@ export default function Sidebar({
                                 ? <AutoText>Unlimited Everything</AutoText>
                                 : "Pro Features + 24/7 Support"}
                     </p>
-                    <button
-                        className="upgrade-btn"
-                        onClick={() => {
-                            setShowPricing(true);
-                            setActiveTab("pricing");
-                        }}
-                    >
-                        {/* {t("upgradeNow")} */}
+                    <button className="upgrade-btn" onClick={() => { setShowPricing(true); setActiveTab("pricing"); }}>
                         <AutoText>Upgrade Now</AutoText>
                     </button>
                 </div>
             </div>
 
-            <div className="patient-list">
-                {patients.map((p) => (
-                    <div
-                        key={p.id}
-                        className={`patient-card ${selectedPatient && selectedPatient.id === p.id ? "active" : ""
-                            }`}
-                        onClick={() => setSelectedPatient(p)}
-                    >
-                        <div className="patient-info">
-                            <div className="patient-name">  <AutoText>{p.name}</AutoText></div>
-                            <div className="patient-diagnosis">{p.diagnosis || "—"}</div>
-                            <div className="patient-conditions">
-                                {(conditionMap[p.id] || []).map((d) => (
-                                    <span key={d} className="condition-tag">
-                                        {/* {t(d)} */}
-                                        <AutoText>{d}</AutoText>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="patient-age">
-                            {/* {p.age !== null ? `${p.age} ${<AutoText>years</AutoText>}` : `— ${<AutoText>years</AutoText>}`} */}
-                            {p.age !== null ? (
-                                <>
-                                    {p.age} <AutoText>years</AutoText>
-                                </>
-                            ) : (
-                                <>
-                                    — <AutoText>years</AutoText>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                ))}
+            {/* ── Wellness Widget ── */}
+            <div style={{ marginTop: 14 }}>
+                <SleepWellnessWidget />
             </div>
         </div>
     );

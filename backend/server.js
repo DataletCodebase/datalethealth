@@ -16,6 +16,7 @@ import adminAuthRoutes from "./routes/adminAuth.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import dietRoutes from "./routes/diet.js";
 import activityRoutes from "./routes/activityRoutes.js";
+import wellnessRoutes from "./routes/wellnessRoutes.js";
 
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 
@@ -148,6 +149,7 @@ app.use("/api/admin", adminRoutes);
 
 app.use("/api/diet", dietRoutes);
 app.use("/api/activity", activityRoutes);
+app.use("/api/wellness", wellnessRoutes);
 
 /* ===========================
    SERVER START

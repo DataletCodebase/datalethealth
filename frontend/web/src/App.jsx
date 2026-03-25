@@ -89,6 +89,34 @@ function AppContent() {
     localStorage.setItem("dashboardActiveTab", activeTab);
   }, [activeTab]);
 
+  // 🔹 AUTO-CACHE CLEARING (Force update when server version changes)
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverVer = data.version;
+        const localVer = localStorage.getItem("app_version");
+
+        if (localVer && serverVer && String(localVer) !== String(serverVer)) {
+            console.log("🚀 New version detected! Clearing cache and reloading...");
+            localStorage.setItem("app_version", serverVer);
+            if ('caches' in window) {
+                const names = await caches.keys();
+                await Promise.all(names.map(n => caches.delete(n)));
+            }
+            window.location.reload(true);
+        } else if (!localVer && serverVer) {
+            localStorage.setItem("app_version", serverVer);
+        }
+      } catch (e) { /* ignore silent failure */ }
+    };
+    checkVersion();
+    const timer = setInterval(checkVersion, 1000 * 60 * 5); // Check every 5 mins
+    return () => clearInterval(timer);
+  }, []);
+
 
   const calculateAge = (dob) => {
     if (!dob) return null;

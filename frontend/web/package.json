@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "version-bump": "node -e \"require('fs').writeFileSync('./public/version.json', JSON.stringify({version: Date.now()}))\"",
+    "build": "npm run version-bump && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

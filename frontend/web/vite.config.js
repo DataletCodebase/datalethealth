@@ -11,8 +11,16 @@ export default defineConfig({
     // 🔹 PWA Plugin (added safely — does NOT affect API proxy)
     VitePWA({
       registerType: "autoUpdate",
-      devOptions: {
-        enabled: true   // enable PWA during development
+      devOptions: { enabled: true },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+      },
+      // Check for updates every 1 hour (fallback)
+      onRegistered(r) {
+        if (r) setInterval(() => r.update(), 60 * 60 * 1000);
       },
       includeAssets: ["favicon.ico", "robots.txt"],
       manifest: {

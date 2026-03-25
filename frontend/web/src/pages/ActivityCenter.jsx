@@ -265,13 +265,13 @@ export default function ActivityCenter() {
     const fetchAll = useCallback(async () => {
         try {
             // Fetch calorie target in parallel
-            const targetRes = await fetch(`${API}/api/activity/calorie-target`, { headers: authHeaders() });
+            const targetRes = await fetch(`${API}/activity/calorie-target`, { headers: authHeaders() });
             if (targetRes.ok) {
                 const tData = await targetRes.json();
                 setCalorieTarget(tData);
             }
 
-            const userIdResult = await fetch(`${API}/api/user/profile/basic`, { headers: authHeaders() });
+            const userIdResult = await fetch(`${API}/user/profile/basic`, { headers: authHeaders() });
             let userId = "me";
             if (userIdResult.ok) {
                 const ud = await userIdResult.json();
@@ -279,11 +279,11 @@ export default function ActivityCenter() {
             }
 
             const [histRes, streakRes, monthRes, todayRes, dietRes] = await Promise.all([
-                fetch(`${API}/api/activity/history?days=30`, { headers: authHeaders() }),
-                fetch(`${API}/api/activity/streak`, { headers: authHeaders() }),
-                fetch(`${API}/api/activity/monthly?year=${viewYear}&month=${viewMonth}`, { headers: authHeaders() }),
-                fetch(`${API}/api/activity/today`, { headers: authHeaders() }),
-                fetch(`${API}/api/diet/meal/user/${userId}?look_date=${new Date().toISOString().split("T")[0]}`, { headers: authHeaders() })
+                fetch(`${API}/activity/history?days=30`, { headers: authHeaders() }),
+                fetch(`${API}/activity/streak`, { headers: authHeaders() }),
+                fetch(`${API}/activity/monthly?year=${viewYear}&month=${viewMonth}`, { headers: authHeaders() }),
+                fetch(`${API}/activity/today`, { headers: authHeaders() }),
+                fetch(`${API}/diet/meal/user/${userId}?look_date=${new Date().toISOString().split("T")[0]}`, { headers: authHeaders() })
             ]);
 
             if (histRes.ok) setHistory(await histRes.json());

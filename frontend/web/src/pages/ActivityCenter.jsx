@@ -3,6 +3,58 @@ import React, { useState, useEffect, useCallback } from "react";
 const API = "/api";
 
 // ─────────────────────────────────────────────
+// Animated SVG Arc Progress Ring
+// ─────────────────────────────────────────────
+function ArcProgress({ value, max, color, size = 120, label, sublabel, icon }) {
+    const pct = max > 0 ? Math.min(value / max, 1) : 0;
+    const r = (size - 18) / 2;
+    const circ = 2 * Math.PI * r;
+    const dash = pct * circ;
+    const cx = size / 2;
+    const cy = size / 2;
+    const isOver = value > max;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+                {/* Track */}
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={10} />
+                {/* Progress */}
+                <circle
+                    cx={cx} cy={cy} r={r} fill="none"
+                    stroke={isOver ? '#ef4444' : color}
+                    strokeWidth={10}
+                    strokeDasharray={`${dash} ${circ}`}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1)', filter: `drop-shadow(0 0 6px ${color}88)` }}
+                />
+                {/* Center text (counter-rotated) */}
+                <text
+                    x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
+                    fill={isOver ? '#ef4444' : color}
+                    fontSize={size * 0.175} fontWeight="800"
+                    style={{ transform: `rotate(90deg)`, transformOrigin: `${cx}px ${cy}px` }}
+                >
+                    {icon}
+                </text>
+                <text
+                    x={cx} y={cy + 10} textAnchor="middle" dominantBaseline="middle"
+                    fill={isOver ? '#ef4444' : '#e2e8f0'}
+                    fontSize={size * 0.155} fontWeight="700"
+                    style={{ transform: `rotate(90deg)`, transformOrigin: `${cx}px ${cy}px` }}
+                >
+                    {Math.round(value)}
+                </text>
+            </svg>
+            <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: isOver ? '#ef4444' : color }}>{label}</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 2 }}>{sublabel}</div>
+            </div>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────
 // Utility helpers
 // ─────────────────────────────────────────────
 function getToken() {
@@ -199,6 +251,7 @@ export default function ActivityCenter() {
     const [saveMsg, setSaveMsg] = useState("");
     const [todayCalories, setTodayCalories] = useState(null);
     const [todayConsumedCalories, setTodayConsumedCalories] = useState(0);
+    const [calorieTarget, setCalorieTarget] = useState(null);
 
     // Data state
     const [history, setHistory] = useState([]);
@@ -211,6 +264,13 @@ export default function ActivityCenter() {
 
     const fetchAll = useCallback(async () => {
         try {
+            // Fetch calorie target in parallel
+            const targetRes = await fetch(`${API}/api/activity/calorie-target`, { headers: authHeaders() });
+            if (targetRes.ok) {
+                const tData = await targetRes.json();
+                setCalorieTarget(tData);
+            }
+
             const userIdResult = await fetch(`${API}/api/user/profile/basic`, { headers: authHeaders() });
             let userId = "me";
             if (userIdResult.ok) {
@@ -835,6 +895,147 @@ export default function ActivityCenter() {
                     <div className="ac-stat-label">km This Month</div>
                 </div>
             </div>
+
+            {/* ── Target Calories Section ── */}
+            {calorieTarget && (() => {
+                const burnTarget = calorieTarget.burn_target;
+                const intakeTarget = calorieTarget.intake_target;
+                const burned = todayCalories !== null ? Math.round(todayCalories) : 0;
+                const consumed = Math.round(todayConsumedCalories);
+                const remainBurn = Math.max(0, burnTarget - burned);
+                const remainIntake = Math.max(0, intakeTarget - consumed);
+                const net = consumed - burned;
+
+                // Last 7 days for mini chart
+                const last7 = history.slice(-7);
+
+                return (
+                    <div className="ac-card ac-full-width" style={{ marginBottom: 20 }}>
+                        <div className="ac-card-title">🎯 Daily Calorie Targets</div>
+                        <div style={{ fontSize: '0.72rem', color: '#475569', marginBottom: 18 }}>
+                            Based on your medical profile — Condition: <span style={{ color: '#818cf8', fontWeight: 600 }}>{calorieTarget.condition || 'General'}</span>
+                            {' · '} BMR: <span style={{ color: '#38bdf8' }}>{calorieTarget.bmr} kcal</span>
+                            {' · '} TDEE: <span style={{ color: '#10b981' }}>{calorieTarget.tdee} kcal</span>
+                        </div>
+
+                        {/* Progress Rings Row */}
+                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'space-around', marginBottom: 24 }}>
+                            <ArcProgress
+                                value={burned} max={burnTarget}
+                                color="#f97316" size={130}
+                                icon="🔥" label={`${burned} / ${burnTarget} kcal`}
+                                sublabel="Burned Today"
+                            />
+                            <ArcProgress
+                                value={consumed} max={intakeTarget}
+                                color="#10b981" size={130}
+                                icon="🥗" label={`${consumed} / ${intakeTarget} kcal`}
+                                sublabel="Intake Today"
+                            />
+                            {/* Remaining Burn */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                <div style={{
+                                    background: remainBurn === 0 ? 'rgba(16,185,129,0.12)' : 'rgba(249,115,22,0.1)',
+                                    border: `1px solid ${remainBurn === 0 ? 'rgba(16,185,129,0.4)' : 'rgba(249,115,22,0.3)'}`,
+                                    borderRadius: 16, padding: '18px 24px', textAlign: 'center', minWidth: 130
+                                }}>
+                                    <div style={{ fontSize: '2rem', fontWeight: 800, color: remainBurn === 0 ? '#10b981' : '#f97316' }}>
+                                        {remainBurn === 0 ? '✅' : `${remainBurn}`}
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {remainBurn === 0 ? 'Burn Goal Met!' : 'kcal left to burn'}
+                                    </div>
+                                </div>
+                                {/* Remaining Intake */}
+                                <div style={{
+                                    background: remainIntake === 0 ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                                    border: `1px solid ${remainIntake === 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`,
+                                    borderRadius: 16, padding: '18px 24px', textAlign: 'center', minWidth: 130
+                                }}>
+                                    <div style={{ fontSize: '2rem', fontWeight: 800, color: remainIntake === 0 ? '#ef4444' : '#10b981' }}>
+                                        {consumed > intakeTarget ? `+${consumed - intakeTarget}` : remainIntake}
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {consumed > intakeTarget ? 'kcal over limit ⚠️' : 'kcal intake remaining'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Net Calorie Balance */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{
+                                    background: net > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                                    border: `1px solid ${net > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.35)'}`,
+                                    borderRadius: 20, padding: '20px 28px', textAlign: 'center'
+                                }}>
+                                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Net Balance</div>
+                                    <div style={{ fontSize: '2.2rem', fontWeight: 900, color: net > 0 ? '#ef4444' : '#10b981' }}>
+                                        {net >= 0 ? '+' : ''}{net}
+                                    </div>
+                                    <div style={{ fontSize: '0.68rem', color: '#475569', marginTop: 6 }}>kcal (consumed − burned)</div>
+                                    <div style={{ fontSize: '0.75rem', marginTop: 8, fontWeight: 600, color: net > 200 ? '#ef4444' : net < -100 ? '#f59e0b' : '#10b981' }}>
+                                        {net > 200 ? '🔴 Calorie Surplus' : net < -100 ? '🟡 Slight Deficit' : '🟢 On Target'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 7-Day Burn vs Intake Comparison Chart */}
+                        {last7.length > 0 && (
+                            <div>
+                                <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 10 }}>
+                                    📊 LAST 7 DAYS — BURN vs INTAKE vs TARGET
+                                </div>
+                                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', overflowX: 'auto', paddingBottom: 8 }}>
+                                    {/* Target reference lines label */}
+                                    <div style={{ display: 'flex', gap: 14, marginBottom: 6, flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '0.7rem', color: '#f97316', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f97316', display: 'inline-block' }} /> Burned
+                                        </span>
+                                        <span style={{ fontSize: '0.7rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} /> Consumed
+                                        </span>
+                                        <span style={{ fontSize: '0.7rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ width: 10, height: 4, background: '#818cf8', display: 'inline-block', borderRadius: 2 }} /> Burn Target
+                                        </span>
+                                    </div>
+                                </div>
+                                <svg width="100%" viewBox={`0 0 ${Math.max(last7.length * 70, 300)} 160`} preserveAspectRatio="xMidYMid meet">
+                                    {last7.map((d, i) => {
+                                        const maxVal = Math.max(intakeTarget * 1.2, burnTarget * 1.2,
+                                            ...last7.map(x => Math.max(x.calories_burned || 0, x.calories_consumed || 0)), 1);
+                                        const scale = (v) => 120 - (v / maxVal) * 100;
+                                        const bH = ((d.calories_burned || 0) / maxVal) * 100;
+                                        const cH = ((d.calories_consumed || 0) / maxVal) * 100;
+                                        const x = i * 70 + 10;
+                                        const targetY = scale(burnTarget);
+                                        return (
+                                            <g key={i}>
+                                                {/* Burn bar */}
+                                                <rect x={x} y={120 - bH} width={20} height={bH} fill="#f97316" rx={3} opacity={0.85} />
+                                                {/* Intake bar */}
+                                                <rect x={x + 22} y={120 - cH} width={20} height={cH} fill="#10b981" rx={3} opacity={0.85} />
+                                                {/* Target line */}
+                                                <line x1={x - 2} y1={targetY} x2={x + 44} y2={targetY} stroke="#818cf8" strokeWidth={1.5} strokeDasharray="4,2" />
+                                                {/* Labels */}
+                                                {d.calories_burned > 0 && (
+                                                    <text x={x + 10} y={120 - bH - 4} textAnchor="middle" fontSize={8} fill="#f97316">{Math.round(d.calories_burned)}</text>
+                                                )}
+                                                {d.calories_consumed > 0 && (
+                                                    <text x={x + 32} y={120 - cH - 4} textAnchor="middle" fontSize={8} fill="#10b981">{Math.round(d.calories_consumed)}</text>
+                                                )}
+                                                <text x={x + 21} y={138} textAnchor="middle" fontSize={9} fill="#475569">
+                                                    {new Date(d.log_date).getMonth() + 1}/{new Date(d.log_date).getDate()}
+                                                </text>
+                                            </g>
+                                        );
+                                    })}
+                                </svg>
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
 
             <div className="ac-grid">
                 {/* ── Log Activity Form ── */}

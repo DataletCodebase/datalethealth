@@ -2,6 +2,7 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.js";
 import { db } from "../server.js";
+import { calculateCaloriesBurned, calculateCalorieTargets } from "../utils/healthCalculators.js";
 
 const router = express.Router();
 
@@ -48,30 +49,7 @@ async function ensureTable() {
     return tableInit;
 }
 
-// =============================================
-// MET-based Calorie Burn Calculation
-// MET formula: kcal = MET × weight_kg × duration_hours
-// =============================================
-function calculateCalories(km_walked, km_run, weight_lifting_mins, outdoor_activity_mins, weight_kg) {
-    const MET_WALK = 3.5;
-    const MET_RUN = 8.0;
-    const MET_LIFT = 5.0;
-    const MET_OUTDOOR = 4.0;
 
-    // Estimate duration from km (avg walk 5km/h, run 10km/h)
-    const walk_hours = km_walked / 5;
-    const run_hours = km_run / 10;
-    const lift_hours = weight_lifting_mins / 60;
-    const outdoor_hours = outdoor_activity_mins / 60;
-
-    const calories =
-        MET_WALK * weight_kg * walk_hours +
-        MET_RUN * weight_kg * run_hours +
-        MET_LIFT * weight_kg * lift_hours +
-        MET_OUTDOOR * weight_kg * outdoor_hours;
-
-    return Math.round(calories * 10) / 10;
-}
 
 // =============================================
 // POST /api/activity/log — Log today's activity
@@ -102,9 +80,9 @@ router.post("/log", authMiddleware, async (req, res) => {
         );
         const weight_kg = safeFloat(user?.weight) || 70; // default 70kg if missing
 
-        const calories_burned = calculateCalories(
+        const calories_burned = calculateCaloriesBurned({
             km_walked, km_run, weight_lifting_mins, outdoor_activity_mins, weight_kg
-        );
+        });
         // Guarantee calories are never NaN
         const safe_calories = isNaN(calories_burned) ? 0 : calories_burned;
 
@@ -257,7 +235,7 @@ router.get("/today", authMiddleware, async (req, res) => {
 // =============================================
 // GET /api/activity/calorie-target
 // Returns daily calorie burn & intake targets
-// based on user's medical profile
+// Fully dynamic: BMI-aware + multi-condition medical logic
 // =============================================
 router.get("/calorie-target", authMiddleware, async (req, res) => {
     try {
@@ -268,61 +246,13 @@ router.get("/calorie-target", authMiddleware, async (req, res) => {
             [userId]
         );
 
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        const weight_kg = parseFloat(user.weight) || 70;
-        const height_cm = parseFloat(user.height) || 170;
-
-        // Age from DOB
-        let age = 30;
-        if (user.dob) {
-            const birth = new Date(user.dob);
-            const now = new Date();
-            age = now.getFullYear() - birth.getFullYear() -
-                (now < new Date(now.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-        }
-
-        const gender = (user.gender || "male").toLowerCase();
-        const disease = (user.disease || "").toLowerCase();
-
-        // BMR using Mifflin-St Jeor equation
-        let bmr;
-        if (gender === "female") {
-            bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161;
-        } else {
-            bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + 5;
-        }
-
-        // Activity level: assume lightly active (1.375) for patients
-        let tdee = Math.round(bmr * 1.375);
-
-        // Condition adjustments to intake target
-        let intakeTarget = tdee;
-        let burnTarget = Math.round(tdee * 0.20); // 20% of TDEE as daily burn goal
-
-        if (disease.includes("kidney") || disease.includes("ckd") || disease.includes("renal")) {
-            intakeTarget = Math.min(intakeTarget, 1800); // Low calorie for CKD
-            burnTarget = Math.min(burnTarget, 200);     // Gentle exercise for CKD
-        }
-        if (disease.includes("diabet") || disease.includes("sugar")) {
-            intakeTarget = Math.min(intakeTarget, 1600); // Diabetic diet
-            burnTarget = Math.max(burnTarget, 300);      // More burn for diabetes
-        }
-        if (disease.includes("heart") || disease.includes("cardiac")) {
-            burnTarget = Math.min(burnTarget, 250);      // Cardio patients: gentle
-        }
-        if (disease.includes("obes")) {
-            intakeTarget = Math.min(intakeTarget, tdee - 500); // 500 kcal deficit
-            burnTarget = Math.max(burnTarget, 400);
-        }
-
+        const targets = calculateCalorieTargets(user);
         res.json({
-            burn_target: burnTarget,
-            intake_target: intakeTarget,
-            tdee,
-            bmr: Math.round(bmr),
+            ...targets,
             weight_kg,
+            height_cm,
             age,
+            gender: user.gender,
             condition: user.disease || "General"
         });
     } catch (err) {

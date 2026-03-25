@@ -7,48 +7,52 @@ const API = "/api";
 // ─────────────────────────────────────────────
 function ArcProgress({ value, max, color, size = 120, label, sublabel, icon }) {
     const pct = max > 0 ? Math.min(value / max, 1) : 0;
-    const r = (size - 18) / 2;
+    const r = (size - 22) / 2;
     const circ = 2 * Math.PI * r;
     const dash = pct * circ;
     const cx = size / 2;
     const cy = size / 2;
     const isOver = value > max;
+    const gradId = `grad-${color.replace('#', '')}`;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+                <defs>
+                    <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={color} />
+                        <stop offset="100%" stopColor={isOver ? '#ef4444' : color} stopOpacity={0.6} />
+                    </linearGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                        <feMerge>
+                            <feMergeNode in="coloredBlur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                </defs>
                 {/* Track */}
-                <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={10} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={12} />
                 {/* Progress */}
                 <circle
                     cx={cx} cy={cy} r={r} fill="none"
-                    stroke={isOver ? '#ef4444' : color}
-                    strokeWidth={10}
+                    stroke={isOver ? '#ef4444' : `url(#${gradId})`}
+                    strokeWidth={12}
                     strokeDasharray={`${dash} ${circ}`}
                     strokeLinecap="round"
-                    style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1)', filter: `drop-shadow(0 0 6px ${color}88)` }}
+                    filter="url(#glow)"
+                    style={{ transition: 'stroke-dasharray 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                 />
-                {/* Center text (counter-rotated) */}
-                <text
-                    x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
-                    fill={isOver ? '#ef4444' : color}
-                    fontSize={size * 0.175} fontWeight="800"
-                    style={{ transform: `rotate(90deg)`, transformOrigin: `${cx}px ${cy}px` }}
-                >
-                    {icon}
-                </text>
-                <text
-                    x={cx} y={cy + 10} textAnchor="middle" dominantBaseline="middle"
-                    fill={isOver ? '#ef4444' : '#e2e8f0'}
-                    fontSize={size * 0.155} fontWeight="700"
-                    style={{ transform: `rotate(90deg)`, transformOrigin: `${cx}px ${cy}px` }}
-                >
-                    {Math.round(value)}
-                </text>
+                {/* Text (un-rotated) */}
+                <g style={{ transform: `rotate(90deg)`, transformOrigin: `${cx}px ${cy}px` }}>
+                    <text x={cx} y={cy - 12} textAnchor="middle" fontSize={size * 0.18} fill={color}>{icon}</text>
+                    <text x={cx} y={cy + 10} textAnchor="middle" fontSize={size * 0.16} fontWeight="900" fill="#f8fafc">{Math.round(value)}</text>
+                    <text x={cx} y={cy + 24} textAnchor="middle" fontSize={size * 0.08} fontWeight="600" fill="#64748b" style={{ textTransform: 'uppercase' }}>kcal</text>
+                </g>
             </svg>
             <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: isOver ? '#ef4444' : color }}>{label}</div>
-                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 2 }}>{sublabel}</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: isOver ? '#ef4444' : color }}>{label}</div>
+                <div style={{ fontSize: '0.7rem', color: '#475569', marginTop: 2, fontWeight: 500 }}>{sublabel}</div>
             </div>
         </div>
     );
@@ -791,61 +795,74 @@ export default function ActivityCenter() {
 
         .ac-full-width { grid-column: 1 / -1; }
 
+        .ac-stat.glass {
+          background: rgba(30, 41, 59, 0.4);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.06);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ac-stat.glass:hover {
+          background: rgba(45, 55, 72, 0.6);
+          border-color: rgba(99, 102, 241, 0.4);
+          transform: translateY(-5px);
+          box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 15px rgba(99,102,241,0.15);
+        }
+
         /* ── Quote Banner ── */
         .ac-quote-banner {
           position: relative;
-          background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(56,189,248,0.08));
-          border: 1px solid rgba(99,102,241,0.3);
-          border-radius: 16px;
-          padding: 18px 24px;
-          margin-bottom: 24px;
+          background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(99,102,241,0.2);
+          border-radius: 20px;
+          padding: 20px 28px;
+          margin-bottom: 30px;
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 20px;
           cursor: default;
           overflow: hidden;
-          transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
-          animation: ac-fade-up 0.5s cubic-bezier(.22,1,.36,1) both;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: ac-fade-up 0.6s cubic-bezier(.22,1,.36,1) both;
         }
-        .ac-quote-banner::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(90deg, rgba(99,102,241,0.05), rgba(56,189,248,0.05));
-          opacity: 0;
-          transition: opacity 0.3s;
-        }
-        .ac-quote-banner:hover::before { opacity: 1; }
         .ac-quote-banner:hover {
-          border-color: rgba(99,102,241,0.65);
-          box-shadow: 0 0 30px rgba(99,102,241,0.22), 0 0 12px rgba(56,189,248,0.12);
-          background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(56,189,248,0.12));
+          border-color: rgba(99,102,241,0.5);
+          box-shadow: 0 15px 50px rgba(0,0,0,0.5), 0 0 20px rgba(99,102,241,0.2);
+          transform: translateY(-2px);
         }
         .ac-quote-icon {
-          font-size: 2.1rem;
+          font-size: 2.2rem;
           flex-shrink: 0;
-          display: inline-block;
-          animation: ac-icon-bounce 2.4s ease-in-out infinite;
-          transition: transform 0.3s;
+          filter: drop-shadow(0 0 10px rgba(99,102,241,0.5));
+          animation: ac-icon-bounce 3s ease-in-out infinite;
         }
-        .ac-quote-banner:hover .ac-quote-icon { animation-play-state: paused; transform: scale(1.3) rotate(8deg); }
         .ac-quote-text {
           flex: 1;
-          font-size: 1rem;
+          font-size: 1.05rem;
           font-style: italic;
-          color: #cbd5e1;
+          color: #e2e8f0;
           line-height: 1.6;
-          letter-spacing: 0.01em;
-          transition: opacity 0.4s ease, transform 0.4s ease, color 0.3s;
+          font-weight: 500;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
+        .ac-quote-text.hidden { opacity: 0; transform: translateY(10px); }
         .ac-quote-text.visible { opacity: 1; transform: translateY(0); }
-        .ac-quote-text.hidden  { opacity: 0; transform: translateY(10px); }
-        .ac-quote-banner:hover .ac-quote-text { color: #f1f5f9; }
-        .ac-quote-dot {
-          width: 9px; height: 9px;
-          border-radius: 50%;
-          flex-shrink: 0;
-          animation: ac-dot-pulse 2s ease-in-out infinite;
+        
+        @keyframes ac-fade-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ac-icon-bounce {
+          0%, 100% { transform: translateY(0) rotate(0); }
+          50% { transform: translateY(-8px) rotate(5deg); }
+        }
+        @keyframes ac-glow-pulse {
+          0%, 100% { box-shadow: 0 0 5px rgba(129,140,248,0.2); }
+          50% { box-shadow: 0 0 20px rgba(129,140,248,0.5); }
         }
       `}</style>
 
@@ -866,37 +883,38 @@ export default function ActivityCenter() {
 
             {/* ── Stats Row ── */}
             <div className="ac-stats-row">
-                <div className="ac-stat">
-                    <div className={`ac-stat-val ac-streak-val`}>{streak} 🔥</div>
+                <div className="ac-stat glass">
+                    <div className="ac-stat-val ac-streak-val">{streak} 🔥</div>
                     <div className="ac-stat-label">Day Streak</div>
                 </div>
+
                 {/* Burned Stats */}
-                <div className="ac-stat">
-                    <div className={`ac-stat-val ac-cal-val`}>{todayCalories !== null ? Math.round(todayCalories) : "0"}</div>
+                <div className="ac-stat glass">
+                    <div className="ac-stat-val ac-cal-val">{todayCalories !== null ? Math.round(todayCalories) : "0"}</div>
                     <div className="ac-stat-label">Today's kcal Burned</div>
                 </div>
-                <div className="ac-stat">
-                    <div className={`ac-stat-val`} style={{ color: "#10b981" }}>{totalCaloriesMonth}</div>
-                    <div className="ac-stat-label">kcal Burned This Month</div>
+                <div className="ac-stat glass">
+                    <div className="ac-stat-val" style={{ color: "#38bdf8" }}>{totalCaloriesMonth}</div>
+                    <div className="ac-stat-label">kcal Burned Month</div>
                 </div>
 
                 {/* Consumed Stats */}
-                <div className="ac-stat">
-                    <div className={`ac-stat-val`} style={{ color: "#f97316" }}>{Math.round(todayConsumedCalories)}</div>
+                <div className="ac-stat glass">
+                    <div className="ac-stat-val" style={{ color: "#10b981" }}>{Math.round(todayConsumedCalories)}</div>
                     <div className="ac-stat-label">Today's kcal Consumed</div>
                 </div>
-                <div className="ac-stat">
-                    <div className={`ac-stat-val`} style={{ color: "#f97316" }}>{Math.round(totalConsumedMonth)}</div>
-                    <div className="ac-stat-label">kcal Consumed This Month</div>
+                <div className="ac-stat glass">
+                    <div className="ac-stat-val" style={{ color: "#f59e0b" }}>{Math.round(totalConsumedMonth)}</div>
+                    <div className="ac-stat-label">kcal Consumed Month</div>
                 </div>
 
-                <div className="ac-stat">
-                    <div className={`ac-stat-val ac-km-val`}>{totalKmMonth}</div>
+                <div className="ac-stat glass">
+                    <div className="ac-stat-val ac-km-val">{totalKmMonth}</div>
                     <div className="ac-stat-label">km This Month</div>
                 </div>
             </div>
 
-            {/* ── Target Calories Section ── */}
+            {/* ── Daily Metabolic Dashboard ── */}
             {calorieTarget && (() => {
                 const burnTarget = calorieTarget.burn_target;
                 const intakeTarget = calorieTarget.intake_target;
@@ -905,132 +923,256 @@ export default function ActivityCenter() {
                 const remainBurn = Math.max(0, burnTarget - burned);
                 const remainIntake = Math.max(0, intakeTarget - consumed);
                 const net = consumed - burned;
-
-                // Last 7 days for mini chart
                 const last7 = history.slice(-7);
+                const burnPct = Math.min(100, burnTarget > 0 ? (burned / burnTarget) * 100 : 0);
+                const intakePct = Math.min(100, intakeTarget > 0 ? (consumed / intakeTarget) * 100 : 0);
+                const bmi = calorieTarget.bmi;
+                const bmiCat = calorieTarget.bmi_category || "Normal";
+                const bmiColor = bmi >= 40 ? '#dc2626' : bmi >= 35 ? '#ef4444' : bmi >= 30 ? '#f97316' : bmi >= 25 ? '#f59e0b' : '#10b981';
+                const conditionsList = calorieTarget.conditions_applied || [];
+                const deficit = calorieTarget.deficit || 0;
+                const conditionDisplay = (calorieTarget.condition && calorieTarget.condition !== "Na" && calorieTarget.condition !== "General")
+                    ? calorieTarget.condition : "General Profile";
+
+                const metabolicState = net > 300
+                    ? { label: "📈 Calorie Surplus", color: "#ef4444", desc: "Weight gain risk", icon: "⬆️" }
+                    : net < -300
+                        ? { label: "📉 Active Deficit", color: "#f59e0b", desc: "Weight loss mode", icon: "⬇️" }
+                        : { label: "⚖️ Balanced", color: "#10b981", desc: "Maintenance mode", icon: "✅" };
 
                 return (
-                    <div className="ac-card ac-full-width" style={{ marginBottom: 20 }}>
-                        <div className="ac-card-title">🎯 Daily Calorie Targets</div>
-                        <div style={{ fontSize: '0.72rem', color: '#475569', marginBottom: 18 }}>
-                            Based on your medical profile — Condition: <span style={{ color: '#818cf8', fontWeight: 600 }}>{calorieTarget.condition || 'General'}</span>
-                            {' · '} BMR: <span style={{ color: '#38bdf8' }}>{calorieTarget.bmr} kcal</span>
-                            {' · '} TDEE: <span style={{ color: '#10b981' }}>{calorieTarget.tdee} kcal</span>
-                        </div>
+                    <div style={{
+                        marginBottom: 30,
+                        background: 'linear-gradient(145deg, rgba(15,23,42,0.98), rgba(30,41,59,0.95))',
+                        border: '1px solid rgba(99,102,241,0.2)',
+                        boxShadow: '0 24px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(99,102,241,0.1)',
+                        borderRadius: 24,
+                        padding: '28px 32px',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        {/* Background glow */}
+                        <div style={{
+                            position: 'absolute', top: -80, right: -80, width: 300, height: 300,
+                            borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.08), transparent 70%)',
+                            pointerEvents: 'none'
+                        }} />
 
-                        {/* Progress Rings Row */}
-                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'space-around', marginBottom: 24 }}>
-                            <ArcProgress
-                                value={burned} max={burnTarget}
-                                color="#f97316" size={130}
-                                icon="🔥" label={`${burned} / ${burnTarget} kcal`}
-                                sublabel="Burned Today"
-                            />
-                            <ArcProgress
-                                value={consumed} max={intakeTarget}
-                                color="#10b981" size={130}
-                                icon="🥗" label={`${consumed} / ${intakeTarget} kcal`}
-                                sublabel="Intake Today"
-                            />
-                            {/* Remaining Burn */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                <div style={{
-                                    background: remainBurn === 0 ? 'rgba(16,185,129,0.12)' : 'rgba(249,115,22,0.1)',
-                                    border: `1px solid ${remainBurn === 0 ? 'rgba(16,185,129,0.4)' : 'rgba(249,115,22,0.3)'}`,
-                                    borderRadius: 16, padding: '18px 24px', textAlign: 'center', minWidth: 130
-                                }}>
-                                    <div style={{ fontSize: '2rem', fontWeight: 800, color: remainBurn === 0 ? '#10b981' : '#f97316' }}>
-                                        {remainBurn === 0 ? '✅' : `${remainBurn}`}
-                                    </div>
-                                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {remainBurn === 0 ? 'Burn Goal Met!' : 'kcal left to burn'}
-                                    </div>
-                                </div>
-                                {/* Remaining Intake */}
-                                <div style={{
-                                    background: remainIntake === 0 ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-                                    border: `1px solid ${remainIntake === 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`,
-                                    borderRadius: 16, padding: '18px 24px', textAlign: 'center', minWidth: 130
-                                }}>
-                                    <div style={{ fontSize: '2rem', fontWeight: 800, color: remainIntake === 0 ? '#ef4444' : '#10b981' }}>
-                                        {consumed > intakeTarget ? `+${consumed - intakeTarget}` : remainIntake}
-                                    </div>
-                                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {consumed > intakeTarget ? 'kcal over limit ⚠️' : 'kcal intake remaining'}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Net Calorie Balance */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{
-                                    background: net > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-                                    border: `1px solid ${net > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.35)'}`,
-                                    borderRadius: 20, padding: '20px 28px', textAlign: 'center'
-                                }}>
-                                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Net Balance</div>
-                                    <div style={{ fontSize: '2.2rem', fontWeight: 900, color: net > 0 ? '#ef4444' : '#10b981' }}>
-                                        {net >= 0 ? '+' : ''}{net}
-                                    </div>
-                                    <div style={{ fontSize: '0.68rem', color: '#475569', marginTop: 6 }}>kcal (consumed − burned)</div>
-                                    <div style={{ fontSize: '0.75rem', marginTop: 8, fontWeight: 600, color: net > 200 ? '#ef4444' : net < -100 ? '#f59e0b' : '#10b981' }}>
-                                        {net > 200 ? '🔴 Calorie Surplus' : net < -100 ? '🟡 Slight Deficit' : '🟢 On Target'}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 7-Day Burn vs Intake Comparison Chart */}
-                        {last7.length > 0 && (
+                        {/* Header Row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
                             <div>
-                                <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 10 }}>
-                                    📊 LAST 7 DAYS — BURN vs INTAKE vs TARGET
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                                    <span style={{ fontSize: '1.4rem' }}>🎯</span>
+                                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.01em' }}>Daily Metabolic Dashboard</span>
                                 </div>
-                                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', overflowX: 'auto', paddingBottom: 8 }}>
-                                    {/* Target reference lines label */}
-                                    <div style={{ display: 'flex', gap: 14, marginBottom: 6, flexWrap: 'wrap' }}>
-                                        <span style={{ fontSize: '0.7rem', color: '#f97316', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f97316', display: 'inline-block' }} /> Burned
+                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.72rem', color: '#64748b', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, padding: '3px 10px', fontWeight: 700 }}>
+                                        {conditionDisplay}
+                                    </span>
+                                    {bmi && (
+                                        <span style={{ fontSize: '0.72rem', color: bmiColor, background: `${bmiColor}18`, border: `1px solid ${bmiColor}44`, borderRadius: 8, padding: '3px 10px', fontWeight: 700 }}>
+                                            BMI {bmi} — {bmiCat}
                                         </span>
-                                        <span style={{ fontSize: '0.7rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} /> Consumed
+                                    )}
+                                    {deficit > 0 && (
+                                        <span style={{ fontSize: '0.72rem', color: '#f59e0b', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, padding: '3px 10px', fontWeight: 700 }}>
+                                            −{deficit} kcal deficit target
                                         </span>
-                                        <span style={{ fontSize: '0.7rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <span style={{ width: 10, height: 4, background: '#818cf8', display: 'inline-block', borderRadius: 2 }} /> Burn Target
-                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.65rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live at</div>
+                                <div style={{ fontSize: '0.9rem', color: '#cbd5e1', fontWeight: 600 }}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                <div style={{ display: 'flex', gap: 10, marginTop: 6, justifyContent: 'flex-end' }}>
+                                    <span style={{ fontSize: '0.68rem', color: '#475569' }}>BMR <b style={{ color: '#818cf8' }}>{calorieTarget.bmr}</b></span>
+                                    <span style={{ fontSize: '0.68rem', color: '#475569' }}>TDEE <b style={{ color: '#38bdf8' }}>{calorieTarget.tdee}</b></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Main 3-column grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 24 }}>
+
+                            {/* Column 1: Arc Progress Rings */}
+                            <div style={{
+                                background: 'rgba(255,255,255,0.025)', borderRadius: 20, padding: '20px 16px',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8
+                            }}>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: 8 }}>Today's Progress</div>
+                                <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
+                                    <div style={{ position: 'relative', textAlign: 'center' }}>
+                                        <ArcProgress value={burned} max={burnTarget} color="#f97316" size={130} icon="🔥" label={`${burned}`} sublabel={`${burnTarget} target`} />
+                                        <div style={{
+                                            position: 'absolute', bottom: 36, left: '50%', transform: 'translateX(-50%)',
+                                            background: '#f97316', color: '#fff', fontSize: '0.6rem', padding: '2px 7px',
+                                            borderRadius: 8, fontWeight: 800, whiteSpace: 'nowrap'
+                                        }}>{Math.round(burnPct)}% BURNED</div>
+                                    </div>
+                                    <div style={{ position: 'relative', textAlign: 'center' }}>
+                                        <ArcProgress value={consumed} max={intakeTarget} color={consumed > intakeTarget ? '#ef4444' : '#10b981'} size={130} icon="🍽️" label={`${consumed}`} sublabel={`${intakeTarget} limit`} />
+                                        <div style={{
+                                            position: 'absolute', bottom: 36, left: '50%', transform: 'translateX(-50%)',
+                                            background: consumed > intakeTarget ? '#ef4444' : '#10b981', color: '#fff', fontSize: '0.6rem', padding: '2px 7px',
+                                            borderRadius: 8, fontWeight: 800, whiteSpace: 'nowrap'
+                                        }}>{Math.round(intakePct)}% INTAKE</div>
                                     </div>
                                 </div>
-                                <svg width="100%" viewBox={`0 0 ${Math.max(last7.length * 70, 300)} 160`} preserveAspectRatio="xMidYMid meet">
-                                    {last7.map((d, i) => {
-                                        const maxVal = Math.max(intakeTarget * 1.2, burnTarget * 1.2,
-                                            ...last7.map(x => Math.max(x.calories_burned || 0, x.calories_consumed || 0)), 1);
-                                        const scale = (v) => 120 - (v / maxVal) * 100;
-                                        const bH = ((d.calories_burned || 0) / maxVal) * 100;
-                                        const cH = ((d.calories_consumed || 0) / maxVal) * 100;
-                                        const x = i * 70 + 10;
-                                        const targetY = scale(burnTarget);
-                                        return (
-                                            <g key={i}>
-                                                {/* Burn bar */}
-                                                <rect x={x} y={120 - bH} width={20} height={bH} fill="#f97316" rx={3} opacity={0.85} />
-                                                {/* Intake bar */}
-                                                <rect x={x + 22} y={120 - cH} width={20} height={cH} fill="#10b981" rx={3} opacity={0.85} />
-                                                {/* Target line */}
-                                                <line x1={x - 2} y1={targetY} x2={x + 44} y2={targetY} stroke="#818cf8" strokeWidth={1.5} strokeDasharray="4,2" />
-                                                {/* Labels */}
-                                                {d.calories_burned > 0 && (
-                                                    <text x={x + 10} y={120 - bH - 4} textAnchor="middle" fontSize={8} fill="#f97316">{Math.round(d.calories_burned)}</text>
-                                                )}
-                                                {d.calories_consumed > 0 && (
-                                                    <text x={x + 32} y={120 - cH - 4} textAnchor="middle" fontSize={8} fill="#10b981">{Math.round(d.calories_consumed)}</text>
-                                                )}
-                                                <text x={x + 21} y={138} textAnchor="middle" fontSize={9} fill="#475569">
-                                                    {new Date(d.log_date).getMonth() + 1}/{new Date(d.log_date).getDate()}
-                                                </text>
-                                            </g>
-                                        );
-                                    })}
-                                </svg>
+                                {/* Capacity bar */}
+                                <div style={{ width: '100%', marginTop: 10 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#64748b', marginBottom: 4 }}>
+                                        <span>Intake Capacity Remaining</span>
+                                        <span style={{ color: consumed > intakeTarget ? '#ef4444' : '#10b981', fontWeight: 700 }}>
+                                            {consumed > intakeTarget ? `${consumed - intakeTarget} OVER` : `${remainIntake} kcal left`}
+                                        </span>
+                                    </div>
+                                    <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
+                                        <div style={{
+                                            height: '100%', borderRadius: 4, transition: 'width 1s ease',
+                                            width: `${Math.min(100, intakePct)}%`,
+                                            background: consumed > intakeTarget
+                                                ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                                                : intakePct > 80 ? 'linear-gradient(90deg, #f59e0b, #f97316)'
+                                                    : 'linear-gradient(90deg, #10b981, #34d399)'
+                                        }} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Column 2: Status Metrics */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {/* Left to burn */}
+                                <div style={{
+                                    background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)',
+                                    borderRadius: 16, padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Burn Goal</div>
+                                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: remainBurn === 0 ? '#10b981' : '#f97316', lineHeight: 1.1, marginTop: 2 }}>
+                                            {remainBurn === 0 ? '🏆 GOAL MET!' : `${remainBurn} kcal`}
+                                        </div>
+                                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>Target: {burnTarget} kcal/day</div>
+                                    </div>
+                                    <div style={{ fontSize: '2rem' }}>{remainBurn === 0 ? '🏆' : '🔥'}</div>
+                                </div>
+                                {/* Intake capacity */}
+                                <div style={{
+                                    background: consumed > intakeTarget ? 'rgba(239,68,68,0.06)' : 'rgba(16,185,129,0.06)',
+                                    border: `1px solid ${consumed > intakeTarget ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.2)'}`,
+                                    borderRadius: 16, padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Intake Capacity</div>
+                                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: consumed > intakeTarget ? '#ef4444' : '#10b981', lineHeight: 1.1, marginTop: 2 }}>
+                                            {consumed > intakeTarget ? `+${consumed - intakeTarget} OVER` : `${remainIntake} kcal`}
+                                        </div>
+                                        <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: 2 }}>Limit: {intakeTarget} kcal/day</div>
+                                    </div>
+                                    <div style={{ fontSize: '2rem' }}>{consumed > intakeTarget ? '⚠️' : '🥗'}</div>
+                                </div>
+                                {/* Net score */}
+                                <div style={{
+                                    background: `${metabolicState.color}08`, border: `1px solid ${metabolicState.color}30`,
+                                    borderRadius: 16, padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Net Balance</div>
+                                        <div style={{ fontSize: '1.6rem', fontWeight: 900, color: metabolicState.color, textShadow: `0 0 16px ${metabolicState.color}40`, lineHeight: 1.1, marginTop: 2 }}>
+                                            {net > 0 ? '+' : ''}{net} kcal
+                                        </div>
+                                        <div style={{ fontSize: '0.65rem', color: metabolicState.color, marginTop: 2, fontWeight: 700 }}>{metabolicState.label}</div>
+                                    </div>
+                                    <div style={{ fontSize: '2rem' }}>{metabolicState.icon}</div>
+                                </div>
+                            </div>
+
+                            {/* Column 3: Medical Conditions Panel */}
+                            <div style={{
+                                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 20, padding: '18px 20px',
+                                display: 'flex', flexDirection: 'column', gap: 10
+                            }}>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: 4 }}>
+                                    🩺 Medical Adjustments Applied
+                                </div>
+                                {conditionsList.map((c, i) => (
+                                    <div key={i} style={{
+                                        background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.15)',
+                                        borderRadius: 10, padding: '8px 12px',
+                                        fontSize: '0.72rem', color: '#cbd5e1', lineHeight: 1.5,
+                                        borderLeft: '3px solid rgba(99,102,241,0.5)'
+                                    }}>
+                                        <span style={{ color: '#a5b4fc', fontWeight: 700 }}>#{i + 1}</span> {c}
+                                    </div>
+                                ))}
+                                {/* Body stats */}
+                                <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                    {[
+                                        { label: 'Weight', value: `${calorieTarget.weight_kg} kg`, color: '#818cf8' },
+                                        { label: 'Height', value: `${calorieTarget.height_cm} cm`, color: '#38bdf8' },
+                                        { label: 'Age', value: `${calorieTarget.age} yrs`, color: '#f97316' },
+                                        { label: 'BMI', value: bmi ? `${bmi} (${bmiCat})` : '—', color: bmiColor },
+                                    ].map(({ label, value, color }) => (
+                                        <div key={label} style={{ textAlign: 'center', background: 'rgba(15,23,42,0.5)', borderRadius: 10, padding: '8px 6px' }}>
+                                            <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+                                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color, marginTop: 2 }}>{value}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Weekly Trend Chart */}
+                        {last7.length > 0 && (
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 22 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f1f5f9' }}>📉 7-Day Metabolic Trend</div>
+                                    <div style={{ display: 'flex', gap: 14 }}>
+                                        {[['#f97316', 'Burn'], ['#10b981', 'Intake'], ['#6366f1', 'Target Line']].map(([color, label]) => (
+                                            <span key={label} style={{ fontSize: '0.67rem', color, display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'inline-block' }} /> {label}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.015)', borderRadius: 14, padding: '16px 8px', overflowX: 'auto' }}>
+                                    <svg width="100%" viewBox={`0 0 ${Math.max(last7.length * 82, 380)} 155`} preserveAspectRatio="xMidYMid meet">
+                                        <defs>
+                                            <linearGradient id="burnGrad7" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#f97316" stopOpacity="0.95" />
+                                                <stop offset="100%" stopColor="#f97316" stopOpacity="0.35" />
+                                            </linearGradient>
+                                            <linearGradient id="intakeGrad7" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#10b981" stopOpacity="0.95" />
+                                                <stop offset="100%" stopColor="#10b981" stopOpacity="0.35" />
+                                            </linearGradient>
+                                        </defs>
+                                        {last7.map((d, i) => {
+                                            const maxVal = Math.max(intakeTarget * 1.2, burnTarget * 1.2, ...last7.map(x => Math.max(x.calories_burned || 0, x.calories_consumed || 0)), 1);
+                                            const scaleY = (v) => 115 - (v / maxVal) * 95;
+                                            const bH = ((d.calories_burned || 0) / maxVal) * 95;
+                                            const cH = ((d.calories_consumed || 0) / maxVal) * 95;
+                                            const x = i * 82 + 18;
+                                            const targetY = scaleY(burnTarget);
+                                            const intakeLineY = scaleY(intakeTarget);
+                                            return (
+                                                <g key={i}>
+                                                    <text x={x + 22} y={148} textAnchor="middle" fontSize={9} fill="#475569" fontWeight={500}>
+                                                        {new Date(d.log_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                    </text>
+                                                    <rect x={x} y={115 - bH} width={20} height={bH} fill="url(#burnGrad7)" rx={4} />
+                                                    <rect x={x + 24} y={115 - cH} width={20} height={cH} fill="url(#intakeGrad7)" rx={4} />
+                                                    <line x1={x - 4} y1={targetY} x2={x + 50} y2={targetY} stroke="#6366f1" strokeWidth={1.5} strokeDasharray="4,2" opacity={0.7} />
+                                                    <line x1={x - 4} y1={intakeLineY} x2={x + 50} y2={intakeLineY} stroke="#10b981" strokeWidth={1} strokeDasharray="3,3" opacity={0.35} />
+                                                    {(d.calories_burned || 0) > 0 && <text x={x + 10} y={115 - bH - 5} textAnchor="middle" fontSize={8} fill="#f97316" fontWeight={700}>{Math.round(d.calories_burned)}</text>}
+                                                    {(d.calories_consumed || 0) > 0 && <text x={x + 34} y={115 - cH - 5} textAnchor="middle" fontSize={8} fill="#10b981" fontWeight={700}>{Math.round(d.calories_consumed)}</text>}
+                                                </g>
+                                            );
+                                        })}
+                                        <line x1="0" y1="115" x2="100%" y2="115" stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+                                    </svg>
+                                </div>
                             </div>
                         )}
                     </div>

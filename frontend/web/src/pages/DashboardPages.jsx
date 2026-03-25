@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 // import Sidebar, { SidebarProvider, useSidebar } from "./dashboard/Sidebar";
 import Sidebar, { SidebarProvider, useSidebar } from "../components/Sidebar";
 import ContentHeader, { ContentHeaderRight } from "../components/ContentHeader";
-import { AskHealthAgent, WaterTracker } from "../components/DashboardGrid";
+import { AskHealthAgent, ActivityWidget } from "../components/DashboardGrid";
 // import ContentHeader, { ContentHeaderRight } from "./dashboard/ContentHeader";
 // import { AskHealthAgent, WaterTracker } from "./dashboard/DashboardGrid";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -698,11 +698,8 @@ function DashboardContent() {
                             lab={lab}
                         />
 
-                        <WaterTracker
-                            todayTotal={todayTotal}
-                            handleWaterIntake={handleWaterIntake}
-                            waterLogs={waterLogs}
-                        />
+                        <ActivityWidget />
+
                     </div>
                 </div>
 

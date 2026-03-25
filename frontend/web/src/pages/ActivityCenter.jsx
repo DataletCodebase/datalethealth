@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-
-const API = "/api";
+import { API_BASE, getAuthHeaders } from "../apiConfig";
 
 // ─────────────────────────────────────────────
 // Animated SVG Arc Progress Ring
@@ -61,12 +60,8 @@ function ArcProgress({ value, max, color, size = 120, label, sublabel, icon }) {
 // ─────────────────────────────────────────────
 // Utility helpers
 // ─────────────────────────────────────────────
-function getToken() {
-    return localStorage.getItem("token");
-}
-
 function authHeaders() {
-    return { Authorization: `Bearer ${getToken()}` };
+    return getAuthHeaders();
 }
 
 function fmtDate(d) {
@@ -269,13 +264,13 @@ export default function ActivityCenter() {
     const fetchAll = useCallback(async () => {
         try {
             // Fetch calorie target in parallel
-            const targetRes = await fetch(`${API}/activity/calorie-target`, { headers: authHeaders() });
+            const targetRes = await fetch(`${API_BASE}/activity/calorie-target`, { headers: authHeaders() });
             if (targetRes.ok) {
                 const tData = await targetRes.json();
                 setCalorieTarget(tData);
             }
 
-            const userIdResult = await fetch(`${API}/user/profile/basic`, { headers: authHeaders() });
+            const userIdResult = await fetch(`${API_BASE}/user/profile/basic`, { headers: authHeaders() });
             let userId = "me";
             if (userIdResult.ok) {
                 const ud = await userIdResult.json();
@@ -283,11 +278,11 @@ export default function ActivityCenter() {
             }
 
             const [histRes, streakRes, monthRes, todayRes, dietRes] = await Promise.all([
-                fetch(`${API}/activity/history?days=30`, { headers: authHeaders() }),
-                fetch(`${API}/activity/streak`, { headers: authHeaders() }),
-                fetch(`${API}/activity/monthly?year=${viewYear}&month=${viewMonth}`, { headers: authHeaders() }),
-                fetch(`${API}/activity/today`, { headers: authHeaders() }),
-                fetch(`${API}/diet/meal/user/${userId}?look_date=${new Date().toISOString().split("T")[0]}`, { headers: authHeaders() })
+                fetch(`${API_BASE}/activity/history?days=30`, { headers: authHeaders() }),
+                fetch(`${API_BASE}/activity/streak`, { headers: authHeaders() }),
+                fetch(`${API_BASE}/activity/monthly?year=${viewYear}&month=${viewMonth}`, { headers: authHeaders() }),
+                fetch(`${API_BASE}/activity/today`, { headers: authHeaders() }),
+                fetch(`${API_BASE}/diet/meal/user/${userId}?look_date=${new Date().toISOString().split("T")[0]}`, { headers: authHeaders() })
             ]);
 
             if (histRes.ok) setHistory(await histRes.json());
@@ -373,7 +368,7 @@ export default function ActivityCenter() {
         setSaveMsg("");
         try {
             const payload = { ...form, calories_consumed: todayConsumedCalories };
-            const res = await fetch(`${API}/api/activity/log`, {
+            const res = await fetch(`${API_BASE}/activity/log`, {
                 method: "POST",
                 headers: { ...authHeaders(), "Content-Type": "application/json" },
                 body: JSON.stringify(payload),

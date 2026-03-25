@@ -12,10 +12,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import AutoText from "../components/AutoText";
 
 
-// API base
-const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL)
-    ? import.meta.env.VITE_API_URL
-    : "";
+import { API_BASE } from "../apiConfig";
 
 // Helper: post with fallback across multiple urls
 async function postJsonWithFallback(urls = [], payload = {}, options = {}) {

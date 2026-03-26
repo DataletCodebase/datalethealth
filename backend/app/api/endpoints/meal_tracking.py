@@ -10,7 +10,7 @@ import openai
 
 from backend.app.models.mysql_models import SessionLocal
 from backend.app.models.meal_tracking_model import MealTracking, MealStatus
-from backend.app.models.mysql_models import DietPlan, DietMeal
+from backend.app.models.diet_model import DietPlan, DietMeal
 
 # ==========================
 # OpenAI setup

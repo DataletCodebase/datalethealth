@@ -101,18 +101,19 @@ export default function AdminDashboard() {
 
   const handleApproveDiet = async () => {
     try {
+      const dieticianName = window.prompt("Enter Your Name (Approved by):", "Dietitian");
+      if (dieticianName === null) return; // cancel
+
       const res = await fetch(
         `/api/diet/approve/${dietPlan.id}`,
-        // { method: "POST"
-
-        //  }
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            plan: editablePlan, // 👈 send current edited plan
+            plan: editablePlan,
+            approved_by: dieticianName,
           }),
         }
       );
@@ -122,12 +123,12 @@ export default function AdminDashboard() {
 
       const data = await res.json();
 
-      // ✅ IMPORTANT: lock the edited plan as approved plan
       setDietPlan(prev => ({
         ...prev,
         status: "approved",
         ai_generated_plan: JSON.stringify(editablePlan),
         approved_at: data.approved_at,
+        approved_by: dieticianName,
       }));
 
       setPopup({
@@ -137,6 +138,47 @@ export default function AdminDashboard() {
       });
 
       setEditMode(false);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRejectDiet = async () => {
+    try {
+      const dieticianName = window.prompt("Enter Your Name (Rejected by):", "Dietitian");
+      if (dieticianName === null) return; // cancel
+
+      const res = await fetch(
+        `/api/diet/reject/${dietPlan.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            approved_by: dieticianName,
+          }),
+        }
+      );
+
+
+      if (!res.ok) throw new Error("Rejection failed");
+
+      const data = await res.json();
+
+      setDietPlan(prev => ({
+        ...prev,
+        status: "rejected",
+        approved_at: data.rejected_at,
+        approved_by: dieticianName,
+      }));
+
+      setPopup({
+        show: true,
+        message: "Diet Rejected ❌",
+        type: "error",
+      });
 
     } catch (err) {
       console.error(err);
@@ -634,6 +676,14 @@ export default function AdminDashboard() {
                       </button>
 
                       <button
+                        className="reject-btn"
+                        onClick={handleRejectDiet}
+                        style={{ backgroundColor: "#dc3545", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontWeight: "600" }}
+                      >
+                        Reject
+                      </button>
+
+                      <button
                         className="edit-btn"
                         onClick={() => setEditMode(true)}
                       >
@@ -644,6 +694,11 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ===== DIET TABLE START ===== */}
+                {!editablePlan || !editablePlan.Monday ? (
+                  <div className="diet-error">
+                    <p style={{ color: "red", textAlign: "center", padding: "20px" }}>🚨 This diet plan is malformed or empty and cannot be displayed. The generation process likely failed. Please ask the patient to generate a new plan.</p>
+                  </div>
+                ) : (
                 <table className="diet-table">
                   <thead>
                     <tr>
@@ -705,6 +760,7 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                )}
                 {/* ===== DIET TABLE END ===== */}
 
                 {editMode && (

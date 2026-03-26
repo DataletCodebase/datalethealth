@@ -9,30 +9,30 @@ class LabReport(SQLModel, table=True):
 
     user_id: int = Field(index=True)   # IMPORTANT (not patient_id)
 
-    creatinine: Optional[float] = 0
-    potassium: Optional[float] = 0
-    sodium: Optional[float] = 0
-    urea: Optional[float] = 0
+    creatinine: Optional[str] = "0"
+    potassium: Optional[str] = "0"
+    sodium: Optional[str] = "0"
+    urea: Optional[str] = "0"
 
-    estimated_gfr: Optional[float] = 0
-    albumin: Optional[float] = 0
-    calcium: Optional[float] = 0
-    phosphate: Optional[float] = 0
-    uric_acid: Optional[float] = 0
+    estimated_gfr: Optional[str] = "0"
+    albumin: Optional[str] = "0"
+    calcium: Optional[str] = "0"
+    phosphate: Optional[str] = "0"
+    uric_acid: Optional[str] = "0"
 
-    cholesterol_total: Optional[float] = 0
-    cholesterol_ldl: Optional[float] = 0
-    cholesterol_hdl: Optional[float] = 0
-    triglycerides: Optional[float] = 0
+    cholesterol_total: Optional[str] = "0"
+    cholesterol_ldl: Optional[str] = "0"
+    cholesterol_hdl: Optional[str] = "0"
+    triglycerides: Optional[str] = "0"
 
-    blood_pressure_systolic: Optional[float] = 0
-    blood_pressure_diastolic: Optional[float] = 0
-    heart_rate: Optional[float] = 0
-    bmi: Optional[float] = 0
+    blood_pressure_systolic: Optional[str] = "0"
+    blood_pressure_diastolic: Optional[str] = "0"
+    heart_rate: Optional[str] = "0"
+    bmi: Optional[str] = "0"
 
-    fasting_glucose: Optional[float] = 0
-    postprandial_glucose: Optional[float] = 0
-    hba1c: Optional[float] = 0
+    fasting_glucose: Optional[str] = "0"
+    postprandial_glucose: Optional[str] = "0"
+    hba1c: Optional[str] = "0"
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

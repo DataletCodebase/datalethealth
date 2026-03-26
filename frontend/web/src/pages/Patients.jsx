@@ -9,6 +9,7 @@ export default function Patients({ activeTab }) {
 
     const [dietPlan, setDietPlan] = useState(null);
     const [dietStatus, setDietStatus] = useState(null);
+    const [approvedBy, setApprovedBy] = useState(null);
     const [loading, setLoading] = useState(false);
     const [trackingMeals, setTrackingMeals] = useState([]);
     const [dietPlanId, setDietPlanId] = useState(null);
@@ -25,7 +26,10 @@ export default function Patients({ activeTab }) {
 
     // Dietary preference modal
     const [showDietPrefModal, setShowDietPrefModal] = useState(false);
-    const [dietPreference, setDietPreference] = useState(null);
+    const [dietPrefStep, setDietPrefStep] = useState(1); // 1 = Diet Type, 2 = Goals
+    const [selectedDietType, setSelectedDietType] = useState("veg");
+    const [selectedGoals, setSelectedGoals] = useState([]);
+    const [customGoal, setCustomGoal] = useState("");
 
     const today = new Date().toISOString().split("T")[0];
     // Get today's full day name (e.g. "Monday", "Tuesday") to lock non-current days
@@ -67,6 +71,7 @@ export default function Patients({ activeTab }) {
 
             setDietPlan(JSON.parse(latestPlan.ai_generated_plan));
             setDietStatus(latestPlan.status);
+            setApprovedBy(latestPlan.approved_by);
         } catch (err) {
             console.log("No diet found or generation failed");
         }
@@ -87,7 +92,8 @@ export default function Patients({ activeTab }) {
                 throw new Error("Invalid token format");
             }
 
-            const res = await fetch(`${API_BASE}/diet/generate/${userId}?diet_type=${dietType}`, {
+            const goalsString = [...selectedGoals, customGoal].filter(Boolean).join(", ");
+            const res = await fetch(`${API_BASE}/diet/generate/${userId}?diet_type=${dietType}&goal=${encodeURIComponent(goalsString)}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -102,6 +108,7 @@ export default function Patients({ activeTab }) {
 
             setDietPlan(data.diet_preview);
             setDietStatus("pending");
+            setApprovedBy(null);
         } catch (err) {
             console.error(err.message);
         } finally {
@@ -342,7 +349,7 @@ export default function Patients({ activeTab }) {
             {dietPlan && !loading && (
                 <div className="diet-plan-container" style={{ position: "relative" }}>
                     {/* Pending Approval Overlay */}
-                    {dietStatus !== "approved" && (
+                    {dietStatus === "pending" && (
                         <div style={{
                             position: "absolute",
                             top: 0, left: 0, right: 0, bottom: 0,
@@ -367,6 +374,76 @@ export default function Patients({ activeTab }) {
                                 <p style={{ margin: 0, color: "#64748b", fontWeight: 500 }}>Waiting for dietitian approval.</p>
                                 <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.85rem", marginTop: "-5px" }}>This diet plan is currently under review.</p>
                             </div>
+                        </div>
+                    )}
+
+                    {dietStatus === "approved" && approvedBy && (
+                        <div className="approval-banner" style={{
+                            textAlign: "center",
+                            marginBottom: "1.5rem",
+                            padding: "1rem",
+                            background: "#f0fdf4",
+                            border: "1px solid #bbf7d0",
+                            borderRadius: "12px",
+                            color: "#166534",
+                            fontWeight: "600",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                        }}>
+                            <span style={{ fontSize: "1.2rem" }}>✅</span>
+                            <span>Approved by Dietitian:</span>
+                            <span style={{ 
+                                background: "#dcfce7", 
+                                padding: "2px 8px", 
+                                borderRadius: "4px",
+                                textDecoration: "underline" 
+                            }}>{approvedBy}</span>
+                        </div>
+                    )}
+
+                    {dietStatus === "rejected" && (
+                        <div className="rejection-banner" style={{
+                            textAlign: "center",
+                            marginBottom: "1.5rem",
+                            padding: "1rem",
+                            background: "#fef2f2",
+                            border: "1px solid #fecaca",
+                            borderRadius: "12px",
+                            color: "#991b1b",
+                            fontWeight: "600",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                        }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span style={{ fontSize: "1.2rem" }}>❌</span>
+                                <span>Rejected by Dietitian: {approvedBy || "Professional"}</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: "400" }}>
+                                Professional Advice: Please review your profile and generate a new plan.
+                            </p>
+                            <button 
+                                onClick={() => setShowDietPrefModal(true)}
+                                style={{
+                                    marginTop: "10px",
+                                    padding: "8px 20px",
+                                    background: "#dc2626",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    fontWeight: "600",
+                                    boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)"
+                                }}
+                            >
+                                ✨ Generate New Plan
+                            </button>
                         </div>
                     )}
 
@@ -585,59 +662,161 @@ export default function Patients({ activeTab }) {
             {
                 showDietPrefModal && (
                     <div className="diet-pref-overlay">
-                        <div className="diet-pref-modal">
+                        <div className="diet-pref-modal" style={{ color: '#1e293b' }}>
                             <button
                                 className="diet-pref-close"
-                                onClick={() => setShowDietPrefModal(false)}
+                                onClick={() => {
+                                    setShowDietPrefModal(false);
+                                    setDietPrefStep(1);
+                                }}
                                 title="Cancel"
                             >✕</button>
 
-                            <div className="diet-pref-header">
-                                <span className="diet-pref-emoji">🥗</span>
-                                <h2>Choose Your Diet Type</h2>
-                                <p>Your meals will be tailored entirely to your choice</p>
-                            </div>
+                            {dietPrefStep === 1 ? (
+                                <>
+                                    <div className="diet-pref-header">
+                                        <span className="diet-pref-emoji">🥗</span>
+                                        <h2>Step 1: Choose Diet Type</h2>
+                                        <p>Your meals will be tailored entirely to your choice</p>
+                                    </div>
 
-                            <div className="diet-pref-grid">
-                                <button
-                                    className="diet-pref-card veg"
-                                    onClick={() => generateDiet("veg")}
-                                >
-                                    <span className="dpcard-icon">🌿</span>
-                                    <span className="dpcard-label">Vegetarian</span>
-                                    <span className="dpcard-desc">Dairy, lentils, vegetables, grains — strictly no egg or meat</span>
-                                </button>
+                                    <div className="diet-pref-grid">
+                                        <button
+                                            className="diet-pref-card veg"
+                                            onClick={() => {
+                                                setSelectedDietType("veg");
+                                                setDietPrefStep(2);
+                                            }}
+                                        >
+                                            <span className="dpcard-icon">🌿</span>
+                                            <span className="dpcard-label">Vegetarian</span>
+                                            <span className="dpcard-desc">Dairy, lentils, vegetables, grains — strictly no egg or meat</span>
+                                        </button>
 
-                                <button
-                                    className="diet-pref-card nonveg"
-                                    onClick={() => generateDiet("nonveg")}
-                                >
-                                    <span className="dpcard-icon">🍗</span>
-                                    <span className="dpcard-label">Non-Vegetarian</span>
-                                    <span className="dpcard-desc">Egg, chicken, mutton &amp; fish — varied across 7 days</span>
-                                </button>
+                                        <button
+                                            className="diet-pref-card nonveg"
+                                            onClick={() => {
+                                                setSelectedDietType("nonveg");
+                                                setDietPrefStep(2);
+                                            }}
+                                        >
+                                            <span className="dpcard-icon">🍗</span>
+                                            <span className="dpcard-label">Non-Vegetarian</span>
+                                            <span className="dpcard-desc">Egg, chicken, mutton &amp; fish — varied across 7 days</span>
+                                        </button>
 
-                                <button
-                                    className="diet-pref-card mix"
-                                    onClick={() => generateDiet("mix")}
-                                >
-                                    <span className="dpcard-icon">🥗</span>
-                                    <span className="dpcard-label">Mix (Flexitarian)</span>
-                                    <span className="dpcard-desc">50% veg + 50% non-veg — best of both worlds</span>
-                                </button>
+                                        <button
+                                            className="diet-pref-card mix"
+                                            onClick={() => {
+                                                setSelectedDietType("mix");
+                                                setDietPrefStep(2);
+                                            }}
+                                        >
+                                            <span className="dpcard-icon">🥗</span>
+                                            <span className="dpcard-label">Mix (Flexitarian)</span>
+                                            <span className="dpcard-desc">50% veg + 50% non-veg — best of both worlds</span>
+                                        </button>
 
-                                <button
-                                    className="diet-pref-card vegan"
-                                    onClick={() => generateDiet("vegan")}
-                                >
-                                    <span className="dpcard-icon">🌱</span>
-                                    <span className="dpcard-label">Vegan</span>
-                                    <span className="dpcard-desc">No dairy, no egg, no honey — 100% plant-based only</span>
-                                </button>
-                            </div>
+                                        <button
+                                            className="diet-pref-card vegan"
+                                            onClick={() => {
+                                                setSelectedDietType("vegan");
+                                                setDietPrefStep(2);
+                                            }}
+                                        >
+                                            <span className="dpcard-icon">🌱</span>
+                                            <span className="dpcard-label">Vegan</span>
+                                            <span className="dpcard-desc">No dairy, no egg, no honey — 100% plant-based only</span>
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="diet-pref-header">
+                                        <span className="diet-pref-emoji">🎯</span>
+                                        <h2>Step 2: What is your goal?</h2>
+                                        <p>Select one or more goals to focus your nutrition plan</p>
+                                    </div>
 
-                            <p className="diet-pref-note">
-                                💡 This sets the food profile for your AI-generated 7-day meal plan.
+                                    <div style={{ padding: '0 1rem' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1.5rem' }}>
+                                            {[
+                                                { id: 'Weight Loss', icon: '🏃‍♂️' },
+                                                { id: 'Muscle Gain', icon: '💪' },
+                                                { id: 'Weight Gain', icon: '📈' },
+                                                { id: 'PCOD / Hormonal Balance', icon: '🌸' },
+                                                { id: 'Heart Health', icon: '❤️' },
+                                                { id: 'Energy Boost', icon: '⚡' }
+                                            ].map(goal => (
+                                                <div 
+                                                    key={goal.id}
+                                                    onClick={() => {
+                                                        setSelectedGoals(prev => 
+                                                            prev.includes(goal.id) ? prev.filter(g => g !== goal.id) : [...prev, goal.id]
+                                                        );
+                                                    }}
+                                                    style={{
+                                                        padding: '12px',
+                                                        borderRadius: '8px',
+                                                        border: `2px solid ${selectedGoals.includes(goal.id) ? '#10b981' : '#e2e8f0'}`,
+                                                        backgroundColor: selectedGoals.includes(goal.id) ? '#f0fdf4' : 'white',
+                                                        color: '#1e293b',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: '1.2rem' }}>{goal.icon}</span>
+                                                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{goal.id}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div style={{ marginBottom: '1.5rem' }}>
+                                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
+                                                Other medical / health goals?
+                                            </label>
+                                            <textarea 
+                                                placeholder="e.g. Lower uric acid, manage diabetes, gluten-free, etc."
+                                                value={customGoal}
+                                                onChange={(e) => setCustomGoal(e.target.value)}
+                                                style={{
+                                                    width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1',
+                                                    fontSize: '0.9rem', resize: 'none', height: '60px', boxSizing: 'border-box'
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <button 
+                                                onClick={() => setDietPrefStep(1)}
+                                                style={{
+                                                    flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1',
+                                                    background: 'white', color: '#1e293b', fontWeight: 600, cursor: 'pointer'
+                                                }}
+                                            >Back</button>
+                                            <button 
+                                                onClick={() => {
+                                                    if (selectedGoals.length === 0 && !customGoal.trim()) {
+                                                        setLockAlert("Please select at least one goal or type a custom one.");
+                                                        return;
+                                                    }
+                                                    generateDiet(selectedDietType);
+                                                }}
+                                                style={{
+                                                    flex: 2, padding: '12px', borderRadius: '8px', border: 'none',
+                                                    background: '#1e293b', color: 'white', fontWeight: 600, cursor: 'pointer'
+                                                }}
+                                            >Generate My Plan ✨</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            <p className="diet-pref-note" style={{ marginTop: '1.5rem', color: '#64748b' }}>
+                                💡 This sets the target for your AI-generated 7-day meal plan.
                             </p>
                         </div>
                     </div>

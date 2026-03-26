@@ -24,8 +24,8 @@ class Patient(SQLModel, table=True):
     customer_id: Optional[str] = None
     gender: Optional[str] = "NA"
 
-    height: Optional[int] = 0
-    weight: Optional[int] = 0
+    height: Optional[str] = "0"
+    weight: Optional[str] = "0"
 
     blood_group: Optional[str] = "NA"
     city: Optional[str] = "NA"

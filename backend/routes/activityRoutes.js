@@ -3,6 +3,7 @@ import express from "express";
 import authMiddleware from "../middleware/auth.js";
 import { db } from "../server.js";
 import { calculateCaloriesBurned, calculateCalorieTargets } from "../utils/healthCalculators.js";
+import { decrypt, decryptDeterministic } from "../utils/encryption.js";
 
 const router = express.Router();
 
@@ -78,7 +79,8 @@ router.post("/log", authMiddleware, async (req, res) => {
             "SELECT weight FROM users WHERE id = ?",
             [userId]
         );
-        const weight_kg = safeFloat(user?.weight) || 70; // default 70kg if missing
+        const decryptedWeight = user?.weight ? decrypt(user.weight) : null;
+        const weight_kg = safeFloat(decryptedWeight) || 70;
 
         const calories_burned = calculateCaloriesBurned({
             km_walked, km_run, weight_lifting_mins, outdoor_activity_mins, weight_kg
@@ -242,16 +244,26 @@ router.get("/calorie-target", authMiddleware, async (req, res) => {
         const userId = req.user.id;
 
         const [[user]] = await db.query(
-            `SELECT weight, height, gender, dob, disease FROM users WHERE id = ?`,
+            `SELECT weight, height, gender, dob, disease, full_name FROM users WHERE id = ?`,
             [userId]
         );
+
+        if (user) {
+            user.weight = decrypt(user.weight);
+            user.height = decrypt(user.height);
+            user.gender = decrypt(user.gender);
+            user.dob = decrypt(user.dob);
+            user.disease = decrypt(user.disease);
+            // full_name is usually not encrypted but let's be safe if it is
+            user.full_name = decrypt(user.full_name);
+        }
 
         const targets = calculateCalorieTargets(user);
         res.json({
             ...targets,
             weight_kg: user?.weight || 70,
             height_cm: user?.height || 170,
-            age: user?.age || 30, // fallback
+            age: user?.age || 30, 
             gender: user?.gender,
             condition: user?.disease || "General"
         });

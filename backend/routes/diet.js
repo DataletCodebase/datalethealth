@@ -29,6 +29,7 @@ router.post("/generate/:id", authMiddleware, async (req, res) => {
     const aiRes = await fetch(pythonUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body || {}),
     });
 
     const data = await safeJson(aiRes);

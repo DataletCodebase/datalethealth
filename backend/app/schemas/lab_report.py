@@ -11,12 +11,12 @@ class LabReportBase(BaseModel):
     calcium: Optional[float] = None
 
 class LabReportCreate(LabReportBase):
-    patient_id: int
+    user_id: int
 
 class LabReportRead(LabReportBase):
     id: int
-    patient_id: int
-    updated_at: datetime
+    user_id: int
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True  # Updated for Pydantic v2

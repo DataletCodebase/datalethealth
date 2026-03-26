@@ -21,6 +21,8 @@ class MealStatus(PyEnum):
     completed = "completed"
     skipped = "skipped"
     edited = "edited"
+    alternate = "alternate"
+    alternate_upload = "alternate_upload"
 
 
 # =====================

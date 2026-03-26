@@ -15,15 +15,15 @@ router = APIRouter(tags=["lab reports"], prefix="/labs")
 async def upsert_lab_report(
     payload: LabReportCreate, session: AsyncSession = Depends(get_session)
 ):
-    # Check if patient exists
-    patient_q = select(Patient).where(Patient.id == payload.patient_id)
+    # Check if patient exists (user_id in users table)
+    patient_q = select(Patient).where(Patient.id == payload.user_id)
     patient_res = await session.execute(patient_q)
     patient = patient_res.scalars().first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
     # Check if a lab record already exists for this patient
-    q = select(LabReport).where(LabReport.patient_id == payload.patient_id)
+    q = select(LabReport).where(LabReport.user_id == payload.user_id)
     result = await session.execute(q)
     existing = result.scalars().first()
 
@@ -39,16 +39,16 @@ async def upsert_lab_report(
         return existing
     else:
         # Insert new record
-        new_report = LabReport.from_orm(payload)
+        new_report = LabReport(**payload.dict())
         session.add(new_report)
         await session.commit()
         await session.refresh(new_report)
         return new_report
 
 
-@router.get("/{patient_id}", response_model=LabReportRead)
-async def get_lab_report(patient_id: int, session: AsyncSession = Depends(get_session)):
-    q = select(LabReport).where(LabReport.patient_id == patient_id)
+@router.get("/{user_id}", response_model=LabReportRead)
+async def get_lab_report(user_id: int, session: AsyncSession = Depends(get_session)):
+    q = select(LabReport).where(LabReport.user_id == user_id)
     res = await session.execute(q)
     lab = res.scalars().first()
     if not lab:

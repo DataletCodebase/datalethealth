@@ -1,16 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import List, Optional
 import json
 from datetime import datetime, timedelta, date
 import os
 
 from openai import OpenAI
+from dotenv import load_dotenv
 
 from backend.app.models.mysql_models import SessionLocal
 from backend.app.models.diet_model import DietPlan, DietMeal
 from backend.app.models.patient_model import Patient
 from backend.app.models.lab_report_model import LabReport
 from backend.app.models.meal_tracking_model import MealTracking
+from backend.app.utils.encryption import decrypt
 
 
 # =====================================================
@@ -21,6 +25,15 @@ router = APIRouter(
     prefix="/diet",
     tags=["Diet"]
 )
+
+
+# =====================================================
+# 📦 REQUEST BODY SCHEMA
+# =====================================================
+
+class GoalPayload(BaseModel):
+    goals: Optional[List[str]] = []
+    other_goals: Optional[str] = ""
 
 
 # =====================================================
@@ -35,10 +48,8 @@ def get_db():
         db.close()
 
 
-# =====================================================
-# OpenAI Client
-# =====================================================
-
+# Reload .env to ensure the new API key is picked up
+load_dotenv(override=True)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
@@ -50,8 +61,18 @@ def calculate_age(dob):
     if not dob:
         return "Unknown"
 
+    if isinstance(dob, str):
+        try:
+            # Handle standard YYYY-MM-DD strings from MySQL/SQLite
+            dob = datetime.strptime(dob.split("T")[0], "%Y-%m-%d").date()
+        except ValueError:
+            return "Unknown"
+
     today = date.today()
-    return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    try:
+        return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    except AttributeError:
+        return "Unknown"
 
 
 # =====================================================
@@ -120,39 +141,46 @@ def build_lab_restrictions(lab):
 
     restrictions = []
 
-    cr = getattr(lab, 'creatinine', None) or 0
-    if float(cr) > 1.2:
+    def safe_float(val):
+        try:
+            val_dec = decrypt(val)
+            return float(val_dec)
+        except (ValueError, TypeError):
+            return 0.0
+
+    cr = safe_float(getattr(lab, 'creatinine', None))
+    if cr > 1.2:
         restrictions.append(f"HIGH CREATININE ({cr}) → Strictly limit protein (0.6–0.8 g/kg/day); avoid red meat, extra dairy, protein supplements.")
 
-    k = getattr(lab, 'potassium', None) or 0
-    if float(k) > 5.0:
+    k = safe_float(getattr(lab, 'potassium', None))
+    if k > 5.0:
         restrictions.append(f"HIGH POTASSIUM ({k}) → Avoid banana, orange, potato, tomato, spinach; use low-K vegetables (cabbage, apple, carrot).")
-    elif float(k) < 3.5:
+    elif k > 0 and k < 3.5:
         restrictions.append(f"LOW POTASSIUM ({k}) → Include potassium-rich foods: banana, sweet potato, yogurt, lentils.")
 
-    na = getattr(lab, 'sodium', None) or 0
-    if float(na) < 135:
+    na = safe_float(getattr(lab, 'sodium', None))
+    if na > 0 and na < 135:
         restrictions.append(f"LOW SODIUM ({na}) → Mild sodium restriction; avoid heavy salt restriction.")
-    elif float(na) > 145:
+    elif na > 145:
         restrictions.append(f"HIGH SODIUM ({na}) → Strict low-salt diet (<1500 mg/day); avoid processed/packaged foods.")
 
-    chol = getattr(lab, 'cholesterol_total', None) or 0
-    if float(chol) > 200:
+    chol = safe_float(getattr(lab, 'cholesterol_total', None))
+    if chol > 200:
         restrictions.append(f"HIGH CHOLESTEROL ({chol}) → Avoid saturated fat (ghee, butter, fried food); include oats, flaxseed, nuts, olive oil.")
 
-    hba1c = getattr(lab, 'hba1c', None) or 0
-    if float(hba1c) > 6.5:
+    hba1c = safe_float(getattr(lab, 'hba1c', None))
+    if hba1c > 6.5:
         restrictions.append(f"HIGH HbA1c ({hba1c}% — diabetic range) → Low glycaemic index carbs only; avoid sugar, white rice, maida; distribute carbs evenly across meals.")
-    elif float(hba1c) > 5.7:
+    elif hba1c > 5.7:
         restrictions.append(f"HbA1c {hba1c}% (pre-diabetic) → Reduce refined carbs; prefer whole grains, legumes, vegetables.")
 
-    sys_bp = getattr(lab, 'blood_pressure_systolic', None) or 0
-    dia_bp = getattr(lab, 'blood_pressure_diastolic', None) or 0
-    if float(sys_bp) > 130 or float(dia_bp) > 80:
+    sys_bp = safe_float(getattr(lab, 'blood_pressure_systolic', None))
+    dia_bp = safe_float(getattr(lab, 'blood_pressure_diastolic', None))
+    if sys_bp > 130 or dia_bp > 80:
         restrictions.append(f"HIGH BP ({sys_bp}/{dia_bp}) → DASH diet principles: low sodium, high potassium/magnesium; limit caffeine and alcohol.")
 
-    urea = getattr(lab, 'urea', None) or 0
-    if float(urea) > 40:
+    urea = safe_float(getattr(lab, 'urea', None))
+    if urea > 40:
         restrictions.append(f"HIGH UREA ({urea}) → Further reduce protein; increase simple carbohydrates for energy (rice, bread without bran).")
 
     return "\n".join(f"⚠️ {r}" for r in restrictions) if restrictions else "✅ Labs within normal range — apply standard healthy-eating principles."
@@ -187,7 +215,7 @@ def build_condition_rules(disease):
 # 🧠 PROMPT BUILDER (FULLY INTELLIGENT)
 # =====================================================
 
-def build_diet_prompt(user, lab, history_context=None, diet_type="veg"):
+def build_diet_prompt(user, lab, history_context=None, diet_type="veg", goals=None, other_goals=None):
     # Dietary preference instruction block
     diet_type = (diet_type or "veg").lower()
     dietary_rules = {
@@ -216,18 +244,40 @@ def build_diet_prompt(user, lab, history_context=None, diet_type="veg"):
     }
     diet_label, diet_instruction = dietary_rules.get(diet_type, dietary_rules["veg"])
 
-    age = calculate_age(user.dob)
+    age = calculate_age(decrypt(user.dob) if getattr(user, 'dob', None) else None)
     age_val = age if isinstance(age, int) else None
     age_str = f"{age} years" if age != "Unknown" else "Not specified"
 
-    weight = int(user.weight or 0)
-    height = int(user.height or 0)
+    # Profile info decryption
+    patient_name = decrypt(getattr(user, 'name', '')) or 'Unknown'
+    patient_gender = decrypt(getattr(user, 'gender', '')) or 'Unknown'
+    patient_blood_group = decrypt(getattr(user, 'blood_group', '')) or 'Unknown'
+    patient_condition = decrypt(getattr(user, 'condition_type', '')) or 'Unknown'
+
+    try:
+        weight = int(float(decrypt(user.weight or "0")))
+    except (ValueError, TypeError):
+        weight = 0
+
+    try:
+        height = int(float(decrypt(user.height or 0)))
+    except (ValueError, TypeError):
+        height = 0
+
     bmi = calculate_bmi(weight, height)
     bmi_str = str(bmi) if bmi else "Cannot calculate (missing height/weight)"
 
     weight_goal, calorie_target, bmi_note = bmi_goal_and_calories(bmi, age_val, user.gender)
     lab_restrictions = build_lab_restrictions(lab)
     condition_rules = build_condition_rules(user.disease)
+
+    # Build goals section
+    goal_lines = []
+    if goals:
+        goal_lines.append("Selected Goals: " + ", ".join(goals))
+    if other_goals and other_goals.strip():
+        goal_lines.append(f"Additional health goals: {other_goals.strip()}")
+    goals_section = "\n".join(goal_lines) if goal_lines else "No specific goals selected — apply balanced nutrition."
 
     return f"""You are a senior clinical dietitian creating a fully personalised 7-day meal plan.
 
@@ -242,18 +292,23 @@ This is the MOST IMPORTANT constraint. ALL meals across all 7 days MUST strictly
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PATIENT PROFILE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Name: {user.full_name}
-• Age: {age_str} | Gender: {user.gender or 'Not specified'} | Blood Group: {user.blood_group or 'NA'}
+• Name: {patient_name}
+• Age: {age_str} | Gender: {patient_gender} | Blood Group: {patient_blood_group}
 • Weight: {weight} kg | Height: {height} cm | BMI: {bmi_str}
 • Weight Goal: {weight_goal}
 • Calorie Target: {calorie_target}
 • {bmi_note}
-• Medical Condition: {user.disease or 'None reported'}
+• Medical Condition: {patient_condition or 'None reported'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CLINICAL LAB FLAGS (MUST FOLLOW)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {lab_restrictions}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATIENT GOALS (MUST ALIGN ALL MEALS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{goals_section}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CONDITION-SPECIFIC RULES
@@ -320,7 +375,7 @@ def call_ai(prompt):
 # =====================================================
 
 @router.post("/generate/{patient_id}")
-def generate_diet(patient_id: int, diet_type: str = "veg", db: Session = Depends(get_db)):
+def generate_diet(patient_id: int, diet_type: str = "veg", payload: GoalPayload = Body(default_factory=GoalPayload), db: Session = Depends(get_db)):
 
     # 1️⃣ Fetch patient
     user = db.query(Patient).filter(Patient.id == patient_id).first()
@@ -376,7 +431,7 @@ def generate_diet(patient_id: int, diet_type: str = "veg", db: Session = Depends
     history_context = "\n".join(history_lines) if history_lines else None
 
     # 4️⃣ Build intelligent AI prompt
-    prompt = build_diet_prompt(user, lab, history_context=history_context, diet_type=diet_type)
+    prompt = build_diet_prompt(user, lab, history_context=history_context, diet_type=diet_type, goals=payload.goals, other_goals=payload.other_goals)
 
     print("\n========== AI DIET PROMPT ==========")
     print(prompt)
@@ -384,6 +439,12 @@ def generate_diet(patient_id: int, diet_type: str = "veg", db: Session = Depends
 
     # 4️⃣ Call AI
     ai_response = call_ai(prompt)
+
+    if not ai_response or "Monday" not in ai_response:
+        raise HTTPException(
+            status_code=500, 
+            detail="AI failed to generate a valid diet plan. Please try again."
+        )
 
     # 5️⃣ Calculate weekly calories
     total_calories = sum(
@@ -459,18 +520,17 @@ def approve_diet(
 ):
     plan = db.query(DietPlan).filter(DietPlan.id == diet_plan_id).first()
 
-    plan.ai_generated_plan = json.dumps(payload["plan"])
-
     if not plan:
         raise HTTPException(status_code=404, detail="Diet plan not found")
+
+    plan.ai_generated_plan = json.dumps(payload["plan"])
 
     if plan.status == "approved":
         return {"message": "Diet plan is already approved"}
 
     plan.status = "approved"
     plan.approved_at = datetime.utcnow()
-    # If we had a current user (dietician), we would set approved_by here
-    # plan.approved_by = current_user.full_name 
+    plan.approved_by = payload.get("approved_by", "Dietitian")
 
     # =========================================================
     # 🔥 SYNC DIET MEALS (Fix for "Meal not found")
@@ -520,6 +580,35 @@ def approve_diet(
     }
 
 
+@router.post("/reject/{diet_plan_id}")
+def reject_diet(
+    diet_plan_id: int,
+    payload: dict,
+    db: Session = Depends(get_db)
+):
+    plan = db.query(DietPlan).filter(DietPlan.id == diet_plan_id).first()
+
+    if not plan:
+        raise HTTPException(status_code=404, detail="Diet plan not found")
+
+    if plan.status == "rejected":
+        return {"message": "Diet plan is already rejected"}
+
+    plan.status = "rejected"
+    plan.approved_at = datetime.utcnow()  # Use approved_at for rejection time too
+    plan.approved_by = payload.get("approved_by", "Dietitian")
+
+    db.commit()
+    db.refresh(plan)
+
+    return {
+        "success": True,
+        "message": f"Diet plan {diet_plan_id} rejected ❌",
+        "status": "rejected",
+        "rejected_at": plan.approved_at
+    }
+
+
 @router.get("/user/{user_id}")
 def get_user_diets(user_id: int, db: Session = Depends(get_db)):
     # Explicitly sort by created_at ASC so the frontend (taking the last one) gets the latest
@@ -532,3 +621,4 @@ def get_user_diets(user_id: int, db: Session = Depends(get_db)):
 
     return diets
     
+# trigger reload - force new key check

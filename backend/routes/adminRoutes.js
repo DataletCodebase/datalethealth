@@ -2,6 +2,7 @@ import express from "express";
 import { db } from "../server.js";
 // import authMiddleware from "../middleware/auth.js";
 import adminAuth from "../middleware/adminAuth.js";
+import { encrypt, decrypt, encryptDeterministic, decryptDeterministic } from "../utils/encryption.js";
 
 const router = express.Router();
 
@@ -61,7 +62,43 @@ router.get("/users-medical", adminAuth, async (req, res) => {
       ORDER BY u.id DESC
     `);
 
-    res.json(rows);
+    const decryptedRows = rows.map((r) => ({
+      ...r,
+      full_name: decrypt(r.full_name),
+      email: decryptDeterministic(r.email),
+      mobile: decryptDeterministic(r.mobile),
+      dob: decrypt(r.dob),
+      disease: decrypt(r.disease),
+      gender: decrypt(r.gender),
+      height: decrypt(r.height),
+      weight: decrypt(r.weight),
+      blood_group: decrypt(r.blood_group),
+      city: decrypt(r.city),
+      state: decrypt(r.state),
+      country: decrypt(r.country),
+      creatinine: decrypt(r.creatinine),
+      potassium: decrypt(r.potassium),
+      sodium: decrypt(r.sodium),
+      urea: decrypt(r.urea),
+      estimated_gfr: decrypt(r.estimated_gfr),
+      albumin: decrypt(r.albumin),
+      calcium: decrypt(r.calcium),
+      phosphate: decrypt(r.phosphate),
+      uric_acid: decrypt(r.uric_acid),
+      cholesterol_total: decrypt(r.cholesterol_total),
+      cholesterol_ldl: decrypt(r.cholesterol_ldl),
+      cholesterol_hdl: decrypt(r.cholesterol_hdl),
+      triglycerides: decrypt(r.triglycerides),
+      blood_pressure_systolic: decrypt(r.blood_pressure_systolic),
+      blood_pressure_diastolic: decrypt(r.blood_pressure_diastolic),
+      heart_rate: decrypt(r.heart_rate),
+      bmi: decrypt(r.bmi),
+      fasting_glucose: decrypt(r.fasting_glucose),
+      postprandial_glucose: decrypt(r.postprandial_glucose),
+      hba1c: decrypt(r.hba1c),
+    }));
+
+    res.json(decryptedRows);
   } catch (err) {
     console.error("ADMIN USERS + MEDICAL ERROR:", err);
     res.status(500).json({ message: "Server error" });
@@ -128,26 +165,26 @@ router.put("/medical/:medicalId", adminAuth, async (req, res) => {
       WHERE id = ?
       `,
       [
-        creatinine,
-        potassium,
-        sodium,
-        urea,
-        estimated_gfr,
-        albumin,
-        calcium,
-        phosphate,
-        uric_acid,
-        cholesterol_total,
-        cholesterol_ldl,
-        cholesterol_hdl,
-        triglycerides,
-        blood_pressure_systolic,
-        blood_pressure_diastolic,
-        heart_rate,
-        bmi,
-        fasting_glucose,
-        postprandial_glucose,
-        hba1c,
+        creatinine === undefined ? undefined : encrypt(creatinine),
+        potassium === undefined ? undefined : encrypt(potassium),
+        sodium === undefined ? undefined : encrypt(sodium),
+        urea === undefined ? undefined : encrypt(urea),
+        estimated_gfr === undefined ? undefined : encrypt(estimated_gfr),
+        albumin === undefined ? undefined : encrypt(albumin),
+        calcium === undefined ? undefined : encrypt(calcium),
+        phosphate === undefined ? undefined : encrypt(phosphate),
+        uric_acid === undefined ? undefined : encrypt(uric_acid),
+        cholesterol_total === undefined ? undefined : encrypt(cholesterol_total),
+        cholesterol_ldl === undefined ? undefined : encrypt(cholesterol_ldl),
+        cholesterol_hdl === undefined ? undefined : encrypt(cholesterol_hdl),
+        triglycerides === undefined ? undefined : encrypt(triglycerides),
+        blood_pressure_systolic === undefined ? undefined : encrypt(blood_pressure_systolic),
+        blood_pressure_diastolic === undefined ? undefined : encrypt(blood_pressure_diastolic),
+        heart_rate === undefined ? undefined : encrypt(heart_rate),
+        bmi === undefined ? undefined : encrypt(bmi),
+        fasting_glucose === undefined ? undefined : encrypt(fasting_glucose),
+        postprandial_glucose === undefined ? undefined : encrypt(postprandial_glucose),
+        hba1c === undefined ? undefined : encrypt(hba1c),
         medicalId,
       ]
     );

@@ -2,6 +2,7 @@
 import express from "express";
 import { db } from "../server.js"; // make sure path is correct
 import authMiddleware from "../middleware/auth.js"; // must exist
+import { encrypt, decrypt, encryptDeterministic, decryptDeterministic } from "../utils/encryption.js";
 // import { verifyToken } from "../middleware/auth.js";
 
 
@@ -23,7 +24,29 @@ router.get("/profile/basic", authMiddleware, async (req, res) => {
 
     if (!rows[0]) return res.status(404).json({ message: "User not found" });
 
-    res.json(rows[0]);
+    const user = rows[0];
+    const decryptedUser = {
+      ...user,
+      full_name: decrypt(user.full_name),
+      email: decryptDeterministic(user.email),
+      mobile: decryptDeterministic(user.mobile),
+      dob: decrypt(user.dob),
+      address: decrypt(user.address),
+      disease: decrypt(user.disease),
+      gender: decrypt(user.gender),
+      height: decrypt(user.height),
+      weight: decrypt(user.weight),
+      blood_group: decrypt(user.blood_group),
+      city: decrypt(user.city),
+      state: decrypt(user.state),
+      zip_code: decrypt(user.zip_code),
+      country: decrypt(user.country),
+      emergency_contact_name: decrypt(user.emergency_contact_name),
+      emergency_contact_phone: decrypt(user.emergency_contact_phone),
+      emergency_contact_relationship: decrypt(user.emergency_contact_relationship),
+    };
+
+    res.json(decryptedUser);
   } catch (err) {
     console.error("Profile fetch error:", err);
     res.status(500).json({ message: "Server error" });
@@ -74,22 +97,22 @@ WHERE id = ?;
 `;
 
     const values = [
-      fullName,
-      email,
-      phone,
-      dateOfBirth,
-      gender,
-      height,
-      weight,
-      bloodGroup,
-      address,
-      city,
-      state,
-      zipCode,
-      country,
-      emergencyContact?.name || "N/A",
-      emergencyContact?.phone || "N/A",
-      emergencyContact?.relationship || "N/A",
+      encrypt(fullName),
+      encryptDeterministic(email),
+      encryptDeterministic(phone),
+      encrypt(dateOfBirth),
+      encrypt(gender),
+      encrypt(height),
+      encrypt(weight),
+      encrypt(bloodGroup),
+      encrypt(address),
+      encrypt(city),
+      encrypt(state),
+      encrypt(zipCode),
+      encrypt(country),
+      encrypt(emergencyContact?.name || "N/A"),
+      encrypt(emergencyContact?.phone || "N/A"),
+      encrypt(emergencyContact?.relationship || "N/A"),
       userId
     ];
 
@@ -98,8 +121,31 @@ WHERE id = ?;
 
     // Fetch updated profile
     const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+    const user = rows[0];
+    
+    // Partially decrypt only what we need for the response or full object
+    const decryptedUser = {
+      ...user,
+      full_name: decrypt(user.full_name),
+      email: decryptDeterministic(user.email),
+      mobile: decryptDeterministic(user.mobile),
+      dob: decrypt(user.dob),
+      address: decrypt(user.address),
+      disease: decrypt(user.disease),
+      gender: decrypt(user.gender),
+      height: decrypt(user.height),
+      weight: decrypt(user.weight),
+      blood_group: decrypt(user.blood_group),
+      city: decrypt(user.city),
+      state: decrypt(user.state),
+      zip_code: decrypt(user.zip_code),
+      country: decrypt(user.country),
+      emergency_contact_name: decrypt(user.emergency_contact_name),
+      emergency_contact_phone: decrypt(user.emergency_contact_phone),
+      emergency_contact_relationship: decrypt(user.emergency_contact_relationship),
+    };
 
-    res.json({ message: "Profile updated successfully", profile: rows[0] });
+    res.json({ message: "Profile updated successfully", profile: decryptedUser });
   } catch (err) {
     console.error("PROFILE UPDATE ERROR:", err);
     res.status(500).json({ message: "Internal Server Error" });
@@ -133,7 +179,23 @@ router.get("/all", authMiddleware, async (req, res) => {
       ORDER BY created_at DESC
     `);
 
-    res.json(rows);
+    const decryptedRows = rows.map(user => ({
+      ...user,
+      full_name: decrypt(user.full_name),
+      email: decryptDeterministic(user.email),
+      mobile: decryptDeterministic(user.mobile),
+      gender: decrypt(user.gender),
+      dob: decrypt(user.dob),
+      disease: decrypt(user.disease),
+      height: decrypt(user.height),
+      weight: decrypt(user.weight),
+      blood_group: decrypt(user.blood_group),
+      city: decrypt(user.city),
+      state: decrypt(user.state),
+      country: decrypt(user.country)
+    }));
+
+    res.json(decryptedRows);
   } catch (err) {
     console.error("Fetch all users error:", err);
     res.status(500).json({ message: "Server error" });

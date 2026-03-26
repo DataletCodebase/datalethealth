@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { db } from "../server.js";
+import { encrypt, decrypt, encryptDeterministic, decryptDeterministic } from "../utils/encryption.js";
 // import authMiddleware from "../middleware/auth.js";
 import { sendWelcomeEmail } from "../utils/sendEmail.js";
 
@@ -44,10 +45,14 @@ router.post("/signup", async (req, res) => {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
+        // Encrypt identifiers for search
+        const encryptedEmail = encryptDeterministic(email);
+        const encryptedMobile = encryptDeterministic(mobile);
+
         // Check duplicate user
         const [existing] = await db.query(
             "SELECT id FROM users WHERE email = ? OR mobile = ?",
-            [email, mobile]
+            [encryptedEmail, encryptedMobile]
         );
 
         if (existing.length > 0) {
@@ -65,18 +70,19 @@ router.post("/signup", async (req, res) => {
        (full_name, email, mobile, dob, address, disease, role, password_hash)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                full_name,
-                email,
-                mobile,
-                dob,
-                address,
-                disease,
+                encrypt(full_name),
+                encryptedEmail,
+                encryptedMobile,
+                encrypt(dob),
+                encrypt(address),
+                encrypt(disease),
                 role || "USER",
                 password_hash,
             ]
         );
 
         // ✅ SEND WELCOME EMAIL (NON-BLOCKING)
+        // Send actual plaintext email
         sendWelcomeEmail(email, full_name).catch(err =>
       console.error("Welcome email failed:", err)
         );
@@ -106,10 +112,13 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ message: "Missing login credentials" });
         }
 
+        // Encrypt the incoming identifier to find the user
+        const encryptedIdentifier = encryptDeterministic(identifier);
+
         // Fetch user
         const [rows] = await db.query(
             "SELECT * FROM users WHERE email = ? OR mobile = ?",
-            [identifier, identifier]
+            [encryptedIdentifier, encryptedIdentifier]
         );
 
         if (rows.length === 0) {
@@ -124,12 +133,16 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ message: "Invalid password" });
         }
 
+        // Decrypt user data for token
+        const decryptedEmail = decryptDeterministic(user.email);
+        const decryptedFullName = decrypt(user.full_name);
+
         // Generate token
         const token = jwt.sign(
             {
                 id: user.id,
                 role: user.role,
-                email: user.email,
+                email: decryptedEmail,
             },
             JWT_SECRET,
             { expiresIn: "7d" }
@@ -146,8 +159,8 @@ router.post("/login", async (req, res) => {
   token,
   user: {
     id: user.id,
-    full_name: user.full_name,
-    email: user.email,
+    full_name: decryptedFullName,
+    email: decryptedEmail,
     role: user.role,
   },
 });

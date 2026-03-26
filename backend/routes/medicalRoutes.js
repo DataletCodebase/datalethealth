@@ -2,6 +2,7 @@
 import express from "express";
 import { db } from "../server.js"; // MySQL pool
 import authMiddleware from "../middleware/auth.js";
+import { encrypt, decrypt } from "../utils/encryption.js";
 
 const router = express.Router();
 
@@ -68,26 +69,26 @@ router.get("/data", authMiddleware, async (req, res) => {
     const row = rows[0];
 
     const mappedData = {
-      creatinine: row.creatinine,
-      potassium: row.potassium,
-      sodium: row.sodium,
-      urea: row.urea,
-      estimatedGFR: row.estimated_gfr,
-      albumin: row.albumin,
-      calcium: row.calcium,
-      phosphate: row.phosphate,
-      uricAcid: row.uric_acid,
-      cholesterolTotal: row.cholesterol_total,
-      cholesterolLDL: row.cholesterol_ldl,
-      cholesterolHDL: row.cholesterol_hdl,
-      triglycerides: row.triglycerides,
-      bloodPressureSystolic: row.blood_pressure_systolic,
-      bloodPressureDiastolic: row.blood_pressure_diastolic,
-      heartRate: row.heart_rate,
-      bmi: row.bmi,
-      fastingGlucose: row.fasting_glucose,
-      postprandialGlucose: row.postprandial_glucose,
-      hba1c: row.hba1c
+      creatinine: decrypt(row.creatinine),
+      potassium: decrypt(row.potassium),
+      sodium: decrypt(row.sodium),
+      urea: decrypt(row.urea),
+      estimatedGFR: decrypt(row.estimated_gfr),
+      albumin: decrypt(row.albumin),
+      calcium: decrypt(row.calcium),
+      phosphate: decrypt(row.phosphate),
+      uricAcid: decrypt(row.uric_acid),
+      cholesterolTotal: decrypt(row.cholesterol_total),
+      cholesterolLDL: decrypt(row.cholesterol_ldl),
+      cholesterolHDL: decrypt(row.cholesterol_hdl),
+      triglycerides: decrypt(row.triglycerides),
+      bloodPressureSystolic: decrypt(row.blood_pressure_systolic),
+      bloodPressureDiastolic: decrypt(row.blood_pressure_diastolic),
+      heartRate: decrypt(row.heart_rate),
+      bmi: decrypt(row.bmi),
+      fastingGlucose: decrypt(row.fasting_glucose),
+      postprandialGlucose: decrypt(row.postprandial_glucose),
+      hba1c: decrypt(row.hba1c)
     };
 
     res.json(mappedData);
@@ -153,7 +154,7 @@ router.put("/update", authMiddleware, async (req, res) => {
       .map(key => `${fieldMap[key] || key} = ?`)
       .join(", ");
 
-    const values = keys.map(key => updateFields[key]);
+    const values = keys.map(key => encrypt(updateFields[key]));
 
     // 3️⃣ Update ONLY the latest row
     await db.query(
@@ -166,10 +167,18 @@ router.put("/update", authMiddleware, async (req, res) => {
       "SELECT * FROM medical_data WHERE id = ?",
       [latest.id]
     );
+    
+    // Decrypt updated data for response
+    const decryptedUpdatedRow = { ...updatedRow };
+    Object.keys(decryptedUpdatedRow).forEach(key => {
+      if (!["id", "user_id", "created_at", "updated_at"].includes(key)) {
+         decryptedUpdatedRow[key] = decrypt(decryptedUpdatedRow[key]);
+      }
+    });
 
     res.json({
       message: "Medical data updated successfully",
-      medicalData: updatedRow
+      medicalData: decryptedUpdatedRow
     });
 
   } catch (err) {

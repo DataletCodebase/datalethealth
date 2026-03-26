@@ -46,7 +46,6 @@ export default defineConfig({
         target: "http://localhost:8000",
         changeOrigin: true
       },
-      "/admin": { target: "http://localhost:8000", changeOrigin: true },
       "/diet": { target: "http://localhost:8000", changeOrigin: true },
       "/ask": { target: "http://localhost:8000", changeOrigin: true },
       "/water-logs": { target: "http://localhost:8000", changeOrigin: true },

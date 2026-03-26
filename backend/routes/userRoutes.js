@@ -10,6 +10,7 @@ import { uploadProfile } from "../middleware/upload.js";
 import { uploadPrescription } from "../middleware/uploadPrescription.js";
 import { runOCR } from "../utils/ocr.js";
 import { extractMedicalValuesFromTables } from "../utils/medicalParser.js";
+import { encrypt, decrypt, encryptDeterministic, decryptDeterministic } from "../utils/encryption.js";
 
 const router = express.Router();
 
@@ -20,7 +21,12 @@ router.get("/me", authMiddleware, async (req, res) => {
     [req.user.id]
   );
 
-  res.json(rows[0]);
+  if (!rows[0]) return res.json({});
+  const user = rows[0];
+  user.full_name = decrypt(user.full_name);
+  user.email = decryptDeterministic(user.email);
+
+  res.json(user);
 });
 
 
@@ -203,30 +209,30 @@ router.post(
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               req.user.id,
-              medicalData.creatinine || null,
-              medicalData.potassium || null,
-              medicalData.sodium || null,
-              medicalData.urea || null,
-              medicalData.estimatedGFR || null,
+              encrypt(medicalData.creatinine || null),
+              encrypt(medicalData.potassium || null),
+              encrypt(medicalData.sodium || null),
+              encrypt(medicalData.urea || null),
+              encrypt(medicalData.estimatedGFR || null),
 
-              medicalData.albumin || null,
-              medicalData.calcium || null,
-              medicalData.phosphate || null,
-              medicalData.uricAcid || null,
+              encrypt(medicalData.albumin || null),
+              encrypt(medicalData.calcium || null),
+              encrypt(medicalData.phosphate || null),
+              encrypt(medicalData.uricAcid || null),
 
-              medicalData.cholesterolTotal || null,
-              medicalData.cholesterolLDL || null,
-              medicalData.cholesterolHDL || null,
-              medicalData.triglycerides || null,
+              encrypt(medicalData.cholesterolTotal || null),
+              encrypt(medicalData.cholesterolLDL || null),
+              encrypt(medicalData.cholesterolHDL || null),
+              encrypt(medicalData.triglycerides || null),
 
-              medicalData.bloodPressureSystolic || null,
-              medicalData.bloodPressureDiastolic || null,
-              medicalData.heartRate || null,
-              medicalData.bmi || null,
+              encrypt(medicalData.bloodPressureSystolic || null),
+              encrypt(medicalData.bloodPressureDiastolic || null),
+              encrypt(medicalData.heartRate || null),
+              encrypt(medicalData.bmi || null),
 
-              medicalData.fastingGlucose || null,
-              medicalData.postprandialGlucose || null,
-              medicalData.hba1c || null
+              encrypt(medicalData.fastingGlucose || null),
+              encrypt(medicalData.postprandialGlucose || null),
+              encrypt(medicalData.hba1c || null)
             ]
           );
         } else {
@@ -255,30 +261,30 @@ router.post(
               hba1c = ?
             WHERE user_id = ?`,
             [
-              medicalData.creatinine || null,
-              medicalData.potassium || null,
-              medicalData.sodium || null,
-              medicalData.urea || null,
-              medicalData.estimatedGFR || null,
+              encrypt(medicalData.creatinine || null),
+              encrypt(medicalData.potassium || null),
+              encrypt(medicalData.sodium || null),
+              encrypt(medicalData.urea || null),
+              encrypt(medicalData.estimatedGFR || null),
 
-              medicalData.albumin || null,
-              medicalData.calcium || null,
-              medicalData.phosphate || null,
-              medicalData.uricAcid || null,
+              encrypt(medicalData.albumin || null),
+              encrypt(medicalData.calcium || null),
+              encrypt(medicalData.phosphate || null),
+              encrypt(medicalData.uricAcid || null),
 
-              medicalData.cholesterolTotal || null,
-              medicalData.cholesterolLDL || null,
-              medicalData.cholesterolHDL || null,
-              medicalData.triglycerides || null,
+              encrypt(medicalData.cholesterolTotal || null),
+              encrypt(medicalData.cholesterolLDL || null),
+              encrypt(medicalData.cholesterolHDL || null),
+              encrypt(medicalData.triglycerides || null),
 
-              medicalData.bloodPressureSystolic || null,
-              medicalData.bloodPressureDiastolic || null,
-              medicalData.heartRate || null,
-              medicalData.bmi || null,
+              encrypt(medicalData.bloodPressureSystolic || null),
+              encrypt(medicalData.bloodPressureDiastolic || null),
+              encrypt(medicalData.heartRate || null),
+              encrypt(medicalData.bmi || null),
 
-              medicalData.fastingGlucose || null,
-              medicalData.postprandialGlucose || null,
-              medicalData.hba1c || null,
+              encrypt(medicalData.fastingGlucose || null),
+              encrypt(medicalData.postprandialGlucose || null),
+              encrypt(medicalData.hba1c || null),
 
               req.user.id
             ]

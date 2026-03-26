@@ -10,6 +10,8 @@ import DashboardTab from "./pages/DashboardPages.jsx";
 import Patients from "./pages/Patients.jsx";
 import ActivityCenter from "./pages/ActivityCenter.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
+import AdminLogin from "./admin/pages/AdminLogin.jsx";
+import AdminDashboard from "./admin/pages/AdminDashboard.jsx";
 
 
 
@@ -342,6 +344,8 @@ export default function App() {
       <Route path="/" element={<Dashboard />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/patients/:id/history" element={<ChatHistory />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
     </Routes>
   );
 }

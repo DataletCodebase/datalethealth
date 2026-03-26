@@ -249,11 +249,11 @@ router.get("/calorie-target", authMiddleware, async (req, res) => {
         const targets = calculateCalorieTargets(user);
         res.json({
             ...targets,
-            weight_kg,
-            height_cm,
-            age,
-            gender: user.gender,
-            condition: user.disease || "General"
+            weight_kg: user?.weight || 70,
+            height_cm: user?.height || 170,
+            age: user?.age || 30, // fallback
+            gender: user?.gender,
+            condition: user?.disease || "General"
         });
     } catch (err) {
         console.error("Calorie target error:", err);

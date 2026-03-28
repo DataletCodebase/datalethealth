@@ -294,17 +294,7 @@ function AppContent() {
     <div className="dashboard-container">
 
 
-      <ChatWidget
-        onSubmitted={async (payload) => {
-          try {
-            const base = API_BASE.replace(/\/$/, "");
-            const urls = [`${base}/leads/`, `${base}/leads`];
-            await postJsonWithFallback(urls, payload, { timeoutMs: 8000 });
-          } catch (err) { /* ignore */ }
-        }}
-        defaultConditionContext={getCurrentConditionContext()}
-        onConditionChange={handleConditionChange}
-      />
+      <ChatWidget />
 
 
 

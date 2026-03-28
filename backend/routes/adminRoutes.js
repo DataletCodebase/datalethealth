@@ -33,6 +33,7 @@ router.get("/users-medical", adminAuth, async (req, res) => {
         u.city,
         u.state,
         u.country,
+        u.assigned_dietician,
 
         m.id AS medicalId,
         m.creatinine,

@@ -1,680 +1,905 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { io } from "socket.io-client";
 
-// NOTE: Vite exposes import.meta.env at build time; default to localhost for dev fallback.
-// NOTE: Vite exposes import.meta.env at build time; default to localhost for dev fallback.
-const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL)
-  ? import.meta.env.VITE_API_URL
-  : "/api";
+const API_BASE =
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL
+    ? import.meta.env.VITE_API_URL
+    : "/api";
 
-async function postJSON(path, body) {
-  const fullUrl = `${API_BASE}${path}`;
-  console.log("Making API request to:", fullUrl);
+const SOCKET_URL =
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_SOCKET_URL
+    ? import.meta.env.VITE_SOCKET_URL
+    : "http://localhost:8000";
 
-  const res = await fetch(fullUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  console.log("Response status:", res.status);
-  console.log("Response headers:", Array.from(res.headers.entries()));
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => res.statusText);
-    throw new Error(`HTTP ${res.status}: ${errText}`);
-  }
-
-  try {
-    const json = await res.json();
-    console.log("Parsed JSON response:", json);
-    return json;
-  } catch (jsonErr) {
-    try {
-      const buf = await res.arrayBuffer();
-      const decoded = new TextDecoder("utf-8").decode(buf);
-      console.warn("Response could not be parsed as JSON — decoded text:", decoded);
-      try {
-        return JSON.parse(decoded);
-      } catch (pErr) {
-        return { _raw_text: decoded };
-      }
-    } catch (bufErr) {
-      throw new Error("Failed to read response body: " + bufErr.message);
-    }
-  }
+/* ─── helpers ─────────────────────────────────────────────────── */
+function fmtTime(d) {
+  const dt = typeof d === "string" ? new Date(d) : d;
+  return dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 
-function extractTextFromBackendResponse(resp) {
-  if (!resp && resp !== 0) return null;
-  if (typeof resp === "string") return resp;
-  if (resp._raw_text) return resp._raw_text;
-  if (resp.message) return resp.message;
-  if (resp.answer) return resp.answer;
-  if (resp.text) return resp.text;
-  if (resp.reply) return resp.reply;
-  if (resp.data && (resp.data.answer || resp.data.message || resp.data.text)) {
-    return resp.data.answer || resp.data.message || resp.data.text;
-  }
-  if (resp.ai_raw) {
-    try {
-      if (typeof resp.ai_raw === "string") return resp.ai_raw;
-      if (typeof resp.ai_raw === "object") return JSON.stringify(resp.ai_raw);
-    } catch { }
-  }
-  try {
-    return JSON.stringify(resp);
-  } catch {
-    return String(resp);
-  }
+function getTimeContext() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return "morning";
+  if (h >= 11 && h < 16) return "afternoon";
+  if (h >= 16 && h < 20) return "evening";
+  return "night";
 }
 
-export default function ChatWidget({ onSubmitted, defaultConditionContext = [], onConditionChange }) {
+function getMealLabel(ctx) {
+  return { morning: "breakfast", afternoon: "lunch", evening: "snacks", night: "dinner" }[ctx];
+}
+
+function getDietTip(meal, answer) {
+  const tips = {
+    breakfast: {
+      yes: "Great start! 🌟 A balanced breakfast fuels your metabolism. Try to include protein + fiber.",
+      no: "Skipping breakfast can slow metabolism. Try eggs, oats, or a fruit smoothie next time!",
+    },
+    lunch: {
+      yes: "Perfect! 🥗 Aim for a balanced plate — protein, grains, and lots of veggies.",
+      no: "A light lunch like dal-rice or a salad bowl keeps energy levels stable. Don't skip it!",
+    },
+    snacks: {
+      yes: "👍 Healthy snacking is great! Nuts, fruits, or yogurt are ideal choices.",
+      no: "An evening snack prevents overeating at dinner. Try a handful of almonds or a banana.",
+    },
+    dinner: {
+      yes: "Excellent! 🌙 Keep dinner light — your body needs less energy at night.",
+      no: "A light dinner like soup or roti-sabzi is easy to digest. Try to eat by 8 PM.",
+    },
+  };
+  return tips[meal]?.[answer] || "Keep tracking your meals consistently for best results!";
+}
+
+/* ─── bot conversation engine ─────────────────────────────────── */
+function buildConversation(userName, timeCtx) {
+  const meal = getMealLabel(timeCtx);
+  const greetings = {
+    morning: "Good morning",
+    afternoon: "Good afternoon",
+    evening: "Good evening",
+    night: "Good night",
+  };
+
+  return [
+    {
+      id: "greet",
+      botText: `${greetings[timeCtx]}${userName ? `, ${userName}` : ""} 👋 I'm your **Datalet Diet Assistant**. I'm here to help you eat right and stay healthy!`,
+      options: null,
+      next: "ask_meal",
+    },
+    {
+      id: "ask_meal",
+      botText: `Have you had your **${meal}** today? 🍽️`,
+      options: ["Yes, I had it ✅", "Not yet ❌"],
+      next: (ans) => (ans.startsWith("Yes") ? "meal_yes" : "meal_no"),
+    },
+    {
+      id: "meal_yes",
+      botText: null, // filled dynamically with getDietTip
+      options: null,
+      next: "ask_timing",
+    },
+    {
+      id: "meal_no",
+      botText: null,
+      options: null,
+      next: "ask_timing",
+    },
+    {
+      id: "ask_timing",
+      botText: "Are you maintaining consistent meal timings today?",
+      options: ["Yes, on schedule 🕐", "Been irregular today"],
+      next: (ans) => (ans.startsWith("Yes") ? "timing_good" : "timing_bad"),
+    },
+    {
+      id: "timing_good",
+      botText: "That's wonderful! ⏰ Consistent meal timings help regulate blood sugar and digestion. Keep it up!",
+      options: null,
+      next: "ask_water",
+    },
+    {
+      id: "timing_bad",
+      botText: "Try to eat within a 2-hour window each day. Set alarms if needed! Your body loves routine. ⏰",
+      options: null,
+      next: "ask_water",
+    },
+    {
+      id: "ask_water",
+      botText: "How's your water intake today? 💧",
+      options: ["Good (2L+) 💧", "Could be better"],
+      next: () => "water_tip",
+    },
+    {
+      id: "water_tip",
+      botText: "Staying hydrated helps flush toxins and keeps your kidneys healthy. Aim for 8 glasses daily! 🌊",
+      options: null,
+      next: "ask_help",
+    },
+    {
+      id: "ask_help",
+      botText: "Is there anything specific about your diet plan you'd like to know?",
+      options: ["Protein intake", "Foods to avoid", "Calorie guide", "Connect with Dietician 👨‍⚕️"],
+      next: (ans) => {
+        if (ans.includes("Dietician")) return "connect_diet";
+        if (ans.includes("Protein")) return "tip_protein";
+        if (ans.includes("avoid")) return "tip_avoid";
+        return "tip_calories";
+      },
+    },
+    {
+      id: "tip_protein",
+      botText: "For most patients, 0.8–1.2g of protein per kg of body weight daily is recommended. Lean meats, legumes, and dairy are great sources! 💪",
+      options: null,
+      next: "end",
+    },
+    {
+      id: "tip_avoid",
+      botText: "Generally avoid: high-sodium processed foods, excessive sugar, saturated fats, and alcohol. Your dietician can give you a personalized list! 🚫",
+      options: null,
+      next: "end",
+    },
+    {
+      id: "tip_calories",
+      botText: "Your caloric needs depend on your weight, height, and activity level. The BMR formula gives a baseline. I can help you track this over time! 📊",
+      options: null,
+      next: "end",
+    },
+    {
+      id: "connect_diet",
+      botText: "__CONNECT_DIETICIAN__", // special marker
+      options: null,
+      next: "end",
+    },
+    {
+      id: "end",
+      botText: "I'm always here if you have more questions! 💚 Stay healthy and remember — small consistent changes make a big difference.",
+      options: null,
+      next: null,
+    },
+  ];
+}
+
+/* ─── main component ──────────────────────────────────────────── */
+export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
+  // Restore mode from localStorage
+  const [mode, setMode] = useState(() => localStorage.getItem("cw_mode") || "assistant");
   const [messages, setMessages] = useState([]);
-  const [userInput, setUserInput] = useState("");
+  const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
-  const [activeSection, setActiveSection] = useState("chat");
-  const [liveAgent, setLiveAgent] = useState(null);
-
-  const steps = [
-    { key: "first_name", label: "Please provide your name" },
-    { key: "phone", label: "Please provide your phone number" },
-    { key: "age", label: "What's your age?" },
-    { key: "weight", label: "What's your body weight (kg)?" },
-    { key: "conditions", label: "Any chronic conditions or diseases? (or 'none')" },
-  ];
-
-  const [form, setForm] = useState({
-    first_name: "",
-    phone: "",
-    age: "",
-    weight: "",
-    conditions: "",
+  const [dieticianTyping, setDieticianTyping] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState(null);
+  const [assignedDietician, setAssignedDietician] = useState(null);
+  // Restore convStep from localStorage
+  const [convStep, setConvStep] = useState(() => {
+    const saved = localStorage.getItem("cw_step");
+    return saved ? parseInt(saved, 10) : 0;
   });
+  const [conversation, setConversation] = useState([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [connected, setConnected] = useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [doneMessage, setDoneMessage] = useState(null);
-  const [error, setError] = useState(null);
+  const socketRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const typingTimer = useRef(null);
+  const convRef = useRef(conversation);
+  convRef.current = conversation;
 
-  // condition context (multi-select) - persisted in this widget and reported to parent via onConditionChange
-  const DOMAIN_OPTIONS = [
-    { id: "kidney", label: "Kidney" },
-    { id: "heart", label: "Heart" },
-    { id: "diabetes", label: "Diabetes" },
-  ];
-  const [conditionContext, setConditionContext] = useState(defaultConditionContext || []);
-
-  // Available live agents with avatars - Updated titles
-  const availableAgents = [
-    {
-      id: 1,
-      name: "Jinia Roy",
-      title: "Health Diet Expert", // Changed from "Kidney Diet Expert"
-      avatar: "👩‍⚕️",
-      specialty: "Renal Nutrition",
-      experience: "8 years",
-      autoQuestions: [
-        "Hello! I'm Jinia, your health diet specialist. How can I help you today?",
-        "I've reviewed your information. Would you like me to create a personalized diet plan?",
-        "Based on your details, I can help with meal planning, fluid management, and nutrient balance.",
-        "What specific health concerns would you like to discuss first?"
-      ]
-    },
-    {
-      id: 2,
-      name: "Dr. Tapas Roy",
-      title: "Health Specialist", // Changed from "Nephrology Specialist"
-      avatar: "👨‍⚕️",
-      specialty: "Chronic Conditions",
-      experience: "12 years",
-      autoQuestions: [
-        "Namaste! I'm Dr. Tapas. I see you're interested in health management.",
-        "Your information looks good. Let's discuss your health goals.",
-        "I can help you understand dietary restrictions and fluid intake recommendations.",
-        "Would you like me to explain how different foods affect your health?"
-      ]
-    },
-    {
-      id: 3,
-      name: "Rajashree Jena",
-      title: "Health Nutritionist", // Changed from "Renal Nutritionist"
-      avatar: "🧑‍⚕️",
-      specialty: "Diet Planning",
-      experience: "6 years",
-      autoQuestions: [
-        "Hi there! I'm Rajashree, your health nutrition expert.",
-        "I can see you've provided your details. Ready to create your healthy eating plan?",
-        "Let me help you with portion control and food choices for better health.",
-        "What type of healthy recipes are you most interested in?"
-      ]
-    }
-  ];
-
-  // init messages when widget opens - Updated messages
-  useEffect(() => {
-    if (open && messages.length === 0) {
-      setMessages([
-        { id: 1, text: "Hello! I'm DatalethealthcareTM Assistant 👋", sender: "bot", timestamp: new Date() }, // Changed
-        { id: 2, text: "I'm here to help you connect with our health experts. Let's get started!", sender: "bot", timestamp: new Date() } // Changed
-      ]);
-    }
-  }, [open, messages.length]);
-
-  // 🔄 Listen for external updates (from App.jsx)
-  useEffect(() => {
-    const handleExternalUpdate = (e) => {
-      const newCtx = e.detail;
-      setConditionContext(newCtx);
-    };
-    window.addEventListener("updateConditionContext", handleExternalUpdate);
-    return () => window.removeEventListener("updateConditionContext", handleExternalUpdate);
-  }, []);
-
-  // when parent passes a new defaultConditionContext, sync it
-  useEffect(() => {
-    if (Array.isArray(defaultConditionContext) && defaultConditionContext.length) {
-      setConditionContext(defaultConditionContext);
-    }
-  }, [defaultConditionContext ? defaultConditionContext.join(",") : ""]);
-
-  // notify parent when conditionContext changes
-  useEffect(() => {
-    onConditionChange && onConditionChange(conditionContext);
-  }, [conditionContext.join(","), onConditionChange]);
-
+  /* ── scroll to bottom ── */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, dieticianTyping]);
 
-  // auto open after 3 seconds
+  /* ── fetch user profile ── */
   useEffect(() => {
-    const timer = setTimeout(() => setOpen(true), 3000);
-    return () => clearTimeout(timer);
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch("/api/user/profile/basic", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const first = (data.full_name || "").split(" ")[0];
+        setUserName(first || "");
+        setUserId(data.id);
+        // Also load assigned dietician directly from profile to avoid extra call
+        if (data.assigned_dietician) setAssignedDietician(data.assigned_dietician);
+      })
+      .catch(() => {});
   }, []);
 
-  const addBotMessage = (text, delay = 1000) => {
-    setIsTyping(true);
-    setTimeout(() => {
-      setMessages(prev => [...prev, { id: Date.now(), text, sender: "bot", timestamp: new Date() }]);
-      setIsTyping(false);
-    }, delay);
-  };
+  /* ── build conversation when userName is ready ── */
+  useEffect(() => {
+    const ctx = getTimeContext();
+    setConversation(buildConversation(userName, ctx));
+  }, [userName]);
 
-  const addAgentMessage = (text, delay = 1000) => {
-    setIsTyping(true);
-    setTimeout(() => {
-      setMessages(prev => [...prev, { id: Date.now(), text, sender: "agent", agent: liveAgent, timestamp: new Date() }]);
-      setIsTyping(false);
-    }, delay);
-  };
+  /* ── fetch assigned dietician (if not already in profile) ── */
+  useEffect(() => {
+    if (!userId || assignedDietician) return;
+    const token = localStorage.getItem("token");
+    fetch(`/api/diet-chat/dietician/${userId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.assigned_dietician) setAssignedDietician(data.assigned_dietician);
+      })
+      .catch(() => {});
+  }, [userId]);
 
-  function update(val) {
-    setForm(prev => ({ ...prev, ...val }));
-  }
+  /* ── socket.io setup ── */
+  useEffect(() => {
+    if (!userId) return;
+    const token = localStorage.getItem("token");
 
-  function toggleCondition(domainId) {
-    setConditionContext(prev => {
-      const s = new Set(prev || []);
-      if (s.has(domainId)) s.delete(domainId); else s.add(domainId);
-      const arr = Array.from(s);
-      return arr;
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+      auth: { token },
+      reconnection: true,
     });
-  }
 
-  // quick user messages handling
-  const handleUserMessage = () => {
-    if (!userInput.trim()) return;
+    socketRef.current = socket;
 
-    const newMessage = { id: Date.now(), text: userInput, sender: "user", timestamp: new Date() };
-    setMessages(prev => [...prev, newMessage]);
-    const input = userInput.trim();
-    setUserInput("");
-    setIsTyping(true);
+    socket.on("connect", () => {
+      setConnected(true);
+      socket.emit("join_room", { userId, role: "patient" });
+    });
 
-    setTimeout(() => {
-      if (step === 0 && !form.first_name) {
-        update({ first_name: input });
-        addBotMessage(`Nice to meet you, ${input}! I'll help you connect with our health specialist.`, 800); // Changed
-        setTimeout(() => {
-          addBotMessage(steps[1].label, 1000);
-          setStep(1);
-        }, 1800);
-      } else if (activeSection === "chat") {
-        const responses = [
-          "I understand you're looking for health advice. Let me connect you with our expert.", // Changed
-          "That's a great question! Our health experts can provide personalized guidance.", // Changed
-          "I'll make sure our specialist addresses this when they contact you."
-        ];
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        addBotMessage(randomResponse, 800);
-        setTimeout(() => {
-          addBotMessage("Let me collect a few details to connect you with the right expert.", 1000);
-          setActiveSection("form");
-        }, 2000);
-      } else if (activeSection === "liveAgent") {
-        setTimeout(() => {
-          const responses = [
-            "I understand. Let me provide more details about that.",
-            "That's a great question about health.",
-            "I can help you with that aspect of healthy diet."
-          ];
-          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-          addAgentMessage(randomResponse, 1000);
-        }, 1500);
+    socket.on("disconnect", () => setConnected(false));
+
+    socket.on("dietician_reply", (msg) => {
+      const newMsg = {
+        id: msg.id || Date.now(),
+        sender: "dietician",
+        text: msg.message,
+        dietician: msg.dietician,
+        timestamp: msg.created_at || new Date().toISOString(),
+      };
+      if (!open) {
+        setUnreadCount((c) => c + 1);
       }
-    }, 800);
-  };
+      setMessages((prev) => [...prev, newMsg]);
+    });
 
-  function next() {
-    setError(null);
-    const key = steps[Math.min(step, steps.length - 1)].key;
-    const v = (form[key] || "").toString().trim();
+    socket.on("dietician_typing", ({ typing }) => setDieticianTyping(typing));
 
-    if (!v) {
-      setError("Please fill this field to continue.");
-      return;
+    return () => {
+      socket.disconnect();
+    };
+  }, [userId]);
+
+  /* ── load dietician chat history when switching to dietician mode ── */
+  const loadDieticianHistory = useCallback(async () => {
+    if (historyLoaded || !userId) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`/api/diet-chat/history/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const mapped = data.map((m) => ({
+        id: m.id,
+        sender: m.sender,
+        text: m.message,
+        dietician: m.dietician,
+        timestamp: m.created_at,
+      }));
+      setMessages((prev) => {
+        // Avoid duplicates — keep existing messages, prepend history
+        const existingIds = new Set(prev.map((m) => m.id));
+        const newOnes = mapped.filter((m) => !existingIds.has(m.id));
+        return [...newOnes, ...prev];
+      });
+      setHistoryLoaded(true);
+    } catch {}
+  }, [userId, historyLoaded]);
+
+  /* ── start assistant conversation when chat opens ── */
+  useEffect(() => {
+    if (!open || conversation.length === 0) return;
+
+    if (mode === "assistant") {
+      // Restore saved AI messages
+      const savedMsgs = localStorage.getItem("cw_assistant_messages");
+      if (savedMsgs && messages.length === 0) {
+        try {
+          const parsed = JSON.parse(savedMsgs);
+          if (parsed && parsed.length > 0) {
+            setMessages(parsed);
+            setUnreadCount(0);
+            return; // restored — don't replay from step 0
+          }
+        } catch {}
+      }
+      if (messages.length === 0) {
+        runAssistantStep(0);
+      }
     }
+    if (mode === "dietician") {
+      loadDieticianHistory();
+    }
+    setUnreadCount(0);
+  }, [open, mode, conversation.length]);
 
-    if (key === "phone") {
-      const cleanPhone = v.replace(/\D/g, '');
-      if (cleanPhone.length < 10 || cleanPhone.length > 12) {
-        setError("Please enter a valid phone number (10-12 digits)");
+  /* ── persist AI assistant messages + step to localStorage ── */
+  useEffect(() => {
+    if (mode !== "assistant" || messages.length === 0) return;
+    localStorage.setItem("cw_assistant_messages", JSON.stringify(messages));
+    localStorage.setItem("cw_step", String(convStep));
+  }, [messages, convStep, mode]);
+
+  /* ── persist mode ── */
+  useEffect(() => {
+    localStorage.setItem("cw_mode", mode);
+  }, [mode]);
+
+  /* ── assistant conversation runner ── */
+  async function runAssistantStep(stepIdx, mealAnswer) {
+    const conv = convRef.current;
+    if (stepIdx >= conv.length) return;
+    const step = conv[stepIdx];
+    if (!step) return;
+
+    setIsTyping(true);
+    const delay = Math.min(800 + step.botText?.length * 2 || 800, 2000);
+
+    setTimeout(async () => {
+      setIsTyping(false);
+
+      let text = step.botText;
+
+      // Dynamic meal tip
+      if ((step.id === "meal_yes" || step.id === "meal_no") && mealAnswer) {
+        const ctx = getTimeContext();
+        const meal = getMealLabel(ctx);
+        const ans = step.id === "meal_yes" ? "yes" : "no";
+        text = getDietTip(meal, ans);
+      }
+
+      // Special dietician connect marker
+      if (text === "__CONNECT_DIETICIAN__") {
+        const token = localStorage.getItem("token");
+        // Re-fetch to be sure (in case approved since last load)
+        const dRes = await fetch(`/api/diet-chat/dietician/${userId}`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        let latestDietician = assignedDietician;
+        if (dRes.ok) {
+          const dData = await dRes.json();
+          if (dData.assigned_dietician) {
+            latestDietician = dData.assigned_dietician;
+            setAssignedDietician(dData.assigned_dietician);
+          }
+        }
+
+        const hasDoc = !!latestDietician;
+        text = hasDoc
+          ? `Great choice! Your assigned dietician is **${latestDietician}**. Click the button below to start a real conversation! 👆`
+          : "You don't have an assigned dietician yet. Please contact admin to assign one to your profile.";
+
+        const newMsg = {
+          id: Date.now(),
+          sender: "bot",
+          text,
+          timestamp: new Date().toISOString(),
+          showConnectBtn: hasDoc,
+        };
+        setMessages((prev) => [...prev, newMsg]);
+        setConvStep(stepIdx + 1);
         return;
       }
-      update({ phone: cleanPhone });
-    }
 
-    if (step < steps.length - 1) {
-      addBotMessage(steps[step + 1].label, 500);
-    }
-
-    setStep(s => Math.min(s + 1, steps.length));
-  }
-
-  function prev() {
-    setError(null);
-    setStep(s => Math.max(s - 1, 0));
-  }
-
-  // choose a live agent and simulate intros
-  const connectToLiveAgent = () => {
-    setLoading(true);
-
-    const randomAgent = availableAgents[Math.floor(Math.random() * availableAgents.length)];
-    setLiveAgent(randomAgent);
-
-    addBotMessage("Connecting you with a health expert...", 1000); // Changed
-
-    setTimeout(() => {
-      setActiveSection("liveAgent");
-      addAgentMessage("Hello! I'm connecting you with our specialist...", 800);
-
-      setTimeout(() => {
-        addAgentMessage(`Hi! I'm ${randomAgent.name}, your ${randomAgent.title}. I specialize in ${randomAgent.specialty} with ${randomAgent.experience} experience.`, 1000);
-
-        setTimeout(() => {
-          randomAgent.autoQuestions.forEach((question, index) => {
-            setTimeout(() => addAgentMessage(question, 500), (index + 1) * 1200);
-          });
-        }, 1200);
-
-        setLoading(false);
-      }, 1800);
-    }, 1200);
-  };
-
-  // submit lead to backend (/leads/) and fallback to localStorage
-  async function submit() {
-    setError(null);
-    setLoading(true);
-
-    const tempId = Date.now();
-    setMessages(prev => [...prev, { id: tempId, text: "Contacting server for a personalized reply...", sender: "bot", timestamp: new Date() }]);
-
-    try {
-      const requiredFields = ['first_name', 'phone', 'age', 'weight', 'conditions'];
-      const missingFields = requiredFields.filter(field => !form[field]?.toString().trim());
-
-      if (missingFields.length > 0) {
-        throw new Error(`Please fill all fields: ${missingFields.join(', ')}`);
-      }
-
-      const cleanPhone = form.phone.replace(/\D/g, '');
-      if (cleanPhone.length < 10 || cleanPhone.length > 12) {
-        throw new Error("Please enter a valid phone number (10-12 digits)");
-      }
-
-      const payload = {
-        first_name: form.first_name.trim(),
-        phone: cleanPhone,
-        age: form.age ? Number(form.age) : null,
-        weight: form.weight ? Number(form.weight) : null,
-        conditions: form.conditions.trim(),
-        source: "datalethealthcare_chat", // Changed from "kidneybot_chat"
+      const newMsg = {
+        id: Date.now(),
+        sender: "bot",
+        text: text || "",
         timestamp: new Date().toISOString(),
-        condition_context: conditionContext,
+        options: step.options,
       };
+      setMessages((prev) => [...prev, newMsg]);
+      setConvStep(stepIdx);
 
-      console.log("Submitting lead data:", payload);
-
-      // Attempt network POST to backend /leads
-      let backendResp = null;
-      try {
-        backendResp = await postJSON("/leads/", payload);
-        console.log("Lead posted to backend /leads/ successfully. backend response:", backendResp);
-      } catch (networkErr) {
-        console.warn("Posting to backend failed, saving locally. Error:", networkErr);
-        const storedLeads = JSON.parse(localStorage.getItem('datalethealthcare_leads') || '[]'); // Changed
-        storedLeads.push({ ...payload, id: Date.now(), offline: true });
-        localStorage.setItem('datalethealthcare_leads', JSON.stringify(storedLeads)); // Changed
-      }
-
-      // Keep a client copy as well
-      const storedLeads = JSON.parse(localStorage.getItem('datalethealthcare_leads') || '[]'); // Changed
-      storedLeads.push({ ...payload, id: Date.now() });
-      localStorage.setItem('datalethealthcare_leads', JSON.stringify(storedLeads)); // Changed
-
-      // Inform parent about submission
-      onSubmitted && onSubmitted(payload);
-
-      try {
-        setMessages(prev => prev.filter(m => m.id !== tempId));
-
-        if (backendResp) {
-          const visibleText = extractTextFromBackendResponse(backendResp) || "Received response (no text)";
-          setMessages(prev => [...prev, { id: Date.now(), text: visibleText, sender: "bot", timestamp: new Date() }]);
-        } else {
-          setMessages(prev => [...prev, { id: Date.now(), text: "Thanks — we've saved your request and will contact you shortly.", sender: "bot", timestamp: new Date() }]);
+      // If no options needed — auto-advance after a short pause
+      if (!step.options && step.next && typeof step.next === "string") {
+        const nextIdx = conv.findIndex((s) => s.id === step.next);
+        if (nextIdx !== -1) {
+          setTimeout(() => runAssistantStep(nextIdx), 1200);
         }
-      } catch (displayErr) {
-        console.error("Failed to display backend response:", displayErr);
       }
+    }, delay);
+  }
 
-      // Connect to live agent
-      connectToLiveAgent();
+  function handleOptionClick(option) {
+    // Add user message
+    const userMsg = { id: Date.now(), sender: "user", text: option, timestamp: new Date().toISOString() };
+    setMessages((prev) => [...prev, userMsg]);
 
-      // Reset form state for next time
-      setForm({ first_name: "", phone: "", age: "", weight: "", conditions: "" });
-      setStep(0);
-      setDoneMessage("✅ Perfect! Our health expert will contact you with personalized recommendations."); // Changed
+    const conv = convRef.current;
+    const currentStep = conv[convStep];
+    if (!currentStep) return;
 
-      setTimeout(() => addBotMessage("✅ Received — our expert will review and contact you shortly.", 800), 800);
+    const nextId = typeof currentStep.next === "function" ? currentStep.next(option) : currentStep.next;
+    if (!nextId) return;
+    const nextIdx = conv.findIndex((s) => s.id === nextId);
+    if (nextIdx === -1) return;
 
-    } catch (e) {
-      console.error("Submission error:", e);
-      const errorMessage = e.message || "Failed to submit. Please try again.";
-      setError(errorMessage);
+    // Pass the user's answer for dynamic tip generation
+    setTimeout(() => runAssistantStep(nextIdx, option), 400);
+  }
 
-      setMessages(prev => prev.filter(m => m.text !== "Contacting server for a personalized reply..."));
+  /* ── send message to dietician ── */
+  function sendDieticianMessage() {
+    const text = input.trim();
+    if (!text || !userId) return;
+    setInput("");
 
-      setTimeout(() => addBotMessage(`Sorry, there was an error: ${errorMessage}`, 500), 1000);
-    } finally {
-      setLoading(false);
+    const optimistic = {
+      id: `opt_${Date.now()}`,
+      sender: "patient",
+      text,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
+
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("patient_message", {
+        userId,
+        message: text,
+        dietician: assignedDietician,
+      });
+    } else {
+      // REST fallback
+      const token = localStorage.getItem("token");
+      fetch("/api/diet-chat/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId, message: text, sender: "patient", dietician: assignedDietician }),
+      }).catch(() => {});
     }
   }
 
-  // small helpers
-  const HealthIcon = () => ( // Changed from KidneyIcon
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M8 16C8 16 9.5 14 12 14C14.5 14 16 16 16 16"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 10H9.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M15 10H15.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  function handleTyping(val) {
+    setInput(val);
+    if (!socketRef.current?.connected || !userId) return;
+    socketRef.current.emit("typing_start", { userId, role: "patient" });
+    clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => {
+      socketRef.current?.emit("typing_stop", { userId, role: "patient" });
+    }, 1500);
+  }
 
-  const formatTime = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  function switchToDietician() {
+    setMode("dietician");
+    setMessages([]);
+    setHistoryLoaded(false);
+    setTimeout(() => loadDieticianHistory(), 100);
+  }
 
-  const QuickQuestions = () => {
-    const questions = [
-      "What foods should I avoid?",
-      "How much water should I drink?",
-      "Can you create a meal plan?",
-      "What about protein intake?",
-      "Tell me about potassium levels"
-    ];
+  function switchToAssistant() {
+    setMode("assistant");
+    // Restore saved AI messages
+    const savedMsgs = localStorage.getItem("cw_assistant_messages");
+    if (savedMsgs) {
+      try {
+        const parsed = JSON.parse(savedMsgs);
+        if (parsed && parsed.length > 0) {
+          setMessages(parsed);
+          return;
+        }
+      } catch {}
+    }
+    setMessages([]);
+    const ctx = getTimeContext();
+    const conv = buildConversation(userName, ctx);
+    setConversation(conv);
+    setTimeout(() => runAssistantStep(0), 300);
+  }
 
-    return (
-      <div style={{ padding: "12px 0" }}>
-        <div style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "8px" }}>Quick questions:</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {questions.map((question, index) => (
+  /* ── format message text with **bold** ── */
+  function renderText(text) {
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+    return parts.map((p, i) =>
+      i % 2 === 1 ? <strong key={i}>{p}</strong> : <span key={i}>{p}</span>
+    );
+  }
+
+  const headerTitle =
+    mode === "dietician"
+      ? assignedDietician
+        ? `💬 ${assignedDietician}`
+        : "💬 Dietician Chat"
+      : "🥗 Diet Assistant";
+
+  const headerSubtitle =
+    mode === "dietician" ? "Real-time messaging" : "Your smart health companion";
+
+  /* ─── RENDER ──────────────────────────────────────────────────── */
+  return (
+    <>
+      {/* ─── Floating Toggle Button ─── */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        id="chatbot-toggle"
+        style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          zIndex: 10000,
+          width: 60,
+          height: 60,
+          borderRadius: "50%",
+          border: "none",
+          cursor: "pointer",
+          background: "linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)",
+          boxShadow: "0 8px 32px rgba(16, 185, 129, 0.45), 0 2px 8px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 26,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          transform: open ? "rotate(45deg) scale(1.05)" : "scale(1)",
+        }}
+        title="Diet Assistant"
+        aria-label="Open diet assistant"
+      >
+        {open ? "✕" : "🥗"}
+        {unreadCount > 0 && !open && (
+          <span style={{
+            position: "absolute", top: -4, right: -4,
+            background: "#ef4444", color: "white",
+            borderRadius: "50%", width: 20, height: 20,
+            fontSize: 11, fontWeight: 700,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            border: "2px solid #fff",
+            animation: "pulse-badge 1.5s ease-in-out infinite",
+          }}>{unreadCount}</span>
+        )}
+      </button>
+
+      {/* ─── Chat Panel ─── */}
+      <div
+        id="chatbot-panel"
+        style={{
+          position: "fixed",
+          bottom: 100,
+          right: 24,
+          zIndex: 9999,
+          width: 400,
+          maxWidth: "calc(100vw - 48px)",
+          height: 580,
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 20,
+          overflow: "hidden",
+          background: "#0f172a",
+          border: "1px solid rgba(16,185,129,0.2)",
+          boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)",
+          fontFamily: "'Inter','Segoe UI',system-ui,-apple-system,sans-serif",
+          transform: open ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "all" : "none",
+          transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease",
+        }}
+        aria-live="polite"
+      >
+        {/* ── Header ── */}
+        <div style={{
+          padding: "14px 18px",
+          background: "linear-gradient(135deg, #065f46 0%, #047857 50%, #10b981 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          flexShrink: 0,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(255,255,255,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 20, flexShrink: 0,
+              border: "2px solid rgba(255,255,255,0.2)",
+            }}>
+              {mode === "dietician" ? "👨‍⚕️" : "🥗"}
+            </div>
+            <div>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>
+                {headerTitle}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                <span style={{
+                  width: 7, height: 7, borderRadius: "50%",
+                  background: connected ? "#4ade80" : "#94a3b8",
+                  display: "inline-block",
+                  boxShadow: connected ? "0 0 6px #4ade80" : "none",
+                }} />
+                <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>
+                  {headerSubtitle}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Mode toggle tabs */}
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <button
-              key={index}
-              onClick={() => {
-                setUserInput(question);
-                setTimeout(() => handleUserMessage(), 100);
-              }}
+              onClick={switchToAssistant}
               style={{
-                padding: "6px 10px",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: "16px",
-                color: "#e6eef8",
-                fontSize: "11px",
-                cursor: "pointer",
-                transition: "all 0.2s ease"
+                padding: "4px 10px", borderRadius: 20, border: "none", cursor: "pointer",
+                background: mode === "assistant" ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.08)",
+                color: "#fff", fontSize: 11, fontWeight: 600,
+                transition: "background 0.2s",
+              }}
+            >🤖 AI</button>
+            {assignedDietician && (
+              <button
+                onClick={switchToDietician}
+                style={{
+                  padding: "4px 10px", borderRadius: 20, border: "none", cursor: "pointer",
+                  background: mode === "dietician" ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.08)",
+                  color: "#fff", fontSize: 11, fontWeight: 600,
+                  transition: "background 0.2s",
+                  position: "relative",
+                }}
+              >
+                💬 Doc
+                {unreadCount > 0 && mode !== "dietician" && (
+                  <span style={{
+                    position: "absolute", top: -4, right: -4,
+                    background: "#ef4444", color: "#fff",
+                    borderRadius: "50%", width: 14, height: 14,
+                    fontSize: 9, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>{unreadCount}</span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Messages Area ── */}
+        <div style={{
+          flex: 1, overflowY: "auto", padding: "16px 14px",
+          background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255,255,255,0.1) transparent",
+        }}>
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: msg.sender === "user" || msg.sender === "patient" ? "flex-end" : "flex-start",
+                marginBottom: 14,
               }}
             >
-              {question}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // RENDER
-  return (
-    <div style={{
-      position: "fixed",
-      left: 60,
-      bottom: 20,
-
-      zIndex: 9999,
-      width: 400,
-      maxWidth: "calc(100% - 40px)",
-      fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif",
-    }} aria-live="polite">
-      {!open && (
-        <div style={{ display: "flex", justifyContent: "flex-start" }}>
-          <button onClick={() => setOpen(true)} style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white", border: "none", padding: "14px 20px", borderRadius: "50px",
-            cursor: "pointer", fontWeight: 600, fontSize: 14, boxShadow: "0 8px 25px rgba(102,126,234,0.4)",
-            display: "flex", alignItems: "center", gap: 8
-          }} data-testid="open-chat">
-            <HealthIcon /> {/* Changed */}
-            Diet Assistant
-          </button>
-        </div>
-      )}
-
-      {open && (
-        <div style={{
-          background: "#1a1f36", color: "#f0f4f8", borderRadius: 16, overflow: "hidden",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)",
-          height: 550, display: "flex", flexDirection: "column"
-        }}>
-          {/* Header */}
-          <div style={{
-            padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)",
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            background: activeSection === "liveAgent" ? "linear-gradient(135deg,#059669,#047857)" : "linear-gradient(135deg,#667eea,#764ba2)"
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, fontWeight: 700, fontSize: 16 }}>
-              {activeSection === "liveAgent" && liveAgent ? (
-                <>
-                  <div style={{ fontSize: 20 }}>{liveAgent.avatar}</div>
-                  <div>
-                    <div>{liveAgent.name}</div>
-                    <div style={{ fontSize: 11, opacity: 0.9, fontWeight: "normal" }}>{liveAgent.title}</div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <HealthIcon /> {/* Changed */}
-                  <span>DatalethealthcareTM Chat Assistant</span> {/* Changed */}
-                </>
+              {/* Dietician label */}
+              {msg.sender === "dietician" && (
+                <div style={{ fontSize: 11, color: "#10b981", marginBottom: 3, paddingLeft: 4, fontWeight: 600 }}>
+                  👨‍⚕️ {msg.dietician || assignedDietician || "Dietician"}
+                </div>
               )}
-              <div style={{ padding: "2px 8px", background: "rgba(255,255,255,0.2)", borderRadius: 12, fontSize: 12, fontWeight: "normal" }}>
-                {activeSection === "liveAgent" ? "Live" : "Online"}
+
+              <div style={{
+                maxWidth: "80%",
+                padding: "10px 14px",
+                borderRadius: msg.sender === "user" || msg.sender === "patient"
+                  ? "18px 18px 4px 18px"
+                  : "18px 18px 18px 4px",
+                background: msg.sender === "user" || msg.sender === "patient"
+                  ? "linear-gradient(135deg, #059669, #10b981)"
+                  : msg.sender === "dietician"
+                    ? "linear-gradient(135deg, #1e40af, #3b82f6)"
+                    : "rgba(255,255,255,0.06)",
+                border: msg.sender === "bot"
+                  ? "1px solid rgba(255,255,255,0.08)"
+                  : "none",
+                color: "#f0fdf4",
+                fontSize: 13.5,
+                lineHeight: 1.6,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              }}>
+                {renderText(msg.text)}
               </div>
-            </div>
 
-            <button onClick={() => {
-              setOpen(false);
-              setActiveSection("chat");
-              setLiveAgent(null);
-              setStep(0);
-              setForm({ first_name: "", phone: "", age: "", weight: "", conditions: "" });
-            }} style={{
-              background: "rgba(255,255,255,0.1)", color: "#94a3b8", border: "none", cursor: "pointer",
-              width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center"
-            }}>×</button>
-          </div>
-
-          {/* Messages area */}
-          <div style={{ flex: 1, padding: 16, overflowY: "auto", background: "linear-gradient(135deg,#0f172a,#1e293b)" }}>
-            {messages.map((message) => (
-              <div key={message.id} style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: message.sender === "user" ? "flex-end" : "flex-start" }}>
-                {message.sender === "agent" && message.agent && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <div style={{ fontSize: 16 }}>{message.agent.avatar}</div>
-                    <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                      <strong>{message.agent.name}</strong>
-                      <span style={{ marginLeft: 6 }}>{message.agent.title}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{
-                  background: message.sender === "user"
-                    ? "linear-gradient(135deg,#667eea,#764ba2)"
-                    : message.sender === "agent"
-                      ? "linear-gradient(135deg,#059669,#047857)"
-                      : "rgba(255,255,255,0.05)",
-                  padding: "12px 16px",
-                  borderRadius: 18,
-                  maxWidth: "80%",
-                  border: message.sender === "user" || message.sender === "agent" ? "none" : "1px solid rgba(255,255,255,0.1)"
-                }}>
-                  {message.text}
-                </div>
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, padding: "0 8px" }}>
-                  {formatTime(message.timestamp)}
-                </div>
-              </div>
-            ))}
-
-            {isTyping && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                {activeSection === "liveAgent" && liveAgent && <div style={{ fontSize: 16 }}>{liveAgent.avatar}</div>}
-                <div style={{
-                  background: activeSection === "liveAgent" ? "linear-gradient(135deg,#059669,#047857)" : "rgba(255,255,255,0.05)",
-                  padding: "12px 16px",
-                  borderRadius: 18
-                }}>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: 50, background: "#94a3b8", animation: "pulse 1.5s ease-in-out infinite" }} />
-                    <div style={{ width: 6, height: 6, borderRadius: 50, background: "#94a3b8", animation: "pulse 1.5s ease-in-out 0.5s infinite" }} />
-                    <div style={{ width: 6, height: 6, borderRadius: 50, background: "#94a3b8", animation: "pulse 1.5s ease-in-out 1s infinite" }} />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Selected domains display */}
-            <div style={{ marginTop: 8, marginBottom: 8 }}>
-              <div style={{ fontSize: 12, color: "#cbd5e1", marginBottom: 6 }}>Personalization context (select)</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {DOMAIN_OPTIONS.map(d => {
-                  const active = conditionContext.includes(d.id);
-                  return (
-                    <button key={d.id} onClick={() => {
-                      toggleCondition(d.id);
-                    }} style={{
-                      padding: "6px 10px",
-                      borderRadius: 8,
-                      border: active ? "1px solid rgba(96,165,250,0.6)" : "1px solid rgba(255,255,255,0.04)",
-                      background: active ? "linear-gradient(90deg,#60A5FA22,#3B82F622)" : "transparent",
-                      color: active ? "#cff0ff" : "#cbd5e1",
-                      cursor: "pointer"
-                    }}>
-                      {d.label}
+              {/* Options / quick replies */}
+              {msg.options && msg.options.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, maxWidth: "90%" }}>
+                  {msg.options.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => handleOptionClick(opt)}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 20,
+                        border: "1px solid rgba(16,185,129,0.4)",
+                        background: "rgba(16,185,129,0.08)",
+                        color: "#6ee7b7",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        fontWeight: 500,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(16,185,129,0.2)";
+                        e.currentTarget.style.borderColor = "rgba(16,185,129,0.7)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(16,185,129,0.08)";
+                        e.currentTarget.style.borderColor = "rgba(16,185,129,0.4)";
+                      }}
+                    >
+                      {opt}
                     </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div ref={messagesEndRef} />
-
-            {/* Form block */}
-            {activeSection === "form" && !doneMessage && (
-              <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 16, marginTop: 12, border: "1px solid rgba(255,255,255,0.1)" }}>
-                <div style={{ marginBottom: 12, color: "#cbd5e1", fontSize: 14 }}>
-                  {steps[Math.min(step, steps.length - 1)].label}
+                  ))}
                 </div>
-                <input
-                  value={form[steps[Math.min(step, steps.length - 1)].key] || ""}
-                  onChange={(e) => update({ [steps[Math.min(step, steps.length - 1)].key]: e.target.value })}
-                  placeholder={`Enter ${steps[Math.min(step, steps.length - 1)].key.replace('_', ' ')}...`}
+              )}
+
+              {/* Connect with Dietician button */}
+              {msg.showConnectBtn && (
+                <button
+                  onClick={switchToDietician}
                   style={{
-                    width: "100%", padding: 12, borderRadius: 8,
-                    border: error ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)",
-                    background: "rgba(255,255,255,0.02)", color: "#f0f4f8", fontSize: 14, marginBottom: 12
+                    marginTop: 10,
+                    padding: "8px 18px",
+                    borderRadius: 20,
+                    border: "none",
+                    background: "linear-gradient(135deg, #1e40af, #3b82f6)",
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    boxShadow: "0 4px 14px rgba(59,130,246,0.4)",
+                    transition: "transform 0.2s ease",
                   }}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      if (step === steps.length - 1) submit();
-                      else next();
-                    }
-                  }}
-                />
-                {error && <div style={{ color: "#fca5a5", marginBottom: 12, fontSize: 13, padding: "8px 12px", background: "rgba(239,68,68,0.1)", borderRadius: 8 }}>{`⚠️ ${error}`}</div>}
-                <div style={{ display: "flex", gap: 10 }}>
-                  {step > 0 && <button onClick={prev} style={{ flex: 1, padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.05)", color: "#cbd5e1", border: "1px solid rgba(255,255,255,0.1)" }}>Back</button>}
-                  {step < steps.length - 1 && <button onClick={next} style={{ flex: 1, padding: 10, borderRadius: 8, background: "linear-gradient(135deg,#667eea,#764ba2)", color: "#fff", border: "none", fontWeight: 600 }}>Next →</button>}
-                  {step === steps.length - 1 && <button onClick={submit} disabled={loading} style={{ flex: 1, padding: 10, borderRadius: 8, background: loading ? "#94a3b8" : "linear-gradient(135deg,#059669,#047857)", color: "#fff", border: "none", fontWeight: 600 }}>{loading ? "🔄 Connecting..." : "✅ Connect with Expert"}</button>}
-                </div>
-              </div>
-            )}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.03)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                >
+                  👨‍⚕️ Connect with Dietician
+                </button>
+              )}
 
-            {doneMessage && <div style={{ padding: 16, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 12, textAlign: "center", marginTop: 16 }}>{doneMessage}</div>}
-          </div>
+              <span style={{ fontSize: 10, color: "#475569", marginTop: 4, paddingLeft: 4 }}>
+                {fmtTime(msg.timestamp)}
+              </span>
+            </div>
+          ))}
 
-          {/* Input area */}
-          {(activeSection === "chat" || activeSection === "liveAgent") && !doneMessage && (
-            <div style={{ padding: 16, borderTop: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}>
-              {activeSection === "liveAgent" && <QuickQuestions />}
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={activeSection === "liveAgent" ? "Type your message to the expert..." : "Type your message..."}
-                  style={{ flex: 1, padding: "12px 16px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#f0f4f8", fontSize: 14 }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleUserMessage()}
-                />
-                <button onClick={handleUserMessage} style={{ padding: "12px 20px", borderRadius: 24, background: "linear-gradient(135deg,#667eea,#764ba2)", color: "white", border: "none", cursor: "pointer", fontWeight: 600 }}>Send</button>
+          {/* Typing indicator */}
+          {(isTyping || dieticianTyping) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{
+                padding: "10px 14px",
+                borderRadius: "18px 18px 18px 4px",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                display: "flex", gap: 4, alignItems: "center",
+              }}>
+                {[0, 0.3, 0.6].map((delay, i) => (
+                  <span key={i} style={{
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: dieticianTyping ? "#3b82f6" : "#10b981",
+                    display: "inline-block",
+                    animation: `bounce 1.2s ease-in-out ${delay}s infinite`,
+                  }} />
+                ))}
               </div>
-              <div style={{ marginTop: 8, fontSize: 11, color: "#94a3b8", textAlign: "center" }}>{activeSection === "liveAgent" ? "💬 Chatting with live expert" : "💡 We'll connect you with a DatalethealthcareTM health expert"}</div> {/* Changed */}
+              {dieticianTyping && (
+                <span style={{ fontSize: 11, color: "#64748b" }}>
+                  {assignedDietician || "Dietician"} is typing...
+                </span>
+              )}
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
-      )}
 
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+        {/* ── Input Area ── */}
+        {mode === "dietician" && (
+          <div style={{
+            padding: "12px 14px",
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+            background: "rgba(15,23,42,0.95)",
+            flexShrink: 0,
+          }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                id="chat-input"
+                type="text"
+                value={input}
+                onChange={(e) => handleTyping(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendDieticianMessage()}
+                placeholder={`Message ${assignedDietician || "your dietician"}...`}
+                style={{
+                  flex: 1,
+                  padding: "10px 14px",
+                  borderRadius: 24,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.05)",
+                  color: "#f0f4f8",
+                  fontSize: 13.5,
+                  outline: "none",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "rgba(16,185,129,0.5)"}
+                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+              />
+              <button
+                onClick={sendDieticianMessage}
+                disabled={!input.trim()}
+                style={{
+                  width: 42, height: 42, borderRadius: "50%", border: "none",
+                  background: input.trim()
+                    ? "linear-gradient(135deg,#059669,#10b981)"
+                    : "rgba(255,255,255,0.08)",
+                  color: "#fff",
+                  cursor: input.trim() ? "pointer" : "not-allowed",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18,
+                  transition: "all 0.2s ease",
+                  flexShrink: 0,
+                }}
+                aria-label="Send message"
+              >
+                ➤
+              </button>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 11, color: "#334155", textAlign: "center" }}>
+              🔒 Messages are end-to-end encrypted
+            </div>
+          </div>
+        )}
+
+        {mode === "assistant" && (
+          <div style={{
+            padding: "10px 14px",
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+            background: "rgba(15,23,42,0.95)",
+            flexShrink: 0,
+            textAlign: "center",
+          }}>
+            <p style={{ color: "#475569", fontSize: 12, margin: 0 }}>
+              💬 Tap an option above to continue the conversation
+            </p>
+            {assignedDietician && (
+              <button
+                onClick={switchToDietician}
+                style={{
+                  marginTop: 8, padding: "6px 16px",
+                  borderRadius: 20, border: "1px solid rgba(59,130,246,0.4)",
+                  background: "rgba(59,130,246,0.08)", color: "#93c5fd",
+                  fontSize: 12, cursor: "pointer", fontWeight: 600,
+                  transition: "all 0.2s",
+                }}
+              >
+                💬 Switch to Dietician Chat
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ─── CSS Animations ─── */}
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
+          40% { transform: translateY(-6px); opacity: 1; }
+        }
+        @keyframes pulse-badge {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+        }
+        #chatbot-panel::-webkit-scrollbar { width: 4px; }
+        #chatbot-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        #chatbot-toggle:hover { transform: scale(1.1) !important; box-shadow: 0 12px 40px rgba(16,185,129,0.55) !important; }
+        @media (max-width: 480px) {
+          #chatbot-panel { width: calc(100vw - 24px) !important; right: 12px !important; bottom: 90px !important; }
+          #chatbot-toggle { bottom: 16px !important; right: 16px !important; }
         }
       `}</style>
-    </div>
+    </>
   );
 }

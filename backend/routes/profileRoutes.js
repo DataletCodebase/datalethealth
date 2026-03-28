@@ -16,7 +16,8 @@ router.get("/profile/basic", authMiddleware, async (req, res) => {
       `SELECT 
         id, full_name, email, mobile, dob, address, disease,
         gender, height, weight, blood_group, city, state, zip_code, country,
-        emergency_contact_name, emergency_contact_phone, emergency_contact_relationship
+        emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
+        assigned_dietician
       FROM users
       WHERE id = ?`,
       [userId]
@@ -174,6 +175,7 @@ router.get("/all", authMiddleware, async (req, res) => {
         city,
         state,
         country,
+        assigned_dietician,
         created_at
       FROM users
       ORDER BY created_at DESC

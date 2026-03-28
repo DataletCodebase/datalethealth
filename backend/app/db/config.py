@@ -24,8 +24,16 @@ encoded_password = urllib.parse.quote_plus(DB_PASSWORD) if DB_PASSWORD else ""
 DATABASE_URL = f"mysql+aiomysql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 print(f"[DB] Async engine connecting to MySQL: {DB_NAME} at {DB_HOST}:{DB_PORT}")
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,   # verify connection health before each use
+    pool_recycle=1800,    # recycle connections every 30 min to prevent MySQL timeout
+    pool_size=5,
+    max_overflow=10,
+)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
 
 async def init_db():
     async with engine.begin() as conn:

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { io } from "socket.io-client";
 import "./AdminDashboard.css";
 import { useNavigate } from "react-router-dom";
 
@@ -8,6 +9,22 @@ export default function AdminDashboard() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
+
+  // ── Messages / Chat State ──────────────────────────────────────────
+  const [conversations, setConversations] = useState([]);
+  const [selectedConv, setSelectedConv] = useState(null);
+  const [convMessages, setConvMessages] = useState([]);
+  const [adminInput, setAdminInput] = useState("");
+  const [convLoading, setConvLoading] = useState(false);
+  const [patientTyping, setPatientTyping] = useState(false);
+  const adminSocketRef = useRef(null);
+  const adminMsgEndRef = useRef(null);
+
+  // ── Assign Dietician State ─────────────────────────────────────────
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignTarget, setAssignTarget] = useState(null);
+  const [assignName, setAssignName] = useState("");
+  const [assignLoading, setAssignLoading] = useState(false);
 
 
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -41,6 +58,7 @@ export default function AdminDashboard() {
   const handleOpenDiet = async (user) => {
     try {
       setSelectedUser(user);
+      setSelectedPatient(user); // Fix modal title which uses selectedPatient?.name
 
       const res = await fetch(
         `/api/diet/user/${user.id}`
@@ -131,6 +149,9 @@ export default function AdminDashboard() {
         approved_by: dieticianName,
       }));
 
+      // ✅ Manual state update for immediate table refresh
+      setPatients(prev => prev.map(p => p.id === selectedUser.id ? { ...p, assigned_dietician: dieticianName } : p));
+
       setPopup({
         show: true,
         message: "Diet Approved ✅",
@@ -138,6 +159,7 @@ export default function AdminDashboard() {
       });
 
       setEditMode(false);
+      fetchPatients();
 
     } catch (err) {
       console.error(err);
@@ -174,11 +196,15 @@ export default function AdminDashboard() {
         approved_by: dieticianName,
       }));
 
+      // ✅ Manual state update for immediate table refresh
+      setPatients(prev => prev.map(p => p.id === selectedUser.id ? { ...p, assigned_dietician: dieticianName } : p));
+
       setPopup({
         show: true,
         message: "Diet Rejected ❌",
         type: "error",
       });
+      fetchPatients();
 
     } catch (err) {
       console.error(err);
@@ -192,59 +218,161 @@ export default function AdminDashboard() {
 
 
   // Fetch patients + medical data
-  useEffect(() => {
-    async function fetchPatients() {
-      try {
-        const res = await fetch("/api/admin/users-medical", {
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("adminToken"),
-          },
-        });
-
-        if (!res.ok) throw new Error("Failed to fetch users");
-
-        const data = await res.json();
-
-        // Map backend fields to frontend table
-        const mappedPatients = data.map((p) => ({
-          id: p.userId,
-          customerId: p.customer_id,
-          medicalId: p.medicalId,
-          name: p.full_name,
-          gender: p.gender,
-          condition: p.disease || p.condition_type || "N/A",
-          creatinine: p.creatinine,
-          potassium: p.potassium,
-          sodium: p.sodium,
-          urea: p.urea,
-          estimatedGFR: p.estimated_gfr,
-          albumin: p.albumin,
-          calcium: p.calcium,
-          phosphate: p.phosphate,
-          uricAcid: p.uric_acid,
-          cholesterolTotal: p.cholesterol_total,
-          cholesterolLDL: p.cholesterol_ldl,
-          cholesterolHDL: p.cholesterol_hdl,
-          triglycerides: p.triglycerides,
-          bloodPressureSystolic: p.blood_pressure_systolic,
-          bloodPressureDiastolic: p.blood_pressure_diastolic,
-          heartRate: p.heart_rate,
-          bmi: p.bmi,
-          fastingGlucose: p.fasting_glucose,
-          postprandialGlucose: p.postprandial_glucose,
-          hba1c: p.hba1c,
-        }));
-
-        setPatients(mappedPatients);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  const fetchPatients = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/users-medical", {
+        headers: { Authorization: "Bearer " + localStorage.getItem("adminToken") },
+      });
+      if (!res.ok) throw new Error("Failed to fetch users");
+      const data = await res.json();
+      const mappedPatients = data.map((p) => ({
+        id: p.userId,
+        customerId: p.customer_id,
+        medicalId: p.medicalId,
+        name: p.full_name,
+        gender: p.gender,
+        condition: p.disease || p.condition_type || "N/A",
+        creatinine: p.creatinine, potassium: p.potassium, sodium: p.sodium,
+        urea: p.urea, estimatedGFR: p.estimated_gfr, albumin: p.albumin,
+        calcium: p.calcium, phosphate: p.phosphate, uricAcid: p.uric_acid,
+        cholesterolTotal: p.cholesterol_total, cholesterolLDL: p.cholesterol_ldl,
+        cholesterolHDL: p.cholesterol_hdl, triglycerides: p.triglycerides,
+        bloodPressureSystolic: p.blood_pressure_systolic, bloodPressureDiastolic: p.blood_pressure_diastolic,
+        heartRate: p.heart_rate, bmi: p.bmi, fastingGlucose: p.fasting_glucose,
+        postprandialGlucose: p.postprandial_glucose, hba1c: p.hba1c,
+        assignedDietician: p.assigned_dietician,
+      }));
+      setPatients(mappedPatients);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-
-    fetchPatients();
   }, []);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  // ── Socket.io for admin ─────────────────────────────────────────────
+  useEffect(() => {
+    const socket = io("http://localhost:8000", {
+      transports: ["websocket", "polling"],
+      auth: { token: localStorage.getItem("adminToken") },
+    });
+    adminSocketRef.current = socket;
+    socket.on("connect", () => {
+      socket.emit("join_room", { userId: "admin", role: "admin" });
+    });
+    socket.on("new_patient_message", (msg) => {
+      setConvMessages((prev) => {
+        if (selectedConv && msg.user_id === selectedConv.user_id) {
+          return [...prev, { ...msg, timestamp: msg.created_at }];
+        }
+        return prev;
+      });
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.user_id === msg.user_id
+            ? { ...c, last_message: msg.message, last_sender: "patient", unread_count: c.unread_count + 1 }
+            : c
+        )
+      );
+    });
+    socket.on("patient_typing", ({ userId, typing }) => {
+      if (selectedConv && userId === selectedConv.user_id) setPatientTyping(typing);
+    });
+    return () => socket.disconnect();
+  }, []);
+
+  // scroll admin chat to bottom
+  useEffect(() => {
+    adminMsgEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [convMessages, patientTyping]);
+
+  // ── Load conversations list ──────────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== "messages") return;
+    fetch("/api/diet-chat/admin/all-conversations", {
+      headers: { Authorization: "Bearer " + localStorage.getItem("adminToken") },
+    })
+      .then((r) => r.ok ? r.json() : [])
+      .then(setConversations)
+      .catch(() => {});
+  }, [activeTab]);
+
+  // ── Open a conversation ──────────────────────────────────────────────
+  async function openConversation(conv) {
+    setSelectedConv(conv);
+    setConvLoading(true);
+    setConvMessages([]);
+    try {
+      const res = await fetch(`/api/diet-chat/admin/history/${conv.user_id}`, {
+        headers: { Authorization: "Bearer " + localStorage.getItem("adminToken") },
+      });
+      const data = await res.json();
+      setConvMessages(data.map((m) => ({ ...m, timestamp: m.created_at })));
+      // Mark as read
+      fetch(`/api/diet-chat/mark-read/${conv.user_id}`, {
+        method: "PATCH",
+        headers: { Authorization: "Bearer " + localStorage.getItem("adminToken") },
+      }).catch(() => {});
+      setConversations((prev) =>
+        prev.map((c) => c.user_id === conv.user_id ? { ...c, unread_count: 0 } : c)
+      );
+    } catch {} finally { setConvLoading(false); }
+  }
+
+  // ── Admin sends reply ────────────────────────────────────────────────
+  function sendAdminReply() {
+    const text = adminInput.trim();
+    if (!text || !selectedConv) return;
+    setAdminInput("");
+    const optimistic = {
+      id: `opt_${Date.now()}`,
+      sender: "dietician",
+      message: text,
+      dietician: "Admin",
+      timestamp: new Date().toISOString(),
+    };
+    setConvMessages((prev) => [...prev, optimistic]);
+    if (adminSocketRef.current?.connected) {
+      adminSocketRef.current.emit("dietician_message", {
+        userId: selectedConv.user_id,
+        message: text,
+        dietician: "Admin",
+      });
+    } else {
+      fetch("/api/diet-chat/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("adminToken") },
+        body: JSON.stringify({ userId: selectedConv.user_id, message: text, sender: "dietician", dietician: "Admin" }),
+      }).catch(() => {});
+    }
+  }
+
+  // ── Assign Dietician ─────────────────────────────────────────────────
+  async function handleAssignDietician() {
+    if (!assignTarget || !assignName.trim()) return;
+    setAssignLoading(true);
+    try {
+      const res = await fetch("/api/diet-chat/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("adminToken") },
+        body: JSON.stringify({ userId: assignTarget.id, dietician_name: assignName.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setPatients((prev) =>
+        prev.map((p) => p.id === assignTarget.id ? { ...p, assignedDietician: assignName.trim() } : p)
+      );
+      setPopup({ show: true, message: `Dietician "${assignName}" assigned to ${assignTarget.name} ✅`, type: "success" });
+      setShowAssignModal(false);
+      setAssignName("");
+      setAssignTarget(null);
+    } catch {
+      setPopup({ show: true, message: "Failed to assign dietician ❌", type: "error" });
+    } finally { setAssignLoading(false); }
+  }
 
 
 
@@ -367,9 +495,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      // ✅ Update UI instantly (no refetch needed)
-      setPatients((prev) => prev.filter((p) => p.id !== userId));
-
       // alert("Patient deleted successfully");
 
       // ✅ SHOW SUCCESS POPUP
@@ -462,8 +587,13 @@ export default function AdminDashboard() {
   };
 
 
-
-
+  // Group conversations by dietician for the sidebar
+  const groupedConversations = conversations.reduce((acc, c) => {
+    const dName = c.assigned_dietician || "Unassigned";
+    if (!acc[dName]) acc[dName] = [];
+    acc[dName].push(c);
+    return acc;
+  }, {});
 
   return (
     <div className="admin-layout">
@@ -495,6 +625,15 @@ export default function AdminDashboard() {
               >
                 <span className="nav-icon">🍎</span>
                 <span className="nav-text">Patient Diet</span>
+              </button>
+            </li>
+            <li>
+              <button
+                className={`nav-item ${activeTab === "messages" ? "active" : ""}`}
+                onClick={() => { setActiveTab("messages"); setIsSidebarOpen(false); }}
+              >
+                <span className="nav-icon">💬</span>
+                <span className="nav-text">Messages</span>
               </button>
             </li>
             {/* <li>
@@ -541,6 +680,7 @@ export default function AdminDashboard() {
                     <tr>
                       <th>#</th>
                       <th>Name</th>
+                      <th>Assigned Dietician</th>
                       <th>Gender</th>
                       <th>Condition</th>
                       <th>Creatinine</th>
@@ -571,6 +711,11 @@ export default function AdminDashboard() {
                       <tr key={p.id}>
                         <td>{i + 1}</td>
                         <td>{p.name}</td>
+                        <td className="text-center">
+                          <span className={`dietician-badge ${p.assignedDietician ? 'assigned' : 'none'}`}>
+                            {p.assignedDietician || "Not Assigned"}
+                          </span>
+                        </td>
                         <td>{p.gender}</td>
                         <td>
                           <span className={`condition-badge ${p.condition.toLowerCase()}`}>
@@ -603,8 +748,13 @@ export default function AdminDashboard() {
                           <div className="action-buttons">
                             <button className="edit-btn2" onClick={() => handleEdit(p)}>Edit</button>
                             <button className="delete-btn2" onClick={() => handleDelete(p.id)}>Delete</button>
-                            <button className="view-btn" onClick={() => handleViewPrescriptions(p)}>
-                              View
+                            <button className="view-btn" onClick={() => handleViewPrescriptions(p)}>View Rx</button>
+                            <button
+                              className="assign-btn"
+                              onClick={() => { setAssignTarget(p); setAssignName(p.assignedDietician || ""); setShowAssignModal(true); }}
+                              title={p.assignedDietician ? `Assigned: ${p.assignedDietician}` : "Assign Dietician"}
+                            >
+                              {p.assignedDietician ? "👨‍⚕️ Reassign" : "👨‍⚕️ Assign"}
                             </button>
                           </div>
                         </td>
@@ -627,6 +777,7 @@ export default function AdminDashboard() {
                     <th>#</th>
                     <th>Username</th>
                     <th>Customer ID</th>
+                    <th>Assigned Dietician</th>
                     <th>Weekly Diet</th>
                   </tr>
                 </thead>
@@ -637,6 +788,11 @@ export default function AdminDashboard() {
                       <td className="text-center">{index + 1}</td>
                       <td className="text-left">{p.name}</td>
                       <td className="text-center">{p.customerId || "-"}</td>
+                      <td className="text-center">
+                        <span className={`dietician-badge ${p.assignedDietician ? 'assigned' : 'none'}`}>
+                          {p.assignedDietician || "Not Assigned"}
+                        </span>
+                      </td>
                       <td className="text-center">
                         <button
                           className="view-btn compact-btn"
@@ -665,6 +821,12 @@ export default function AdminDashboard() {
                   <span className={`diet-status ${dietPlan?.status}`}>
                     Status: {dietPlan?.status?.toUpperCase()}
                   </span>
+
+                  {dietPlan?.status === "approved" && dietPlan?.approved_by && (
+                    <span className="diet-approved-by">
+                      Approved by: <strong>{dietPlan.approved_by}</strong>
+                    </span>
+                  )}
 
                   {!editMode && dietPlan?.status !== "approved" && (
                     <div className="diet-actions">
@@ -797,6 +959,101 @@ export default function AdminDashboard() {
             <div className="coming-soon">
               <h2>{activeTab.toUpperCase()}</h2>
               <p>This section is under development</p>
+            </div>
+          )}
+
+          {/* ── Messages Tab ── */}
+          {activeTab === "messages" && (
+            <div className="messages-panel">
+              {/* Left: conversation list */}
+              <div className="conv-list">
+                <div className="conv-list-header">💬 Patient Messages</div>
+                {conversations.length === 0 ? (
+                  <div className="conv-empty">No messages yet</div>
+                ) : (
+                  Object.entries(groupedConversations).map(([dietician, convs]) => (
+                    <div key={dietician} className="dietician-group">
+                      <div className="dietician-group-header">
+                        👨‍⚕️ {dietician} ({convs.length})
+                      </div>
+                      {convs.map((c) => (
+                        <div
+                          key={c.user_id}
+                          className={`conv-item ${selectedConv?.user_id === c.user_id ? "active" : ""}`}
+                          onClick={() => openConversation(c)}
+                        >
+                          <div className="conv-avatar">{(c.full_name || "?")[0].toUpperCase()}</div>
+                          <div className="conv-info">
+                            <div className="conv-name">{c.full_name}</div>
+                            <div className="conv-last">
+                              {c.last_message?.slice(0, 30)}
+                              {c.last_message?.length > 30 ? "..." : ""}
+                            </div>
+                          </div>
+                          {c.unread_count > 0 && (
+                            <span className="conv-badge">{c.unread_count}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Right: chat thread */}
+              <div className="conv-thread">
+                {!selectedConv ? (
+                  <div className="conv-empty-thread">
+                    <div style={{ fontSize: 48 }}>💬</div>
+                    <p>Select a conversation to view messages</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="conv-thread-header">
+                      <strong>{selectedConv.full_name}</strong>
+                      {selectedConv.assigned_dietician && (
+                        <span className="conv-assigned">Dietician: {selectedConv.assigned_dietician}</span>
+                      )}
+                    </div>
+                    <div className="conv-messages">
+                      {convLoading ? (
+                        <div className="conv-loading">Loading messages...</div>
+                      ) : (
+                        convMessages.map((m) => (
+                          <div key={m.id} className={`conv-bubble ${m.sender}`}>
+                            <div className="conv-bubble-text">{m.message}</div>
+                            <div className="conv-bubble-time">
+                              {m.sender === "dietician" ? `👨‍⚕️ ${m.dietician || "Admin"} · ` : "Patient · "}
+                              {new Date(m.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                      {patientTyping && (
+                        <div className="conv-bubble patient">
+                          <div className="conv-bubble-text typing-dots">
+                            <span/><span/><span/>
+                          </div>
+                        </div>
+                      )}
+                      <div ref={adminMsgEndRef} />
+                    </div>
+                    <div className="conv-input-area">
+                      <input
+                        type="text"
+                        value={adminInput}
+                        onChange={(e) => setAdminInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && sendAdminReply()}
+                        placeholder={`Reply to ${selectedConv.full_name}...`}
+                        className="conv-input"
+                      />
+                      <button onClick={sendAdminReply} className="conv-send-btn" disabled={!adminInput.trim()}>
+                        Send ➤
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1098,6 +1355,34 @@ export default function AdminDashboard() {
             <button onClick={() => setPopup({ ...popup, show: false })}>
               OK
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Dietician Modal */}
+      {showAssignModal && assignTarget && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 420 }}>
+            <h2>👨‍⚕️ Assign Dietician</h2>
+            <p style={{ color: "#64748b", marginBottom: 16 }}>Patient: <strong>{assignTarget.name}</strong></p>
+            <div className="form-group">
+              <label>Dietician Name</label>
+              <input
+                type="text"
+                value={assignName}
+                onChange={(e) => setAssignName(e.target.value)}
+                placeholder="e.g. Dr. Priya Sharma"
+                onKeyDown={(e) => e.key === "Enter" && handleAssignDietician()}
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="approve-btn" onClick={handleAssignDietician} disabled={assignLoading}>
+                {assignLoading ? "Saving..." : "Assign"}
+              </button>
+              <button className="close-btn" onClick={() => { setShowAssignModal(false); setAssignName(""); setAssignTarget(null); }}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

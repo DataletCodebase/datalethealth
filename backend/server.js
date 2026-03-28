@@ -4,6 +4,8 @@ import express from "express";
 import cors from "cors";
 import mysql from "mysql2/promise";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 import authRoutes from "./routes/auth.js";
 import chatRoutes from "./routes/chat.js";
@@ -17,21 +19,25 @@ import adminRoutes from "./routes/adminRoutes.js";
 import dietRoutes from "./routes/diet.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import wellnessRoutes from "./routes/wellnessRoutes.js";
+import dietChatRoutes from "./routes/dietChat.js";
+import registerChatSockets from "./sockets/chat.js";
 
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 
 const app = express();
+
+const ALLOWED_ORIGINS = [
+  "http://localhost:5174",
+  "http://13.60.55.59:5174",
+  "https://datalethealthcare.in",
+];
 
 /* ===========================
    CORS CONFIG
 =========================== */
 app.use(
   cors({
-    origin: [
-      "http://localhost:5174",
-      "http://13.60.55.59:5174",
-      "https://datalethealthcare.in",
-    ],
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   })
 );
@@ -150,6 +156,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/diet", dietRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/wellness", wellnessRoutes);
+app.use("/api/diet-chat", dietChatRoutes);
 
 // 🔹 Production Aliases (Handles stale frontend builds that omit /api)
 app.use("/diet", dietRoutes);
@@ -162,13 +169,47 @@ app.use("/meal-tracking", createProxyMiddleware({
 }));
 
 /* ===========================
-   SERVER START
+   HTTP SERVER + SOCKET.IO
 =========================== */
+
+const httpServer = createServer(app);
+
+export const io = new Server(httpServer, {
+  cors: {
+    origin: ALLOWED_ORIGINS,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+  transports: ["websocket", "polling"],
+});
+
+// Register all real-time chat socket events
+registerChatSockets(io);
+
+/* ===========================
+   7-DAY CHAT AUTO-CLEANUP
+=========================== */
+async function purgeOldMessages() {
+  try {
+    const [result] = await db.query(
+      `DELETE FROM dietician_messages WHERE created_at < NOW() - INTERVAL 7 DAY`
+    );
+    if (result.affectedRows > 0) {
+      console.log(`🗑️  [Chat Cleanup] Deleted ${result.affectedRows} messages older than 7 days.`);
+    }
+  } catch (err) {
+    console.error("❌ [Chat Cleanup] Failed to purge old messages:", err.message);
+  }
+}
+
+// Run immediately on startup, then every 24 hours
+purgeOldMessages();
+setInterval(purgeOldMessages, 24 * 60 * 60 * 1000);
 
 const PORT = 8000;
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(
-    `✅ API Gateway running on port ${PORT} (Node Public -> Python 8001 Internal)`
+    `✅ API Gateway + Socket.io running on port ${PORT} (Node Public -> Python 8001 Internal)`
   );
 });

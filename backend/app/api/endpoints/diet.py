@@ -569,6 +569,12 @@ def approve_diet(
                 db.add(new_meal)
     # =========================================================
     
+    # ✅ Update assigned_dietician on the Patient profile
+    patient = db.query(Patient).filter(Patient.id == plan.patient_id).first()
+    if patient:
+        patient.assigned_dietician = plan.approved_by
+        db.add(patient)
+
     db.commit()
     db.refresh(plan)
 
@@ -595,8 +601,14 @@ def reject_diet(
         return {"message": "Diet plan is already rejected"}
 
     plan.status = "rejected"
-    plan.approved_at = datetime.utcnow()  # Use approved_at for rejection time too
     plan.approved_by = payload.get("approved_by", "Dietitian")
+    plan.approved_at = datetime.utcnow()
+
+    # ✅ Sync assignment even on rejection
+    patient = db.query(Patient).filter(Patient.id == plan.patient_id).first()
+    if patient:
+        patient.assigned_dietician = plan.approved_by
+        db.add(patient)
 
     db.commit()
     db.refresh(plan)

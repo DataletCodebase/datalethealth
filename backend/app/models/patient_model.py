@@ -29,3 +29,4 @@ class Patient(SQLModel, table=True):
 
     blood_group: Optional[str] = "NA"
     city: Optional[str] = "NA"
+    assigned_dietician: Optional[str] = None

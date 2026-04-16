@@ -1,11 +1,9 @@
 import os
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-# Ensure these match the exact keys from backend/utils/encryption.js
-ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY", "e1f2c3d4e5f6a7b8c9d0e1f2c3d4e5f6a7b8c9d0e1f2c3d4e5f6a7b8c9d0e1f2")
-
 def get_key_bytes():
-    return bytes.fromhex(ENCRYPTION_KEY)[:32]
+    key = os.environ.get("ENCRYPTION_KEY", "e1f2c3d4e5f6a7b8c9d0e1f2c3d4e5f6a7b8c9d0e1f2c3d4e5f6a7b8c9d0e1f2")
+    return bytes.fromhex(key)[:32]
 
 def decrypt(encrypted_data: str) -> str:
     """

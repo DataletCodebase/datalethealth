@@ -72,9 +72,15 @@ def extract_water_volume(text: str) -> Optional[float]:
     return float(m.group(1)) if m else None
 
 
-def calculate_age(dob: Optional[date]) -> Optional[int]:
+def calculate_age(dob: Optional[Union[date, str]]) -> Optional[int]:
     if not dob:
         return None
+    if isinstance(dob, str):
+        try:
+            from datetime import datetime
+            dob = datetime.strptime(dob[:10], "%Y-%m-%d").date()
+        except Exception:
+            return None
     today = date.today()
     age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
     return age if age >= 0 else None
@@ -205,12 +211,16 @@ async def get_today_water_total(session: AsyncSession, patient_id: int) -> float
 # MAIN ENDPOINT
 # ============================================================
 
+def trace(msg):
+    pass
+
 @router.post("/", response_model=AskResponse)
 async def ask_agent(
     payload: AskRequest,
     request: Request,
     session: AsyncSession = Depends(get_session)
 ):
+    trace("DEBUG: Entered ask_agent")
     print(f"DEBUG: asking agent with payload: patient_id={payload.patient_id} question='{payload.question}' language='{payload.language}' condition_context={payload.condition_context}")
 
     # --- Resolve patient_id ---
@@ -237,16 +247,20 @@ async def ask_agent(
     if isinstance(payload.patient_id, int) and payload.patient_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid patient ID. Please refresh and try again.")
 
+    trace("DEBUG: Loading Patient")
     # --- Load Patient ---
     q = select(Patient).where(Patient.id == payload.patient_id)
     patient = (await session.execute(q)).scalars().first()
     if not patient:
+        trace("DEBUG: Patient not found")
         raise HTTPException(status_code=404, detail="Patient not found")
 
+    trace("DEBUG: Loading Labs")
     # --- Load Labs (optional) ---
     lq = select(LabReport).where(LabReport.user_id == payload.patient_id)
     lab = (await session.execute(lq)).scalars().first()
     labs = lab.dict() if lab else {}
+    trace("DEBUG: Processing info")
 
     # --- Patient info ---
     age = calculate_age(patient.dob)
@@ -418,6 +432,7 @@ Long-term Tip
 
     # Call GPT-4o-mini
     try:
+        trace("DEBUG: Calling OpenAI")
         gpt_response = await _openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -427,6 +442,7 @@ Long-term Tip
             temperature=0.4,
             max_tokens=700
         )
+        trace("DEBUG: OpenAI returned")
         nutrition_summary = gpt_response.choices[0].message.content.strip()
         ai_source = "gpt-4o-mini"
     except Exception as e:
@@ -444,7 +460,9 @@ Long-term Tip
     final_class = "SAFE"
     final_reason = "No major red flags detected."
     try:
+        trace("DEBUG: Calling Intelligence Layer")
         memories = await get_last_7_days_memory(session, payload.patient_id)
+        trace("DEBUG: Intelligence Layer Returned")
         patterns = detect_risk_patterns(memories)
         intel_decision, intel_reason = apply_intelligence_rules(patterns)
         if intel_decision:

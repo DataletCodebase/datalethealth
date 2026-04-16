@@ -137,7 +137,7 @@ export default function Patients({ activeTab }) {
 
         const todayISO = new Date().toISOString().split("T")[0];
 
-        fetch(`${API_BASE}/diet/meal/user/${userId}?look_date=${todayISO}`, {
+        fetch(`${API_BASE}/meal-tracking/user/${userId}?look_date=${todayISO}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -168,7 +168,7 @@ export default function Patients({ activeTab }) {
             meal_date: new Date().toISOString().split("T")[0],
         };
 
-        fetch(`${API_BASE}/diet/meal/complete`, {
+        fetch(`${API_BASE}/meal-tracking/complete`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -202,7 +202,7 @@ export default function Patients({ activeTab }) {
             meal_date: new Date().toISOString().split("T")[0],
         };
 
-        fetch(`${API_BASE}/diet/meal/skip`, {
+        fetch(`${API_BASE}/meal-tracking/skip`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

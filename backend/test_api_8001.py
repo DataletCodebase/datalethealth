@@ -5,11 +5,7 @@ req = urllib.request.Request(
     headers={'Content-Type': 'application/json'}
 )
 try:
-    resp = urllib.request.urlopen(req, timeout=3)
-    print(resp.read().decode('utf-8'))
-except urllib.error.HTTPError as e:
-    print('HTTP ERROR:', e.code)
-    try: print(e.read().decode('utf-8')[:1000])
-    except: pass
+    resp = urllib.request.urlopen(req, timeout=40)
+    print(resp.read().decode('utf-8')[:500])
 except Exception as e:
-    print('OTHER ERROR:', e)
+    print('ERROR:', e)

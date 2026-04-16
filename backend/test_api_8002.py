@@ -1,15 +1,11 @@
 import urllib.request, json, urllib.error
 req = urllib.request.Request(
-    'http://localhost:8001/ask-agent/ask/', 
+    'http://127.0.0.1:8003/ask-agent/ask/', 
     data=json.dumps({'patient_id': 1, 'question': 'What should I eat?', 'language': 'en', 'condition_context': []}).encode('utf-8'), 
     headers={'Content-Type': 'application/json'}
 )
 try:
-    resp = urllib.request.urlopen(req, timeout=3)
+    resp = urllib.request.urlopen(req, timeout=20)
     print(resp.read().decode('utf-8'))
-except urllib.error.HTTPError as e:
-    print('HTTP ERROR:', e.code)
-    try: print(e.read().decode('utf-8')[:1000])
-    except: pass
 except Exception as e:
-    print('OTHER ERROR:', e)
+    print('ERROR:', e)

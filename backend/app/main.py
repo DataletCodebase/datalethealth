@@ -13,7 +13,7 @@ from pathlib import Path
 
 # Explicitly load backend/.env
 env_path = Path(__file__).resolve().parent.parent.parent / "backend" / ".env"
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path, override=True)
 
 from typing import Optional
 import asyncio

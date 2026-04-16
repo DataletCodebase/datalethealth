@@ -24,14 +24,16 @@ from backend.app.models.patient_model import Patient
 from backend.app.models.lab_report_model import LabReport
 from backend.app.models.water_intake_model import WaterIntakeLog
 from backend.app.services.usda_connector import get_usda_nutrition
+from backend.app.utils.encryption import decrypt
 
 
 router = APIRouter(prefix="/ask", tags=["AI Agent"])
 
 DAILY_WATER_LIMIT = 1500
 
-_openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
+def get_openai_client():
+    key = os.getenv("OPENAI_API_KEY")
+    return AsyncOpenAI(api_key=key)
 
 # ============================================================
 # MODELS
@@ -151,45 +153,53 @@ def build_lab_flags(labs: dict) -> str:
 
     flags = []
 
-    creatinine = float(labs.get("creatinine") or 0)
+    def parse_lab(val):
+        if not val:
+            return 0.0
+        try:
+            return float(decrypt(val))
+        except:
+            return 0.0
+
+    creatinine = parse_lab(labs.get("creatinine"))
     if creatinine > 1.3:
         flags.append(f"HIGH CREATININE ({creatinine} mg/dL) → Kidney stress: limit high-protein foods, avoid excess meat/dairy")
 
-    potassium = float(labs.get("potassium") or 0)
+    potassium = parse_lab(labs.get("potassium"))
     if potassium > 5.1:
         flags.append(f"HIGH POTASSIUM ({potassium} mmol/L) → Avoid bananas, oranges, potatoes, tomatoes, nuts")
     elif 0 < potassium < 3.5:
         flags.append(f"LOW POTASSIUM ({potassium} mmol/L) → Include potassium-rich foods: spinach, sweet potato, beans")
 
-    sodium = float(labs.get("sodium") or 0)
+    sodium = parse_lab(labs.get("sodium"))
     if 0 < sodium < 135:
         flags.append(f"LOW SODIUM ({sodium} mmol/L) → May need slightly more sodium; check with doctor")
     elif sodium > 145:
         flags.append(f"HIGH SODIUM ({sodium} mmol/L) → Restrict salty foods")
 
-    urea = float(labs.get("urea") or 0)
+    urea = parse_lab(labs.get("urea"))
     if urea > 20:
         flags.append(f"HIGH UREA ({urea} mg/dL) → Restrict protein intake; avoid excess meat/fish/eggs")
 
-    chol_total = float(labs.get("cholesterol_total") or 0)
+    chol_total = parse_lab(labs.get("cholesterol_total"))
     if chol_total > 200:
         flags.append(f"HIGH CHOLESTEROL ({chol_total} mg/dL) → Avoid fried foods, red meat, full-fat dairy, coconut oil")
 
-    ldl = float(labs.get("cholesterol_ldl") or 0)
+    ldl = parse_lab(labs.get("cholesterol_ldl"))
     if ldl > 100:
         flags.append(f"HIGH LDL ({ldl} mg/dL) → Reduce saturated fats; increase fiber (oats, beans, vegetables)")
 
-    hba1c = float(labs.get("hba1c") or 0)
+    hba1c = parse_lab(labs.get("hba1c"))
     if hba1c > 5.7:
         level = "Pre-diabetic" if hba1c < 6.5 else "Diabetic range"
         flags.append(f"HIGH HbA1c ({hba1c}% — {level}) → Strictly limit sugars, white rice, bread, sweets")
 
-    glucose = float(labs.get("fasting_glucose") or 0)
+    glucose = parse_lab(labs.get("fasting_glucose"))
     if glucose > 100:
         flags.append(f"HIGH FASTING GLUCOSE ({glucose} mg/dL) → Avoid sugary drinks, desserts, refined carbs")
 
-    bp_sys = float(labs.get("blood_pressure_systolic") or 0)
-    bp_dia = float(labs.get("blood_pressure_diastolic") or 0)
+    bp_sys = parse_lab(labs.get("blood_pressure_systolic"))
+    bp_dia = parse_lab(labs.get("blood_pressure_diastolic"))
     if bp_sys > 130 or bp_dia > 80:
         flags.append(f"HIGH BLOOD PRESSURE ({int(bp_sys)}/{int(bp_dia)} mmHg) → Restrict sodium to <2g/day; avoid pickles, chips, processed foods")
 
@@ -262,12 +272,29 @@ async def ask_agent(
     labs = lab.dict() if lab else {}
     trace("DEBUG: Processing info")
 
-    # --- Patient info ---
-    age = calculate_age(patient.dob)
+    # --- Patient info decryption ---
+    p_name = decrypt(getattr(patient, "full_name", "")) or "Patient"
+    p_gender = decrypt(getattr(patient, "gender", "")) or "NA"
+    p_blood_group = decrypt(getattr(patient, "blood_group", "")) or "NA"
+    p_disease = decrypt(getattr(patient, "disease", "")) or "none reported"
+
+    try:
+        age_str = decrypt(patient.dob) if getattr(patient, 'dob', None) else None
+        age = calculate_age(age_str)
+    except Exception:
+        age = None
 
     # --- BMI & weight classification ---
-    weight = int(patient.weight or 0)
-    height = int(patient.height or 0)
+    try:
+        weight = int(float(decrypt(patient.weight or "0")))
+    except:
+        weight = 0
+        
+    try:
+        height = int(float(decrypt(patient.height or "0")))
+    except:
+        height = 0
+
     bmi = calculate_bmi(weight, height)
     bmi_status, bmi_advice = classify_bmi(bmi, age)
 
@@ -280,7 +307,7 @@ async def ask_agent(
     height_str = f"{height} cm" if height else "not recorded"
     bmi_str = str(bmi) if bmi else "cannot calculate (no height/weight)"
     conditions_str = ", ".join(payload.condition_context) if payload.condition_context else "none selected"
-    disease_str = patient.disease or "none reported"
+    disease_str = p_disease
 
     # ================================================================
     # WATER HANDLING (fast path — no GPT needed)
@@ -382,21 +409,21 @@ async def ask_agent(
     system_prompt = (
         "You are a certified clinical dietitian and medical nutrition therapist. "
         "Your role is to provide personalized, evidence-based nutritional advice. "
-        "Be direct, warm, and professional. "
-        "Always factor in the patient's BMI, weight status, and lab values. "
-        "Do NOT use numbers for sections. ONLY use EXACTLY these section headers:\\n"
-        "Nutritional Breakdown\\n"
-        "⚠️ Health Warnings\\n"
-        "✅ Recommendation\\n"
-        "Long-term Tip\\n"
-        "Give specific portion sizes — don't be vague. "
-        "If the patient is obese, always flag that the requested quantity may be too much and suggest a healthier portion."
+        "Be direct, warm, and professional. Always factor in the patient's BMI and lab values. "
+        "INTELLIGENCE RULES: "
+        "1. If the user's input is gibberish, random text (e.g., 'kkkk', 'dddkdkd'), or just a short greeting (e.g., 'hi', 'hello'), "
+        "STRICTLY ignore the formatting rules and reply ONLY with: 'Hello! I am your AI clinical dietitian. Please ask a specific health, diet, or nutrition-related question based on your profile.'\n"
+        "2. If the user asks a general health question that does NOT involve eating a specific food (e.g., 'can i fast today', 'how to lower my bp', 'am i healthy'), "
+        "DO NOT output 'Nutritional Breakdown'. Simply answer their question using these headers where applicable: '⚠️ Health Assessment', '✅ Recommendation', 'Long-term Tip'.\n"
+        "3. ONLY if the user asks about consuming a specific food or meal (e.g. 'can i have chicken', 'is rice good'), "
+        "you MUST strictly use EXACTLY these section headers: 'Nutritional Breakdown', '⚠️ Health Warnings', '✅ Recommendation', 'Long-term Tip'. "
+        "Give specific portion sizes — don't be vague. If the patient is obese, flag if the requested quantity is too much."
     )
 
     user_prompt = f"""Patient Health Profile:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Name: {patient.full_name}
-• Age: {age_str} | Gender: {patient.gender or 'NA'} | Blood Group: {patient.blood_group or 'NA'}
+• Name: {p_name}
+• Age: {age_str} | Gender: {p_gender} | Blood Group: {p_blood_group}
 • Weight: {weight_str} | Height: {height_str}
 • BMI: {bmi_str} → Weight Status: {bmi_status.upper()}
 • {bmi_advice}
@@ -414,7 +441,7 @@ Patient Question: "{payload.question}"
 
 Format your response EXACTLY like the following template. Start directly with their first name for the direct answer. DO NOT add any extra introductory text, and DO NOT use markdown headers (like ## or **) for the section titles.
 
-{patient.full_name.split()[0] if patient.full_name else 'Patient'}, [Direct conversational answer here, e.g., while you can technically have X...]
+{p_name.split()[0] if p_name else 'Patient'}, [Direct conversational answer here, e.g., while you can technically have X...]
 Nutritional Breakdown
 For [Portion Size]:
 - Calories: [Amount]
@@ -433,7 +460,8 @@ Long-term Tip
     # Call GPT-4o-mini
     try:
         trace("DEBUG: Calling OpenAI")
-        gpt_response = await _openai_client.chat.completions.create(
+        client = get_openai_client()
+        gpt_response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -446,9 +474,12 @@ Long-term Tip
         nutrition_summary = gpt_response.choices[0].message.content.strip()
         ai_source = "gpt-4o-mini"
     except Exception as e:
+        import traceback
+        with open("gpt_error.txt", "w") as f:
+            f.write(traceback.format_exc())
         print(f"GPT call failed: {e}")
         nutrition_summary = (
-            f"Unable to get AI response at this time. "
+            f"Unable to get AI response at this time. Error: {str(e)[:50]}. "
             f"Based on your profile (Weight: {weight_str}, BMI Status: {bmi_status}): "
             f"Consult your dietitian for advice on '{payload.question}'."
         )
@@ -542,10 +573,27 @@ async def analyze_food_photo(
     lab = (await session.execute(lq)).scalars().first()
     labs = lab.dict() if lab else {}
 
-    # Patient context
-    age = calculate_age(patient.dob)
-    weight = int(patient.weight or 0)
-    height = int(patient.height or 0)
+    # Patient context decryption
+    p_name = decrypt(getattr(patient, "full_name", "")) or "Patient"
+    p_gender = decrypt(getattr(patient, "gender", "")) or "NA"
+    p_disease = decrypt(getattr(patient, "disease", "")) or "none reported"
+
+    try:
+        age_str = decrypt(patient.dob) if getattr(patient, 'dob', None) else None
+        age = calculate_age(age_str)
+    except Exception:
+        age = None
+
+    try:
+        weight = int(float(decrypt(patient.weight or "0")))
+    except:
+        weight = 0
+        
+    try:
+        height = int(float(decrypt(patient.height or "0")))
+    except:
+        height = 0
+
     bmi = calculate_bmi(weight, height)
     bmi_status, bmi_advice = classify_bmi(bmi, age)
     lab_flags = build_lab_flags(labs)
@@ -554,7 +602,7 @@ async def analyze_food_photo(
     weight_str = f"{weight} kg" if weight else "not recorded"
     height_str = f"{height} cm" if height else "not recorded"
     bmi_str = str(bmi) if bmi else "cannot calculate"
-    conditions_str = condition_context or patient.disease or "none"
+    conditions_str = condition_context or p_disease
 
     # Step 1: Vision AI detect food
     try:
@@ -591,10 +639,10 @@ async def analyze_food_photo(
     )
 
     user_prompt = f"""Patient Profile:
-• Name: {patient.full_name} | Age: {age_str} | Gender: {patient.gender or 'NA'}
+• Name: {p_name} | Age: {age_str} | Gender: {p_gender}
 • Weight: {weight_str} | Height: {height_str} | BMI: {bmi_str} → {bmi_status.upper()}
 • {bmi_advice}
-• Medical Condition: {patient.disease or 'Not specified'} | Focus: {conditions_str}
+• Medical Condition: {p_disease} | Focus: {conditions_str}
 
 Lab Flags:
 {lab_flags}
@@ -603,7 +651,7 @@ Food Detected: {food_name} (~{estimated_calories} kcal, confidence: {confidence}
 
 Format your response EXACTLY like the following template. Start directly with their first name for the assessment. DO NOT add any extra introductory text, and DO NOT use markdown headers for the section titles.
 
-{patient.full_name.split()[0] if patient.full_name else 'Patient'}, [Direct conversational answer here concerning the detected food...]
+{p_name.split()[0] if p_name else 'Patient'}, [Direct conversational answer here concerning the detected food...]
 Nutritional Breakdown
 For [Portion Size]:
 - Calories: [Amount]
@@ -620,7 +668,8 @@ Long-term Tip
 """
 
     try:
-        gpt_response = await _openai_client.chat.completions.create(
+        client = get_openai_client()
+        gpt_response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},

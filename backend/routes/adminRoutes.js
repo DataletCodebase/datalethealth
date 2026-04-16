@@ -56,10 +56,17 @@ router.get("/users-medical", adminAuth, async (req, res) => {
         m.fasting_glucose,
         m.postprandial_glucose,
         m.hba1c,
-        m.created_at AS medical_created_at
+        m.created_at AS medical_created_at,
+        dp.diet_status
 
       FROM users u
       LEFT JOIN medical_data m ON m.user_id = u.id
+      LEFT JOIN (
+        SELECT patient_id, status as diet_status FROM diet_plans 
+        WHERE id IN (
+            SELECT MAX(id) FROM diet_plans GROUP BY patient_id
+        )
+      ) dp ON dp.patient_id = u.id
       ORDER BY u.id DESC
     `);
 
@@ -97,6 +104,7 @@ router.get("/users-medical", adminAuth, async (req, res) => {
       fasting_glucose: decrypt(r.fasting_glucose),
       postprandial_glucose: decrypt(r.postprandial_glucose),
       hba1c: decrypt(r.hba1c),
+      dietStatus: r.diet_status,
     }));
 
     res.json(decryptedRows);

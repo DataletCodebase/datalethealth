@@ -107,8 +107,8 @@ export default function Patients({ activeTab }) {
             }
 
             setDietPlan(data.diet_preview);
-            setDietStatus("pending");
-            setApprovedBy(null);
+            setDietStatus(data.status || "pending");
+            setApprovedBy(data.approved_by || null);
         } catch (err) {
             console.error(err.message);
         } finally {

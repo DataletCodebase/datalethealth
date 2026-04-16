@@ -239,8 +239,9 @@ export default function AdminDashboard() {
         cholesterolHDL: p.cholesterol_hdl, triglycerides: p.triglycerides,
         bloodPressureSystolic: p.blood_pressure_systolic, bloodPressureDiastolic: p.blood_pressure_diastolic,
         heartRate: p.heart_rate, bmi: p.bmi, fastingGlucose: p.fasting_glucose,
-        postprandialGlucose: p.postprandial_glucose, hba1c: p.hba1c,
+        hba1c: p.hba1c,
         assignedDietician: p.assigned_dietician,
+        dietStatus: p.dietStatus,
       }));
       setPatients(mappedPatients);
     } catch (err) {
@@ -789,9 +790,15 @@ export default function AdminDashboard() {
                       <td className="text-left">{p.name}</td>
                       <td className="text-center">{p.customerId || "-"}</td>
                       <td className="text-center">
-                        <span className={`dietician-badge ${p.assignedDietician ? 'assigned' : 'none'}`}>
-                          {p.assignedDietician || "Not Assigned"}
-                        </span>
+                        {p.dietStatus === 'pending' ? (
+                          <span className="dietician-badge" style={{ backgroundColor: "#ffc107", color: "#000", fontWeight: 'bold' }}>
+                            ⏳ Pending Approval
+                          </span>
+                        ) : (
+                          <span className={`dietician-badge ${p.assignedDietician ? 'assigned' : 'none'}`}>
+                            {p.assignedDietician || "Not Assigned"}
+                          </span>
+                        )}
                       </td>
                       <td className="text-center">
                         <button

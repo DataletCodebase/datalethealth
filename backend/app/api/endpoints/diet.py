@@ -369,7 +369,6 @@ def call_ai(prompt):
     except Exception as e:
         print(f"AI Call Error: {e}")
         return {}
-
 # =====================================================
 # 🚀 MAIN API
 # =====================================================
@@ -381,6 +380,28 @@ def generate_diet(patient_id: int, diet_type: str = "veg", payload: GoalPayload 
     user = db.query(Patient).filter(Patient.id == patient_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Patient not found")
+
+    # 1.5️⃣ Check if an active non-expired diet plan already exists
+    recent_plan = (
+        db.query(DietPlan)
+        .filter(
+            DietPlan.patient_id == patient_id,
+            DietPlan.status.in_(["pending", "approved"]),
+            DietPlan.created_at >= datetime.utcnow() - timedelta(days=7)
+        )
+        .order_by(DietPlan.created_at.desc())
+        .first()
+    )
+    if recent_plan:
+        return {
+            "message": "Diet plan already exists ✅",
+            "diet_plan_id": recent_plan.id,
+            "total_calories": recent_plan.total_week_calories,
+            "weight_goal": "Kept existing plan",
+            "diet_preview": json.loads(recent_plan.ai_generated_plan) if recent_plan.ai_generated_plan else {},
+            "status": recent_plan.status.value,
+            "approved_by": recent_plan.approved_by
+        }
 
     # 2️⃣ Fetch latest lab report (optional — not required)
     lab = (

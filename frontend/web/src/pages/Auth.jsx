@@ -106,10 +106,10 @@ export default function Auth({ isLoginDefault = true }) {
         <form onSubmit={handleSubmit} className="form">
           {!isLogin && (
             <>
-              <input className="input" placeholder="👤 Enter Full Name" name="full_name" value={form.full_name} onChange={handleChange} required />
-              <input className="input" placeholder="📧 Enter Email" name="email" value={form.email} onChange={handleChange} required />
+              <input className="input" placeholder="👤 Full Name" name="full_name" value={form.full_name} onChange={handleChange} required />
+              <input className="input" placeholder="📧 Email" name="email" value={form.email} onChange={handleChange} required />
 
-              <input className="input" placeholder="📱 Enter Mobile (10 digits)" name="mobile" value={form.mobile} onChange={handleChange} required />
+              <input className="input" placeholder="📱 Mobile (10 digits)" name="mobile" value={form.mobile} onChange={handleChange} required />
               {errors.mobile && <p className="inline-error">{errors.mobile}</p>}
 
               <input className="input" type="date" name="dob" value={form.dob} onChange={handleChange} required />

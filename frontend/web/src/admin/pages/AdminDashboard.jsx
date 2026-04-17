@@ -1,11 +1,18 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 import "./AdminDashboard.css";
 import { useNavigate } from "react-router-dom";
 
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("patients");
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [dashboardSearch, setDashboardSearch] = useState("");
+  const [dashboardFilterDietician, setDashboardFilterDietician] = useState("All");
+  const [showAllDieticians, setShowAllDieticians] = useState(false);
+  const [todayDietOnly, setTodayDietOnly] = useState(false);
+
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
@@ -55,8 +62,9 @@ export default function AdminDashboard() {
 
 
 
-  const handleOpenDiet = async (user) => {
+  const handleOpenDiet = async (user, todayOnly = false) => {
     try {
+      setTodayDietOnly(todayOnly);
       setSelectedUser(user);
       setSelectedPatient(user); // Fix modal title which uses selectedPatient?.name
 
@@ -241,7 +249,8 @@ export default function AdminDashboard() {
         heartRate: p.heart_rate, bmi: p.bmi, fastingGlucose: p.fasting_glucose,
         hba1c: p.hba1c,
         assignedDietician: p.assigned_dietician,
-        dietStatus: p.dietStatus,
+        userCreatedAt: p.user_created_at,
+        dietStatus: p.diet_status,
       }));
       setPatients(mappedPatients);
     } catch (err) {
@@ -254,6 +263,24 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
+
+  // ── Fetch Dashboard Stats ──────────────────────────────────────────
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const res = await fetch("/api/admin/dashboard-stats", {
+          headers: { Authorization: "Bearer " + localStorage.getItem("adminToken") },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setDashboardStats(data);
+        }
+      } catch (e) {
+        console.error("Error fetching dashboard stats", e);
+      }
+    };
+    fetchDashboardStats();
+  }, []);
 
   // ── Socket.io for admin ─────────────────────────────────────────────
   useEffect(() => {
@@ -299,7 +326,7 @@ export default function AdminDashboard() {
     })
       .then((r) => r.ok ? r.json() : [])
       .then(setConversations)
-      .catch(() => {});
+      .catch(() => { });
   }, [activeTab]);
 
   // ── Open a conversation ──────────────────────────────────────────────
@@ -317,11 +344,11 @@ export default function AdminDashboard() {
       fetch(`/api/diet-chat/mark-read/${conv.user_id}`, {
         method: "PATCH",
         headers: { Authorization: "Bearer " + localStorage.getItem("adminToken") },
-      }).catch(() => {});
+      }).catch(() => { });
       setConversations((prev) =>
         prev.map((c) => c.user_id === conv.user_id ? { ...c, unread_count: 0 } : c)
       );
-    } catch {} finally { setConvLoading(false); }
+    } catch { } finally { setConvLoading(false); }
   }
 
   // ── Admin sends reply ────────────────────────────────────────────────
@@ -348,7 +375,7 @@ export default function AdminDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("adminToken") },
         body: JSON.stringify({ userId: selectedConv.user_id, message: text, sender: "dietician", dietician: "Admin" }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 
@@ -412,6 +439,7 @@ export default function AdminDashboard() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
+            userId: selectedPatient.id,
             creatinine: formData.creatinine,
             potassium: formData.potassium,
             sodium: formData.sodium,
@@ -588,13 +616,26 @@ export default function AdminDashboard() {
   };
 
 
-  // Group conversations by dietician for the sidebar
   const groupedConversations = conversations.reduce((acc, c) => {
     const dName = c.assigned_dietician || "Unassigned";
     if (!acc[dName]) acc[dName] = [];
     acc[dName].push(c);
     return acc;
   }, {});
+
+  const filteredDashboardPatients = patients.filter((p) => {
+    const matchSearch = p.name ? p.name.toLowerCase().includes(dashboardSearch.toLowerCase()) : false;
+    const matchDietician = dashboardFilterDietician === "All" || p.assignedDietician === dashboardFilterDietician;
+    return matchSearch && matchDietician;
+  });
+
+  const pieData = dashboardStats ? [
+    { name: "Total Patients", value: dashboardStats.summary.total_patients - dashboardStats.summary.new_patients, color: "#10b981" },
+    { name: "New Patients (7 Days)", value: dashboardStats.summary.new_patients, color: "#f59e0b" }
+  ] : [];
+
+  const dieticianList = dashboardStats?.dietician_overview || [];
+  const displayDieticians = showAllDieticians ? dieticianList : dieticianList.slice(0, 4);
 
   return (
     <div className="admin-layout">
@@ -610,6 +651,15 @@ export default function AdminDashboard() {
 
         <nav className="sidebar-nav">
           <ul>
+            <li>
+              <button
+                className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+                onClick={() => { setActiveTab("dashboard"); setIsSidebarOpen(false); }}
+              >
+                <span className="nav-icon">📊</span>
+                <span className="nav-text">Dashboard</span>
+              </button>
+            </li>
             <li>
               <button
                 className={`nav-item ${activeTab === "patients" ? "active" : ""}`}
@@ -670,6 +720,180 @@ export default function AdminDashboard() {
         </header>
 
         <div className="content-wrapper">
+          {/* ================= DASHBOARD TAB ================= */}
+          {activeTab === "dashboard" && (
+            <div className="dashboard-container active dashboard-grid-view">
+              {!dashboardStats ? (
+                <p>Loading Dashboard...</p>
+              ) : (
+                <>
+                  {/* Top Summary Cards */}
+                  <div className="dashboard-cards">
+                    <div className="dash-card">
+                      <h3>Total Patients</h3>
+                      <div className="card-val">{dashboardStats.summary.total_patients}</div>
+                    </div>
+                    <div className="dash-card">
+                      <h3>Total Dieticians</h3>
+                      <div className="card-val">{dashboardStats.summary.total_dieticians}</div>
+                    </div>
+                    <div className="dash-card new-patients-card">
+                      <h3>New Joined (7 Days)</h3>
+                      <div className="card-val">{dashboardStats.summary.new_patients}</div>
+                    </div>
+                    <div className="dash-card unassigned-card">
+                      <h3>Unassigned Diet</h3>
+                      <div className="card-val">{dashboardStats.summary.unassigned_diet}</div>
+                    </div>
+                  </div>
+
+                  <div className="dash-row">
+                    {/* Dietician Overview */}
+                    <div className="dash-col dash-box">
+                      <div className="dash-box-header">
+                        <h2>Dietician Overview</h2>
+                        {dieticianList.length > 4 && (
+                          <button className="show-all-btn" onClick={() => setShowAllDieticians(!showAllDieticians)}>
+                            {showAllDieticians ? "Show Less" : "Show All ➜"}
+                          </button>
+                        )}
+                      </div>
+                      <table className="dash-mini-table">
+                        <thead>
+                          <tr>
+                            <th>Dietician Name</th>
+                            <th>Total Assigned Patients</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {displayDieticians.map((d, i) => (
+                            <tr key={i}>
+                              <td>👨‍⚕️ {d.name}</td>
+                              <td className="text-center"><strong>{d.total_assigned}</strong></td>
+                            </tr>
+                          ))}
+                          {displayDieticians.length === 0 && (
+                            <tr><td colSpan="2">No dieticians found.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Patient Dist Pie Chart */}
+                    <div className="dash-col dash-box">
+                      <h2>Patient Distribution</h2>
+                      <div className="chart-container" style={{ height: "250px" }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
+                              {pieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pending Diets Table */}
+                  <div className="dash-box mt-4">
+                    <h2>Pending Diet Approval</h2>
+                    <table className="dash-mini-table">
+                      <thead>
+                        <tr>
+                          <th>Patient Name</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardStats.pending_diets.map((pd, i) => (
+                          <tr key={pd.id}>
+                            <td>{pd.full_name}</td>
+                            <td><span className="status-badge pending">Diet Approval Pending</span></td>
+                          </tr>
+                        ))}
+                        {dashboardStats.pending_diets.length === 0 && (
+                          <tr><td colSpan="2" className="text-center text-green-500 font-bold p-4">All Diets Approved! ✅</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Patient Management Section */}
+                  <div className="dash-box mt-4">
+                    <div className="dash-box-header">
+                      <h2>Patient Management</h2>
+                      <div className="dash-filters">
+                        <input
+                          type="text"
+                          placeholder="Search Patient Name..."
+                          value={dashboardSearch}
+                          onChange={(e) => setDashboardSearch(e.target.value)}
+                          className="dash-search-input"
+                        />
+                        <select
+                          value={dashboardFilterDietician}
+                          onChange={(e) => setDashboardFilterDietician(e.target.value)}
+                          className="dash-filter-select"
+                        >
+                          <option value="All">All Dieticians</option>
+                          {dieticianList.map((d, i) => (
+                            <option key={i} value={d.name}>{d.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Patient Name</th>
+                            <th>Assigned Dietician</th>
+                            <th>Condition</th>
+                            <th>Status</th>
+                            <th>BMI</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredDashboardPatients.length === 0 ? (
+                            <tr><td colSpan="6" className="text-center">No patients match your filters.</td></tr>
+                          ) : (
+                            filteredDashboardPatients.map((p) => (
+                              <tr key={p.id}>
+                                <td><strong>{p.name}</strong></td>
+                                <td><span className={`dietician-badge ${p.assignedDietician ? 'assigned' : 'none'}`}>{p.assignedDietician || "Unassigned"}</span></td>
+                                <td>{p.condition}</td>
+                                <td>
+                                  {p.dietStatus === 'approved' ? (
+                                    <span className="status-badge approved">Diet Approved ✅</span>
+                                  ) : (
+                                    <span className="status-badge rejected">Diet Not Approved ❌</span>
+                                  )}
+                                </td>
+                                <td>{p.bmi ?? "-"}</td>
+                                <td className="actions-cell">
+                                  <div className="action-buttons">
+                                    <button className="view-btn compact-btn" onClick={() => handleEdit(p)}>View Report</button>
+                                    <button className="edit-btn2 compact-btn" onClick={() => handleOpenDiet(p, true)}>Today's Diet</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Patients */}
           {activeTab === "patients" && (
             <div className="dashboard-container active">
@@ -868,67 +1092,67 @@ export default function AdminDashboard() {
                     <p style={{ color: "red", textAlign: "center", padding: "20px" }}>🚨 This diet plan is malformed or empty and cannot be displayed. The generation process likely failed. Please ask the patient to generate a new plan.</p>
                   </div>
                 ) : (
-                <table className="diet-table">
-                  <thead>
-                    <tr>
-                      <th>Day</th>
-                      {Object.keys(editablePlan.Monday).map(time => (
-                        <th key={time}>{time}</th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {Object.entries(editablePlan).map(([day, meals]) => (
-                      <tr key={day}>
-                        <td><strong>{day}</strong></td>
-
-                        {Object.entries(meals).map(([time, meal]) => (
-                          <td key={time}>
-                            {editMode ? (
-                              <input
-                                value={meal.meal}
-                                onChange={(e) =>
-                                  setEditablePlan(prev => ({
-                                    ...prev,
-                                    [day]: {
-                                      ...prev[day],
-                                      [time]: {
-                                        ...meal,
-                                        meal: e.target.value
-                                      }
-                                    }
-                                  }))
-                                }
-                              />
-                            ) : (() => {
-                              const trackingMeal = trackingMeals.find(
-                                (m) => m.day === day && m.time === time
-                              );
-                              const isCompleted = trackingMeal?.status === "completed";
-                              const isSkipped = trackingMeal?.status === "skipped";
-                              const isAlternate = trackingMeal?.status === "alternate" || trackingMeal?.status === "alternate_upload";
-                              const statusColor = isCompleted ? "#28a745" : (isSkipped ? "#dc3545" : (isAlternate ? "#17a2b8" : "inherit"));
-
-                              return (
-                                <>
-                                  <div>{trackingMeal ? trackingMeal.meal_name : (meal.meal || "No meal scheduled")}</div>
-                                  <small>{meal.quantity || "—"}</small><br />
-                                  <small>{trackingMeal ? trackingMeal.calories : (meal.cal || 0)} cal</small>
-                                  {trackingMeal && trackingMeal.status !== "pending" && (
-                                    <div style={{ marginTop: '6px', fontSize: '0.9em', fontWeight: 'bold', color: statusColor }}>
-                                      {isCompleted ? "✅ Completed" : (isSkipped ? "❌ Skipped" : "🔄 Alternate")}
-                                    </div>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </td>
+                  <table className="diet-table">
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        {Object.keys(editablePlan.Monday).map(time => (
+                          <th key={time}>{time}</th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+
+                    <tbody>
+                      {Object.entries(editablePlan).filter(([day]) => !todayDietOnly || day === new Date().toLocaleDateString('en-US', { weekday: 'long' })).map(([day, meals]) => (
+                        <tr key={day}>
+                          <td><strong>{day}</strong></td>
+
+                          {Object.entries(meals).map(([time, meal]) => (
+                            <td key={time}>
+                              {editMode ? (
+                                <input
+                                  value={meal.meal}
+                                  onChange={(e) =>
+                                    setEditablePlan(prev => ({
+                                      ...prev,
+                                      [day]: {
+                                        ...prev[day],
+                                        [time]: {
+                                          ...meal,
+                                          meal: e.target.value
+                                        }
+                                      }
+                                    }))
+                                  }
+                                />
+                              ) : (() => {
+                                const trackingMeal = trackingMeals.find(
+                                  (m) => m.day === day && m.time === time
+                                );
+                                const isCompleted = trackingMeal?.status === "completed";
+                                const isSkipped = trackingMeal?.status === "skipped";
+                                const isAlternate = trackingMeal?.status === "alternate" || trackingMeal?.status === "alternate_upload";
+                                const statusColor = isCompleted ? "#28a745" : (isSkipped ? "#dc3545" : (isAlternate ? "#17a2b8" : "inherit"));
+
+                                return (
+                                  <>
+                                    <div>{trackingMeal ? trackingMeal.meal_name : (meal.meal || "No meal scheduled")}</div>
+                                    <small>{meal.quantity || "—"}</small><br />
+                                    <small>{trackingMeal ? trackingMeal.calories : (meal.cal || 0)} cal</small>
+                                    {trackingMeal && trackingMeal.status !== "pending" && (
+                                      <div style={{ marginTop: '6px', fontSize: '0.9em', fontWeight: 'bold', color: statusColor }}>
+                                        {isCompleted ? "✅ Completed" : (isSkipped ? "❌ Skipped" : "🔄 Alternate")}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
                 {/* ===== DIET TABLE END ===== */}
 
@@ -1039,7 +1263,7 @@ export default function AdminDashboard() {
                       {patientTyping && (
                         <div className="conv-bubble patient">
                           <div className="conv-bubble-text typing-dots">
-                            <span/><span/><span/>
+                            <span /><span /><span />
                           </div>
                         </div>
                       )}

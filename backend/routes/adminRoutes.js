@@ -57,7 +57,8 @@ router.get("/users-medical", adminAuth, async (req, res) => {
         m.postprandial_glucose,
         m.hba1c,
         m.created_at AS medical_created_at,
-        dp.diet_status
+        u.created_at AS user_created_at,
+        (SELECT status FROM diet_plans dp WHERE dp.patient_id = u.id ORDER BY dp.id DESC LIMIT 1) AS diet_status
 
       FROM users u
       LEFT JOIN medical_data m ON m.user_id = u.id
@@ -104,12 +105,88 @@ router.get("/users-medical", adminAuth, async (req, res) => {
       fasting_glucose: decrypt(r.fasting_glucose),
       postprandial_glucose: decrypt(r.postprandial_glucose),
       hba1c: decrypt(r.hba1c),
-      dietStatus: r.diet_status,
+      user_created_at: r.user_created_at,
+      diet_status: r.diet_status,
     }));
 
     res.json(decryptedRows);
   } catch (err) {
     console.error("ADMIN USERS + MEDICAL ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+/**
+ * GET /api/admin/dashboard-stats
+ * Admin only - fetches overview data for the admin dashboard
+ */
+router.get("/dashboard-stats", adminAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({ message: "Admin access only" });
+    }
+
+    // 1. Top Summary Data
+    const [[{ total_patients, new_patients }]] = await db.query(`
+      SELECT 
+        COUNT(*) AS total_patients,
+        SUM(CASE WHEN created_at >= NOW() - INTERVAL 7 DAY THEN 1 ELSE 0 END) AS new_patients
+      FROM users
+    `);
+
+    const [[{ total_dieticians }]] = await db.query(`
+      SELECT COUNT(DISTINCT assigned_dietician) AS total_dieticians 
+      FROM users 
+      WHERE assigned_dietician IS NOT NULL AND assigned_dietician != ''
+    `);
+
+    // We consider "Unassigned" as those who do not have an approved diet or no diet.
+    const [[{ unassigned_diet }]] = await db.query(`
+      SELECT COUNT(*) AS unassigned_diet
+      FROM users u
+      LEFT JOIN diet_plans dp ON dp.patient_id = u.id
+      WHERE dp.id IS NULL OR dp.status != 'approved'
+    `);
+
+    // 2. Dietician Overview (grouped by how many patients they have assigned)
+    const [dietician_overview] = await db.query(`
+      SELECT assigned_dietician AS name, COUNT(*) AS total_assigned
+      FROM users
+      WHERE assigned_dietician IS NOT NULL AND assigned_dietician != ''
+      GROUP BY assigned_dietician
+      ORDER BY total_assigned DESC
+    `);
+
+    // 3. Pending Diet Section (patients with status pending or not approved)
+    const [pending_diets] = await db.query(`
+      SELECT u.id, u.full_name, dp.status 
+      FROM users u
+      JOIN diet_plans dp ON dp.patient_id = u.id
+      WHERE dp.status != 'approved'
+      ORDER BY dp.id DESC
+      LIMIT 10
+    `);
+
+    // Decrypt the full_name for pending_diets response
+    const pending_diets_decrypted = pending_diets.map(p => ({
+      id: p.id,
+      full_name: decrypt(p.full_name),
+      status: p.status
+    }));
+
+    res.json({
+      summary: {
+        total_patients: Number(total_patients) || 0,
+        new_patients: Number(new_patients) || 0,
+        total_dieticians: Number(total_dieticians) || 0,
+        unassigned_diet: Number(unassigned_diet) || 0,
+      },
+      dietician_overview,
+      pending_diets: pending_diets_decrypted,
+    });
+  } catch (err) {
+    console.error("ADMIN DASHBOARD ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -146,10 +223,48 @@ router.put("/medical/:medicalId", adminAuth, async (req, res) => {
       fasting_glucose,
       postprandial_glucose,
       hba1c,
+      userId,
     } = req.body;
 
-    await db.query(
-      `
+    if (medicalId === "null" || medicalId === "undefined" || !medicalId) {
+      if (!userId) {
+        return res.status(400).json({ message: "userId required to create new medical data" });
+      }
+      await db.query(
+        `
+        INSERT INTO medical_data (
+          user_id, creatinine, potassium, sodium, urea, estimated_gfr, albumin, calcium, phosphate, uric_acid,
+          cholesterol_total, cholesterol_ldl, cholesterol_hdl, triglycerides, blood_pressure_systolic, blood_pressure_diastolic,
+          heart_rate, bmi, fasting_glucose, postprandial_glucose, hba1c
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          userId,
+          creatinine === undefined ? null : encrypt(creatinine),
+          potassium === undefined ? null : encrypt(potassium),
+          sodium === undefined ? null : encrypt(sodium),
+          urea === undefined ? null : encrypt(urea),
+          estimated_gfr === undefined ? null : encrypt(estimated_gfr),
+          albumin === undefined ? null : encrypt(albumin),
+          calcium === undefined ? null : encrypt(calcium),
+          phosphate === undefined ? null : encrypt(phosphate),
+          uric_acid === undefined ? null : encrypt(uric_acid),
+          cholesterol_total === undefined ? null : encrypt(cholesterol_total),
+          cholesterol_ldl === undefined ? null : encrypt(cholesterol_ldl),
+          cholesterol_hdl === undefined ? null : encrypt(cholesterol_hdl),
+          triglycerides === undefined ? null : encrypt(triglycerides),
+          blood_pressure_systolic === undefined ? null : encrypt(blood_pressure_systolic),
+          blood_pressure_diastolic === undefined ? null : encrypt(blood_pressure_diastolic),
+          heart_rate === undefined ? null : encrypt(heart_rate),
+          bmi === undefined ? null : encrypt(bmi),
+          fasting_glucose === undefined ? null : encrypt(fasting_glucose),
+          postprandial_glucose === undefined ? null : encrypt(postprandial_glucose),
+          hba1c === undefined ? null : encrypt(hba1c),
+        ]
+      );
+    } else {
+      await db.query(
+        `
       UPDATE medical_data SET
         creatinine = COALESCE(?, creatinine),
         potassium = COALESCE(?, potassium),
@@ -173,30 +288,31 @@ router.put("/medical/:medicalId", adminAuth, async (req, res) => {
         hba1c = COALESCE(?, hba1c)
       WHERE id = ?
       `,
-      [
-        creatinine === undefined ? undefined : encrypt(creatinine),
-        potassium === undefined ? undefined : encrypt(potassium),
-        sodium === undefined ? undefined : encrypt(sodium),
-        urea === undefined ? undefined : encrypt(urea),
-        estimated_gfr === undefined ? undefined : encrypt(estimated_gfr),
-        albumin === undefined ? undefined : encrypt(albumin),
-        calcium === undefined ? undefined : encrypt(calcium),
-        phosphate === undefined ? undefined : encrypt(phosphate),
-        uric_acid === undefined ? undefined : encrypt(uric_acid),
-        cholesterol_total === undefined ? undefined : encrypt(cholesterol_total),
-        cholesterol_ldl === undefined ? undefined : encrypt(cholesterol_ldl),
-        cholesterol_hdl === undefined ? undefined : encrypt(cholesterol_hdl),
-        triglycerides === undefined ? undefined : encrypt(triglycerides),
-        blood_pressure_systolic === undefined ? undefined : encrypt(blood_pressure_systolic),
-        blood_pressure_diastolic === undefined ? undefined : encrypt(blood_pressure_diastolic),
-        heart_rate === undefined ? undefined : encrypt(heart_rate),
-        bmi === undefined ? undefined : encrypt(bmi),
-        fasting_glucose === undefined ? undefined : encrypt(fasting_glucose),
-        postprandial_glucose === undefined ? undefined : encrypt(postprandial_glucose),
-        hba1c === undefined ? undefined : encrypt(hba1c),
-        medicalId,
-      ]
-    );
+        [
+          creatinine === undefined ? undefined : encrypt(creatinine),
+          potassium === undefined ? undefined : encrypt(potassium),
+          sodium === undefined ? undefined : encrypt(sodium),
+          urea === undefined ? undefined : encrypt(urea),
+          estimated_gfr === undefined ? undefined : encrypt(estimated_gfr),
+          albumin === undefined ? undefined : encrypt(albumin),
+          calcium === undefined ? undefined : encrypt(calcium),
+          phosphate === undefined ? undefined : encrypt(phosphate),
+          uric_acid === undefined ? undefined : encrypt(uric_acid),
+          cholesterol_total === undefined ? undefined : encrypt(cholesterol_total),
+          cholesterol_ldl === undefined ? undefined : encrypt(cholesterol_ldl),
+          cholesterol_hdl === undefined ? undefined : encrypt(cholesterol_hdl),
+          triglycerides === undefined ? undefined : encrypt(triglycerides),
+          blood_pressure_systolic === undefined ? undefined : encrypt(blood_pressure_systolic),
+          blood_pressure_diastolic === undefined ? undefined : encrypt(blood_pressure_diastolic),
+          heart_rate === undefined ? undefined : encrypt(heart_rate),
+          bmi === undefined ? undefined : encrypt(bmi),
+          fasting_glucose === undefined ? undefined : encrypt(fasting_glucose),
+          postprandial_glucose === undefined ? undefined : encrypt(postprandial_glucose),
+          hba1c === undefined ? undefined : encrypt(hba1c),
+          medicalId,
+        ]
+      );
+    }
 
     res.json({ message: "Medical data updated successfully" });
   } catch (err) {

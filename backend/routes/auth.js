@@ -103,10 +103,10 @@ router.post("/login", async (req, res) => {
     try {
         const { identifier, password, captchaToken } = req.body;
 
-        // 🔹 CAPTCHA check
-        if (!(await verifyCaptcha(captchaToken))) {
-            return res.status(400).json({ message: "Captcha verification failed" });
-        }
+        // 🔹 CAPTCHA check disabled for login per request
+        // if (!(await verifyCaptcha(captchaToken))) {
+        //     return res.status(400).json({ message: "Captcha verification failed" });
+        // }
 
         if (!identifier || !password) {
             return res.status(400).json({ message: "Missing login credentials" });

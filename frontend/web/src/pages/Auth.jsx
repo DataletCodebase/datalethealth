@@ -59,7 +59,7 @@ export default function Auth({ isLoginDefault = true }) {
     e.preventDefault();
     if (loading) return;
 
-    if (!isCaptchaValid()) {
+    if (!isLogin && !isCaptchaValid()) {
       setErrors({ captcha: "🤖 Invalid captcha" });
       refreshCaptcha();
       return;
@@ -140,13 +140,17 @@ export default function Auth({ isLoginDefault = true }) {
             </>
           )}
 
-          <div className="captcha-box">
-            <span>{captchaText}</span>
-            <button type="button" onClick={refreshCaptcha}>⟳</button>
-          </div>
+          {!isLogin && (
+            <>
+              <div className="captcha-box">
+                <span>{captchaText}</span>
+                <button type="button" onClick={refreshCaptcha}>⟳</button>
+              </div>
 
-          <input className="input" placeholder="🤖 Enter captcha" onChange={(e) => onCaptchaChange(e.target.value)} required />
-          {errors.captcha && <p className="inline-error">{errors.captcha}</p>}
+              <input className="input" placeholder="🤖 Enter captcha" onChange={(e) => onCaptchaChange(e.target.value)} required />
+              {errors.captcha && <p className="inline-error">{errors.captcha}</p>}
+            </>
+          )}
 
           {errors.api && <p className="inline-error">{errors.api}</p>}
 

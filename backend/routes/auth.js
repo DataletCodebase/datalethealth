@@ -26,35 +26,47 @@ router.post("/signup", async (req, res) => {
     try {
         const {
             full_name,
-            email,
-            mobile,
-            dob,
-            address,
-            disease,
-            role,
+            email,    // optional – user provides email OR mobile
+            mobile,   // optional – user provides email OR mobile
             password,
-            captchaToken
+            // Fields below are NOT sent by the UI; backend defaults them
+            dob     = "N/A",
+            address = "N/A",
+            disease = "N/A",
+            role    = "USER",
         } = req.body;
 
-        // 🔹 CAPTCHA check
-        if (!(await verifyCaptcha(captchaToken))) {
-            return res.status(400).json({ message: "Captcha verification failed" });
-        }
+        // 🔹 CAPTCHA check disabled for signup per request
+        // if (!(await verifyCaptcha(captchaToken))) { ... }
 
-        if (!full_name || !email || !mobile || !password) {
+        // At least one identifier (email or mobile) must be provided
+        if (!full_name || (!email && !mobile) || !password) {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
-        // Encrypt identifiers for search
-        const encryptedEmail = encryptDeterministic(email);
-        const encryptedMobile = encryptDeterministic(mobile);
+        // Normalise – whichever identifier is missing defaults to 'N/A'
+        const plainEmail  = email  || "N/A";
+        const plainMobile = mobile || "N/A";
 
-        // Check duplicate user
-        const [existing] = await db.query(
-            "SELECT id FROM users WHERE email = ? OR mobile = ?",
-            [encryptedEmail, encryptedMobile]
-        );
+        // Encrypt identifiers for search / storage
+        const encryptedEmail  = encryptDeterministic(plainEmail);
+        const encryptedMobile = encryptDeterministic(plainMobile);
 
+        // Check for duplicate user only on the identifier that was actually provided
+        let dupQuery = "SELECT id FROM users WHERE ";
+        const dupParams = [];
+        if (email && mobile) {
+            dupQuery += "email = ? OR mobile = ?";
+            dupParams.push(encryptedEmail, encryptedMobile);
+        } else if (email) {
+            dupQuery += "email = ?";
+            dupParams.push(encryptedEmail);
+        } else {
+            dupQuery += "mobile = ?";
+            dupParams.push(encryptedMobile);
+        }
+
+        const [existing] = await db.query(dupQuery, dupParams);
         if (existing.length > 0) {
             return res.status(400).json({
                 message: "User already exists with this email or mobile",
@@ -64,7 +76,7 @@ router.post("/signup", async (req, res) => {
         // Hash password
         const password_hash = await bcrypt.hash(password, 10);
 
-        // Insert user
+        // Insert user – missing optional fields stored as encrypted 'N/A'
         await db.query(
             `INSERT INTO users
        (full_name, email, mobile, dob, address, disease, role, password_hash)
@@ -76,24 +88,23 @@ router.post("/signup", async (req, res) => {
                 encrypt(dob),
                 encrypt(address),
                 encrypt(disease),
-                role || "USER",
+                role,
                 password_hash,
             ]
         );
 
-        // ✅ SEND WELCOME EMAIL (NON-BLOCKING)
-        // Send actual plaintext email
-        sendWelcomeEmail(email, full_name).catch(err =>
-      console.error("Welcome email failed:", err)
-        );
-
+        // ✅ SEND WELCOME EMAIL (NON-BLOCKING) – only when email is real
+        if (email && email !== "N/A") {
+            sendWelcomeEmail(email, full_name).catch(err =>
+                console.error("Welcome email failed:", err)
+            );
+        }
 
         return res.status(201).json({ message: "Signup successful" });
     } catch (err) {
-  console.error("Signup DB Error:", err);
-  return res.status(500).json({ message: err.message });
-}
-
+        console.error("Signup DB Error:", err);
+        return res.status(500).json({ message: err.message });
+    }
 });
 
 /* =========================

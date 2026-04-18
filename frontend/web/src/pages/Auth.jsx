@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { useCaptcha } from "../hooks/useCaptcha";
 import "../styles/auth.css";
 
 const passwordRegex =
@@ -14,33 +13,34 @@ export default function Auth({ isLoginDefault = true }) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // identifier = email or mobile (shared between login & signup)
   const [form, setForm] = useState({
     full_name: "",
-    email: "",
-    mobile: "",
-    dob: "",
-    address: "",
-    disease: "",
-    role: "",
+    identifier: "",   // email or mobile — auto-detected
     password: "",
     confirmPassword: "",
   });
 
   const { login, signup } = useAuth();
-  const { captchaToken, captchaText, refreshCaptcha, onCaptchaChange, isCaptchaValid } = useCaptcha();
+
+  // Detect if identifier is mobile (all digits) or email
+  const isMobile = (val) => /^\d+$/.test(val);
 
   const validate = () => {
     const newErrors = {};
 
-    if (!isLogin && form.mobile && !/^\d{10}$/.test(form.mobile))
-      newErrors.mobile = "📱 Only 10 digits allowed";
+    if (!isLogin) {
+      const id = form.identifier.trim();
+      if (isMobile(id) && !/^\d{10}$/.test(id))
+        newErrors.identifier = "📱 Mobile must be exactly 10 digits";
 
-    if (!isLogin && !passwordRegex.test(form.password))
-      newErrors.password =
-        "🔐 6–8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special";
+      if (!passwordRegex.test(form.password))
+        newErrors.password =
+          "🔐 6–16 chars, 1 uppercase, 1 lowercase, 1 number, 1 special";
 
-    if (!isLogin && form.password !== form.confirmPassword)
-      newErrors.confirmPassword = "❌ Passwords do not match";
+      if (form.password !== form.confirmPassword)
+        newErrors.confirmPassword = "❌ Passwords do not match";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -48,23 +48,14 @@ export default function Auth({ isLoginDefault = true }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "mobile" && !/^\d*$/.test(value)) return;
-    if (name === "mobile" && value.length > 10) return;
-
+    // restrict identifier to 10 digits if typing a mobile number
+    if (name === "identifier" && isMobile(value) && value.length > 10) return;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
-
-    if (!isLogin && !isCaptchaValid()) {
-      setErrors({ captcha: "🤖 Invalid captcha" });
-      refreshCaptcha();
-      return;
-    }
-
     if (!validate()) return;
 
     try {
@@ -72,16 +63,20 @@ export default function Auth({ isLoginDefault = true }) {
 
       if (isLogin) {
         await login({
-          identifier: form.email,
+          identifier: form.identifier,
           password: form.password,
-          captchaToken,
         });
         navigate("/dashboard");
       } else {
-        await signup({
-          ...form,
-          captchaToken,
-        });
+        // Build the signup payload — backend fills missing fields with 'N/A'
+        const id = form.identifier.trim();
+        const payload = {
+          full_name: form.full_name.trim(),
+          password: form.password,
+          // send email or mobile based on what the user typed
+          ...(isMobile(id) ? { mobile: id } : { email: id }),
+        };
+        await signup(payload);
         setShowSuccess(true);
         setIsLogin(true);
       }
@@ -104,51 +99,56 @@ export default function Auth({ isLoginDefault = true }) {
         </div>
 
         <form onSubmit={handleSubmit} className="form">
+          {/* ── SIGNUP-ONLY FIELDS ── */}
           {!isLogin && (
             <>
-              <input className="input" placeholder="👤 Full Name" name="full_name" value={form.full_name} onChange={handleChange} required />
-              <input className="input" placeholder="📧 Email" name="email" value={form.email} onChange={handleChange} required />
-
-              <input className="input" placeholder="📱 Mobile (10 digits)" name="mobile" value={form.mobile} onChange={handleChange} required />
-              {errors.mobile && <p className="inline-error">{errors.mobile}</p>}
-
-              <input className="input" type="date" name="dob" value={form.dob} onChange={handleChange} required />
-
-              <select className="input" name="role" value={form.role} onChange={handleChange} required>
-                <option value="">Select Role</option>
-                <option value="USER">User</option>
-                <option value="EXPERT">Expert</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-
-              <textarea className="input" placeholder="🏠 Address" name="address" value={form.address} onChange={handleChange} required />
-              <input className="input" placeholder="🩺 Medical Condition" name="disease" value={form.disease} onChange={handleChange} />
+              <input
+                className="input"
+                placeholder="👤 Full Name"
+                name="full_name"
+                value={form.full_name}
+                onChange={handleChange}
+                required
+              />
             </>
           )}
 
-          {isLogin && (
-            <input className="input" placeholder="📧 Email / Mobile" name="email" value={form.email} onChange={handleChange} required />
-          )}
+          {/* Shared identifier field (email or mobile) */}
+          <input
+            className="input"
+            placeholder={isLogin ? "📧 Email / Mobile" : "📧 Email or 📱 Mobile"}
+            name="identifier"
+            value={form.identifier}
+            onChange={handleChange}
+            required
+          />
+          {errors.identifier && <p className="inline-error">{errors.identifier}</p>}
 
-          <input className="input" type="password" placeholder="🔐 Password" name="password" value={form.password} onChange={handleChange} required />
+          {/* Password */}
+          <input
+            className="input"
+            type="password"
+            placeholder="🔐 Password"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
           {errors.password && <p className="inline-error">{errors.password}</p>}
 
+          {/* Confirm Password — signup only */}
           {!isLogin && (
             <>
-              <input className="input" type="password" placeholder="🔁 Confirm Password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required />
+              <input
+                className="input"
+                type="password"
+                placeholder="🔁 Confirm Password"
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                required
+              />
               {errors.confirmPassword && <p className="inline-error">{errors.confirmPassword}</p>}
-            </>
-          )}
-
-          {!isLogin && (
-            <>
-              <div className="captcha-box">
-                <span>{captchaText}</span>
-                <button type="button" onClick={refreshCaptcha}>⟳</button>
-              </div>
-
-              <input className="input" placeholder="🤖 Enter captcha" onChange={(e) => onCaptchaChange(e.target.value)} required />
-              {errors.captcha && <p className="inline-error">{errors.captcha}</p>}
             </>
           )}
 

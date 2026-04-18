@@ -44,13 +44,9 @@ router.post("/signup", async (req, res) => {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
-        // Normalise – whichever identifier is missing defaults to 'N/A'
-        const plainEmail  = email  || "N/A";
-        const plainMobile = mobile || "N/A";
-
-        // Encrypt identifiers for search / storage
-        const encryptedEmail  = encryptDeterministic(plainEmail);
-        const encryptedMobile = encryptDeterministic(plainMobile);
+        // Store NULL for missing identifier — NOT encrypted "N/A" which breaks UNIQUE constraint
+        const encryptedEmail  = email  ? encryptDeterministic(email)  : null;
+        const encryptedMobile = mobile ? encryptDeterministic(mobile) : null;
 
         // Check for duplicate user only on the identifier that was actually provided
         let dupQuery = "SELECT id FROM users WHERE ";
@@ -76,15 +72,15 @@ router.post("/signup", async (req, res) => {
         // Hash password
         const password_hash = await bcrypt.hash(password, 10);
 
-        // Insert user – missing optional fields stored as encrypted 'N/A'
+        // Insert user – email/mobile are NULL if not provided (avoids UNIQUE constraint clash)
         await db.query(
             `INSERT INTO users
        (full_name, email, mobile, dob, address, disease, role, password_hash)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 encrypt(full_name),
-                encryptedEmail,
-                encryptedMobile,
+                encryptedEmail,     // NULL if not provided
+                encryptedMobile,    // NULL if not provided
                 encrypt(dob),
                 encrypt(address),
                 encrypt(disease),

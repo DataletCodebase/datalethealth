@@ -26,8 +26,6 @@ router.post("/signup", async (req, res) => {
     try {
         const {
             full_name,
-            email,    // optional – user provides email OR mobile
-            mobile,   // optional – user provides email OR mobile
             password,
             // Fields below are NOT sent by the UI; backend defaults them
             dob     = "N/A",
@@ -36,25 +34,48 @@ router.post("/signup", async (req, res) => {
             role    = "USER",
         } = req.body;
 
-        // 🔹 CAPTCHA check disabled for signup per request
-        // if (!(await verifyCaptcha(captchaToken))) { ... }
+        // 🔹 Accept either: { email } / { mobile } / { identifier }
+        // Auto-detect: if value is all digits → mobile, else → email
+        const rawIdentifier = req.body.identifier || req.body.email || req.body.mobile || "";
+        const isMobileInput = /^\d+$/.test(rawIdentifier.trim());
 
-        // At least one identifier (email or mobile) must be provided
-        if (!full_name || (!email && !mobile) || !password) {
-            return res.status(400).json({ message: "Missing required fields" });
+        // Resolve into the correct field
+        let resolvedEmail  = null;
+        let resolvedMobile = null;
+
+        if (isMobileInput) {
+            // Passed digits — treat as mobile regardless of which key was used
+            resolvedMobile = rawIdentifier.trim();
+        } else {
+            // Treat as email
+            resolvedEmail = rawIdentifier.trim();
         }
 
-        // Store NULL for missing identifier — NOT encrypted "N/A" which breaks UNIQUE constraint
-        const encryptedEmail  = email  ? encryptDeterministic(email)  : null;
-        const encryptedMobile = mobile ? encryptDeterministic(mobile) : null;
+        // ── VALIDATION ─────────────────────────────────────────────
+        if (!full_name || !rawIdentifier || !password) {
+            return res.status(400).json({ message: "Missing required fields (full_name, email/mobile, password)" });
+        }
 
-        // Check for duplicate user only on the identifier that was actually provided
+        if (resolvedMobile && !/^\d{10}$/.test(resolvedMobile)) {
+            return res.status(400).json({ message: "Mobile number must be exactly 10 digits" });
+        }
+
+        if (resolvedEmail && !resolvedEmail.includes("@")) {
+            return res.status(400).json({ message: "Invalid email address" });
+        }
+        // ────────────────────────────────────────────────────────────
+
+        // Encrypt identifiers for DB storage (NULL for the missing one)
+        const encryptedEmail  = resolvedEmail  ? encryptDeterministic(resolvedEmail)  : null;
+        const encryptedMobile = resolvedMobile ? encryptDeterministic(resolvedMobile) : null;
+
+        // Check duplicate — only on the identifier that was actually provided
         let dupQuery = "SELECT id FROM users WHERE ";
         const dupParams = [];
-        if (email && mobile) {
+        if (resolvedEmail && resolvedMobile) {
             dupQuery += "email = ? OR mobile = ?";
             dupParams.push(encryptedEmail, encryptedMobile);
-        } else if (email) {
+        } else if (resolvedEmail) {
             dupQuery += "email = ?";
             dupParams.push(encryptedEmail);
         } else {
@@ -65,22 +86,22 @@ router.post("/signup", async (req, res) => {
         const [existing] = await db.query(dupQuery, dupParams);
         if (existing.length > 0) {
             return res.status(400).json({
-                message: "User already exists with this email or mobile",
+                message: `User already exists with this ${resolvedEmail ? "email" : "mobile"}`,
             });
         }
 
         // Hash password
         const password_hash = await bcrypt.hash(password, 10);
 
-        // Insert user – email/mobile are NULL if not provided (avoids UNIQUE constraint clash)
+        // Insert — email/mobile NULL if not provided (avoids UNIQUE constraint clash)
         await db.query(
             `INSERT INTO users
        (full_name, email, mobile, dob, address, disease, role, password_hash)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 encrypt(full_name),
-                encryptedEmail,     // NULL if not provided
-                encryptedMobile,    // NULL if not provided
+                encryptedEmail,     // NULL if mobile was given
+                encryptedMobile,    // NULL if email was given
                 encrypt(dob),
                 encrypt(address),
                 encrypt(disease),
@@ -89,9 +110,9 @@ router.post("/signup", async (req, res) => {
             ]
         );
 
-        // ✅ SEND WELCOME EMAIL (NON-BLOCKING) – only when email is real
-        if (email && email !== "N/A") {
-            sendWelcomeEmail(email, full_name).catch(err =>
+        // ✅ Welcome email — only when a real email was provided
+        if (resolvedEmail) {
+            sendWelcomeEmail(resolvedEmail, full_name).catch(err =>
                 console.error("Welcome email failed:", err)
             );
         }

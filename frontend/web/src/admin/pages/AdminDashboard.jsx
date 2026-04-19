@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const [patientTyping, setPatientTyping] = useState(false);
   const adminSocketRef = useRef(null);
   const adminMsgEndRef = useRef(null);
+  const selectedConvRef = useRef(null); // always-current ref for socket handlers
 
   // ── Assign Dietician State ─────────────────────────────────────────
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -284,7 +285,9 @@ export default function AdminDashboard() {
 
   // ── Socket.io for admin ─────────────────────────────────────────────
   useEffect(() => {
-    const socket = io("http://localhost:8000", {
+    // Use window.location.origin so it works both locally and in production
+    const SOCKET_URL = window.location.origin;
+    const socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
       auth: { token: localStorage.getItem("adminToken") },
     });
@@ -292,23 +295,22 @@ export default function AdminDashboard() {
     socket.on("connect", () => {
       socket.emit("join_room", { userId: "admin", role: "admin" });
     });
+    // Use selectedConvRef (not selectedConv) to avoid stale closure bug
     socket.on("new_patient_message", (msg) => {
-      setConvMessages((prev) => {
-        if (selectedConv && msg.user_id === selectedConv.user_id) {
-          return [...prev, { ...msg, timestamp: msg.created_at }];
-        }
-        return prev;
-      });
+      const currentConv = selectedConvRef.current;
+      if (currentConv && msg.user_id === currentConv.user_id) {
+        setConvMessages((prev) => [...prev, { ...msg, timestamp: msg.created_at }]);
+      }
       setConversations((prev) =>
         prev.map((c) =>
           c.user_id === msg.user_id
-            ? { ...c, last_message: msg.message, last_sender: "patient", unread_count: c.unread_count + 1 }
+            ? { ...c, last_message: msg.message, last_sender: "patient", unread_count: (c.unread_count || 0) + (currentConv?.user_id === msg.user_id ? 0 : 1) }
             : c
         )
       );
     });
     socket.on("patient_typing", ({ userId, typing }) => {
-      if (selectedConv && userId === selectedConv.user_id) setPatientTyping(typing);
+      if (selectedConvRef.current && userId === selectedConvRef.current.user_id) setPatientTyping(typing);
     });
     return () => socket.disconnect();
   }, []);
@@ -332,6 +334,7 @@ export default function AdminDashboard() {
   // ── Open a conversation ──────────────────────────────────────────────
   async function openConversation(conv) {
     setSelectedConv(conv);
+    selectedConvRef.current = conv; // keep ref in sync
     setConvLoading(true);
     setConvMessages([]);
     try {

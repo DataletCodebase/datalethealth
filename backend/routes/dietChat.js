@@ -38,7 +38,7 @@ router.post("/send", authMiddleware, async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO dietician_messages (user_id, sender, message, dietician, is_read)
        VALUES (?, ?, ?, ?, ?)`,
-      [userId, message.trim(), sender, dietician || null, sender === "dietician" ? 1 : 0]
+      [userId, sender, message.trim(), dietician || null, sender === "dietician" ? 1 : 0]
     );
 
     res.json({ success: true, id: result.insertId, created_at: new Date().toISOString() });

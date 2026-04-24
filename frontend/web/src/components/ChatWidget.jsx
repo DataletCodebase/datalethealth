@@ -9,12 +9,14 @@ const API_BASE =
 const SOCKET_URL =
   typeof import.meta !== "undefined" && import.meta.env?.VITE_SOCKET_URL
     ? import.meta.env.VITE_SOCKET_URL
-    : "http://localhost:8000";
+    : (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+        ? window.location.origin
+        : "http://localhost:8000");
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 function fmtTime(d) {
   const dt = typeof d === "string" ? new Date(d) : d;
-  return dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
 }
 
 function getTimeContext() {
@@ -286,15 +288,28 @@ export default function ChatWidget() {
         dietician: m.dietician,
         timestamp: m.created_at,
       }));
-      setMessages((prev) => {
-        // Avoid duplicates — keep existing messages, prepend history
-        const existingIds = new Set(prev.map((m) => m.id));
-        const newOnes = mapped.filter((m) => !existingIds.has(m.id));
-        return [...newOnes, ...prev];
-      });
+
+      // If no history yet — inject a greeting from the dietician
+      if (mapped.length === 0) {
+        const dietName = assignedDietician || "your Dietician";
+        const greetMsg = {
+          id: `greet_${Date.now()}`,
+          sender: "dietician",
+          text: `👋 Hello! I'm **${dietName}**, your assigned dietician. Feel free to message me with any questions about your diet plan, health goals, or meal adjustments. I'm here to help! 🥗`,
+          dietician: dietName,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages([greetMsg]);
+      } else {
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newOnes = mapped.filter((m) => !existingIds.has(m.id));
+          return [...newOnes, ...prev];
+        });
+      }
       setHistoryLoaded(true);
     } catch {}
-  }, [userId, historyLoaded]);
+  }, [userId, historyLoaded, assignedDietician]);
 
   /* ── start assistant conversation when chat opens ── */
   useEffect(() => {

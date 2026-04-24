@@ -2,6 +2,7 @@ import express from "express";
 import { db } from "../server.js";
 import authMiddleware from "../middleware/auth.js";
 import adminAuth from "../middleware/adminAuth.js";
+import { decrypt } from "../utils/encryption.js";
 
 const router = express.Router();
 
@@ -9,7 +10,6 @@ const router = express.Router();
 router.get("/history/:userId", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
-    // Patients can only read their own history
     if (req.user.role !== "SUPER_ADMIN" && req.user.id !== parseInt(userId)) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -34,13 +34,11 @@ router.post("/send", authMiddleware, async (req, res) => {
     if (!userId || !message?.trim() || !sender) {
       return res.status(400).json({ message: "userId, message, sender required" });
     }
-
     const [result] = await db.query(
       `INSERT INTO dietician_messages (user_id, sender, message, dietician, is_read)
        VALUES (?, ?, ?, ?, ?)`,
       [userId, sender, message.trim(), dietician || null, sender === "dietician" ? 1 : 0]
     );
-
     res.json({ success: true, id: result.insertId, created_at: new Date().toISOString() });
   } catch (err) {
     console.error("DIET-CHAT send error:", err);
@@ -85,7 +83,6 @@ router.post("/assign", adminAuth, async (req, res) => {
 // ── GET /api/diet-chat/admin/all-conversations ── all conversations for admin
 router.get("/admin/all-conversations", adminAuth, async (req, res) => {
   try {
-    // Get distinct users who have messages, with last message + unread count
     const [rows] = await db.query(`
       SELECT 
         dm.user_id,
@@ -102,7 +99,17 @@ router.get("/admin/all-conversations", adminAuth, async (req, res) => {
       GROUP BY dm.user_id, u.full_name, u.assigned_dietician
       ORDER BY last_message_at DESC
     `);
-    res.json(rows);
+
+    // Decrypt full_name — stored encrypted in users table
+    const decrypted = rows.map((r) => ({
+      ...r,
+      full_name: (() => {
+        try { return decrypt(r.full_name) || r.full_name; }
+        catch { return r.full_name; }
+      })(),
+    }));
+
+    res.json(decrypted);
   } catch (err) {
     console.error("DIET-CHAT all-conversations error:", err);
     res.status(500).json({ message: "Server error" });

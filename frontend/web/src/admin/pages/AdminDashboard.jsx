@@ -320,16 +320,24 @@ export default function AdminDashboard() {
     adminMsgEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [convMessages, patientTyping]);
 
-  // ── Load conversations list ──────────────────────────────────────────
-  useEffect(() => {
-    if (activeTab !== "messages") return;
+  // ── Load conversations list + auto-refresh every 10s ─────────────────
+  const fetchConversations = useCallback(() => {
     fetch("/api/diet-chat/admin/all-conversations", {
       headers: { Authorization: "Bearer " + localStorage.getItem("adminToken") },
     })
       .then((r) => r.ok ? r.json() : [])
-      .then(setConversations)
+      .then((data) => {
+        setConversations(data);
+      })
       .catch(() => { });
-  }, [activeTab]);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "messages") return;
+    fetchConversations(); // immediate load
+    const interval = setInterval(fetchConversations, 10000); // refresh every 10s
+    return () => clearInterval(interval); // cleanup on tab change
+  }, [activeTab, fetchConversations]);
 
   // ── Open a conversation ──────────────────────────────────────────────
   async function openConversation(conv) {
@@ -1258,7 +1266,7 @@ export default function AdminDashboard() {
                             <div className="conv-bubble-text">{m.message}</div>
                             <div className="conv-bubble-time">
                               {m.sender === "dietician" ? `👨‍⚕️ ${m.dietician || "Admin"} · ` : "Patient · "}
-                              {new Date(m.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                              {new Date(m.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" })}
                             </div>
                           </div>
                         ))

@@ -99,8 +99,8 @@ WHERE id = ?;
 
     const values = [
       encrypt(fullName),
-      encryptDeterministic(email),
-      encryptDeterministic(phone),
+      encryptDeterministic(email || null),
+      encryptDeterministic(phone || null),
       encrypt(dateOfBirth),
       encrypt(gender),
       encrypt(height),

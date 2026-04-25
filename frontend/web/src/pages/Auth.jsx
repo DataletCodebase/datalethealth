@@ -307,7 +307,7 @@ export default function Auth({ isLoginDefault = true }) {
 
         <div className="auth-tabs">
           <button onClick={() => setIsLogin(true)} className={isLogin ? "active" : ""}>Login</button>
-          <button onClick={() => setIsLogin(false)} className={!isLogin ? "active" : ""}>Signup</button>
+          <button onClick={() => setIsLogin(false)} className={!isLogin ? "active" : ""}>Signup to datalet</button>
         </div>
 
         {/* LOGIN MODE SWITCH */}

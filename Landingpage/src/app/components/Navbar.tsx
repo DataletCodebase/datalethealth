@@ -9,6 +9,8 @@ const navLinks = [
   { label: "About", href: "#about" },
   { label: "Programs", href: "#how-it-works" },
   { label: "Advisory", href: "#advisory" }, //milan
+  { label: "Well", href: "#well" }, //milan
+  { label: "Team", href: "#team" },
 ];
 
 // @ts-ignore

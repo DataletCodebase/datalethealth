@@ -5,13 +5,15 @@ import { TiltCard } from "./ui/TiltCard";
 import { ParallaxLayer } from "./ui/ParallaxLayer";
 import { WellnessWidgetDashboard } from "./WellnessWidgets";
 import doctorIndian from "../../assets/images/HealthCoach.avif";
+import doctorIndian1 from "../../assets/images/doctor5.avif";
 
 // Replaced nurse image → health data analytics dashboard
 const imgDoctorTablet =
   // "https://images.unsplash.com/photo-1758691463610-3c2ecf5fb3fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
   doctorIndian;
 const imgMedTeam =
-  "https://images.unsplash.com/photo-1770221797869-81e508282ac4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+  // "https://images.unsplash.com/photo-1770221797869-81e508282ac4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+  doctorIndian1;
 const imgDataViz =
   "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
 

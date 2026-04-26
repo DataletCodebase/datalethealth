@@ -3,12 +3,13 @@ import { motion } from "motion/react";
 import { TiltCard } from "./ui/TiltCard";
 import { ParallaxLayer } from "./ui/ParallaxLayer";
 import doctorImg from "../../assets/images/doctor.avif";
+import doctorImg1 from "../../assets/images/doctor2.avif";
 
 // const imgDoctorMain =
 //   "https://images.unsplash.com/photo-1758691461516-7e716e0ca135?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBkb2N0b3IlMjBwb3J0cmFpdCUyMHNtaWxpbmclMjB3aGl0ZSUyMGNvYXR8ZW58MXx8fHwxNzcxOTQ2MTczfDA&ixlib=rb-4.1.0&q=80&w=1080";
 const imgDoctorMain = doctorImg;
-const imgExec =
-  "https://images.unsplash.com/photo-1650784854452-6f18e97221f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGhjYXJlJTIwZXhlY3V0aXZlJTIwYnVzaW5lc3MlMjBwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE5NDYxNzV8MA&ixlib=rb-4.1.0&q=80&w=1080";
+const imgExec = doctorImg1;
+// "https://images.unsplash.com/photo-1650784854452-6f18e97221f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGhjYXJlJTIwZXhlY3V0aXZlJTIwYnVzaW5lc3MlMjBwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE5NDYxNzV8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
 const values = [
   {

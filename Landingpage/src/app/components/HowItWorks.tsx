@@ -14,7 +14,7 @@ import {
 
 import infectiScanImg from "../../assets/images/infectiscan.avif";
 import eyeImg from "../../assets/images/eyeHealth.avif";
-import dietImg from "../../assets/images/dataletHealthcare.avif";
+import dietImg from "../../assets/images/health.avif";
 import metaImg from "../../assets/images/metacast.avif";
 import mentalImg from "../../assets/images/mentalHealth.avif";
 import speechImg from "../../assets/images/speechandHearing.avif";
@@ -65,7 +65,7 @@ const solutions = [
     img: eyeImg,
   },
   {
-    title: "Datalet Healthcare",
+    title: "Datalet Health",
     desc: "AI-powered preventive healthcare with personalized diet & lifestyle plans.",
     img: dietImg,
   },

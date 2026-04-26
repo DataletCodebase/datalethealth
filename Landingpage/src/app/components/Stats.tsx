@@ -3,8 +3,8 @@ import { motion, useInView } from "motion/react";
 
 const stats = [
   { value: 10, suffix: "+", label: "Health Systems" },
-  { value: 50, suffix: "M+", label: "Daily Records" },
-  { value: 98, suffix: "%", label: "Uptime SLA" },
+  { value: 5, suffix: "K+", label: "Daily Records" },
+  { value: 99, suffix: "%", label: "Uptime SLA" },
   { value: 60, suffix: "%", label: "Cost Savings" },
   { value: 3, suffix: "+", label: "Years in Healthcare" },
 ];

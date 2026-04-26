@@ -1,0 +1,628 @@
+# version: "3.1"
+
+# intents:
+#   - greet
+#   - affirm
+#   - deny
+#   - breakfast_done
+#   - breakfast_skipped
+#   - lunch_done
+#   - lunch_skipped
+#   - dinner_done
+#   - dinner_skipped
+#   - ask_diet_plan
+#   - ask_food
+#   - ask_water
+#   - weight_issue
+#   - connect_dietician
+#   - goodbye
+#   - nlu_fallback
+#   - random_chat
+
+# entities:
+#   - food_item
+
+# slots:
+#   breakfast_status:
+#     type: categorical
+#     values:
+#       - done
+#       - skipped
+#     mappings:
+#       - type: from_intent
+#         intent: breakfast_done
+#         value: done
+#       - type: from_intent
+#         intent: breakfast_skipped
+#         value: skipped
+
+#   lunch_status:
+#     type: categorical
+#     values:
+#       - done
+#       - skipped
+#     mappings:
+#       - type: from_intent
+#         intent: lunch_done
+#         value: done
+#       - type: from_intent
+#         intent: lunch_skipped
+#         value: skipped
+
+#   dinner_status:
+#     type: categorical
+#     values:
+#       - done
+#       - skipped
+#     mappings:
+#       - type: from_intent
+#         intent: dinner_done
+#         value: done
+#       - type: from_intent
+#         intent: dinner_skipped
+#         value: skipped
+
+# forms:
+#   diet_tracking_form:
+#     required_slots:
+#       - breakfast_status
+#       - lunch_status
+#       - dinner_status
+
+# responses:
+#   utter_greet:
+#     - text: "Hello! I am your AI Diet Assistant. How can I help you today? 😊"
+
+#   utter_start_flow:
+#     - text: "Hi 👋 I am your Diet Assistant. Let’s track your meals today."
+
+#   utter_ask_breakfast_status:
+#     - text: "Did you complete your breakfast today?"
+
+#   utter_ask_lunch_status:
+#     - text: "Have you taken your lunch?"
+
+#   utter_ask_dinner_status:
+#     - text: "Did you complete your dinner?"
+
+#   utter_breakfast_good:
+#     - text: "Great 👍 Starting the day with proper nutrition is important. A balanced breakfast improves metabolism."
+
+#   utter_breakfast_skipped:
+#     - text: "Skipping breakfast can slow metabolism. Try fruits 🍎 or oats tomorrow."
+
+#   utter_lunch_good:
+#     - text: "Nice 👍 A balanced lunch keeps energy stable."
+
+#   utter_lunch_skipped:
+#     - text: "Even a light meal like salad helps maintain energy levels."
+
+#   utter_dinner_good:
+#     - text: "Good 👍 Try to keep dinner light and eat it early."
+
+#   utter_dinner_skipped:
+#     - text: "Skipping dinner may affect your sleep and recovery."
+
+#   utter_weight_advice:
+#     - text: "Maintain portion control and regular exercise. Consistency is key for a healthy weight."
+
+#   utter_diet_plan:
+#     - text: "A balanced diet consists of vegetables 🥦, protein 🍗, and whole grains 🌾. We can create a personalized diet plan for you."
+
+#   utter_food_answer:
+#     - text: "Food choices depend on your health condition. Prefer low salt, controlled sugar, and balanced nutrition."
+
+#   utter_water_advice:
+#     - text: "Drink 2–3 litres of water daily unless your doctor has restricted it."
+
+#   utter_connect_dietician:
+#     - text: "Sure 👍 I will connect you with an expert dietician. Would you like a personalized diet plan?"
+
+#   utter_goodbye:
+#     - text: "Take care 👋 Stay consistent with your healthy routine."
+
+#   utter_fallback:
+#     - text: "I am not fully sure about that. Let me check and help you with diet guidance."
+
+# actions:
+#   - action_dynamic_diet_answer
+#   - action_motivate_user
+#   - action_suggest_website
+#   - action_weight_coach
+#   - action_redirect_to_diet
+
+# session_config:
+#   session_expiration_time: 60
+#   carry_over_slots_to_new_session: true
+
+# version: "3.1"
+
+# intents:
+#   - greet
+#   - affirm
+#   - deny
+#   - breakfast_done
+#   - breakfast_skipped
+#   - lunch_done
+#   - lunch_skipped
+#   - dinner_done
+#   - dinner_skipped
+#   - ask_diet_plan
+#   - ask_food
+#   - ask_water
+#   - weight_issue
+#   - connect_dietician
+#   - goodbye
+#   - random_chat
+#   - motivation
+#   - thanks
+#   - gibberish
+
+# entities:
+#   - food_item
+
+# slots:
+#   conversation_mode:
+#     type: text
+#     influence_conversation: true
+#     mappings:
+#       - type: custom
+
+#   breakfast_status:
+#     type: categorical
+#     values:
+#       - done
+#       - skipped
+#     influence_conversation: true
+#     mappings:
+#       - type: from_intent
+#         intent: breakfast_done
+#         value: done
+#       - type: from_intent
+#         intent: breakfast_skipped
+#         value: skipped
+
+#   lunch_status:
+#     type: categorical
+#     values:
+#       - done
+#       - skipped
+#     influence_conversation: true
+#     mappings:
+#       - type: from_intent
+#         intent: lunch_done
+#         value: done
+#       - type: from_intent
+#         intent: lunch_skipped
+#         value: skipped
+
+#   dinner_status:
+#     type: categorical
+#     values:
+#       - done
+#       - skipped
+#     influence_conversation: true
+#     mappings:
+#       - type: from_intent
+#         intent: dinner_done
+#         value: done
+#       - type: from_intent
+#         intent: dinner_skipped
+#         value: skipped
+
+# forms:
+#   diet_tracking_form:
+#     required_slots:
+#       - breakfast_status
+#       - lunch_status
+#       - dinner_status
+
+# responses:
+#   utter_greet:
+#     - text: |
+#         Hello 👋 I am your Smart AI Diet Assistant.
+
+#         I can help you:
+#         🥗 Track meals
+#         💧 Improve hydration
+#         ⚖️ Manage weight
+#         📋 Suggest diet plans
+
+#         What would you like to do today?
+#       buttons:
+#         - title: "Track My Meals 🍱"
+#           payload: "/affirm"
+#         - title: "Get Diet Plan 📋"
+#           payload: "/ask_diet_plan"
+#         - title: "Weight Guidance ⚖️"
+#           payload: "/weight_issue"
+
+#   utter_ask_breakfast_status:
+#     - text: "🌞 Did you complete your breakfast today?"
+#       buttons:
+#         - title: "Yes ✅"
+#           payload: "/breakfast_done"
+#         - title: "Skipped ❌"
+#           payload: "/breakfast_skipped"
+
+#   utter_ask_lunch_status:
+#     - text: "🍛 Have you taken your lunch?"
+#       buttons:
+#         - title: "Yes ✅"
+#           payload: "/lunch_done"
+#         - title: "Skipped ❌"
+#           payload: "/lunch_skipped"
+
+#   utter_ask_dinner_status:
+#     - text: "🌙 Did you complete your dinner?"
+#       buttons:
+#         - title: "Yes ✅"
+#           payload: "/dinner_done"
+#         - title: "Skipped ❌"
+#           payload: "/dinner_skipped"
+
+#   utter_breakfast_good:
+#     - text: |
+#         Excellent 👍 Breakfast gives energy for the whole day.
+
+#         What did you eat?
+
+#   utter_breakfast_skipped:
+#     - text: |
+#         Oh 😅 Try not to skip breakfast. Even fruits or oats help metabolism.
+
+#         Shall we focus on lunch now?
+
+#   utter_lunch_good:
+#     - text: |
+#         Nice 👍 Balanced lunch keeps energy stable.
+
+#         Did you drink enough water today?
+
+#   utter_lunch_skipped:
+#     - text: |
+#         Skipping meals may reduce productivity.
+
+#         Even a light salad helps 🙂
+
+#   utter_dinner_good:
+#     - text: |
+#         Good 👍 Keep dinner light and early for better sleep.
+
+#   utter_dinner_skipped:
+#     - text: |
+#         Skipping dinner sometimes is okay but avoid doing it daily.
+
+#   utter_meal_tracking_done:
+#     - text: |
+#         ✅ Great! I have tracked all your meals today.
+
+#         Would you like diet suggestions for tomorrow?
+#       buttons:
+#         - title: "Yes 📋"
+#           payload: "/ask_diet_plan"
+#         - title: "No 🙂"
+#           payload: "/deny"
+
+#   utter_weight_advice:
+#     - text: |
+#         ⚖️ Weight depends on:
+
+#         • Calories
+#         • Physical activity
+#         • Sleep
+#         • Stress
+
+#         Would you like a personalised diet plan?
+
+#   utter_diet_plan:
+#     - text: |
+#         🥗 A balanced diet includes:
+
+#         ✔ Protein
+#         ✔ Fiber
+#         ✔ Healthy fats
+#         ✔ Whole grains
+
+#         Want me to track your meals daily?
+
+#   utter_water_advice:
+#     - text: |
+#         💧 Drink around 2–3 litres water daily.
+
+#         Hydration improves digestion and skin health.
+
+#   utter_connect_dietician:
+#     - text: |
+#         👩‍⚕️ I can connect you with a diet expert.
+
+#         Would you like to continue?
+
+#   utter_goodbye:
+#     - text: |
+#         Take care 👋
+#         Stay consistent with healthy habits.
+
+#   utter_fallback:
+#     - text: |
+#         Hmm 🤔 I didn’t fully get that.
+
+#         You can ask about:
+#         🍎 Food advice
+#         ⚖️ Weight help
+#         💧 Water intake
+#         🥗 Diet plans
+
+# actions:
+#   - action_set_meal_mode
+#   - action_dynamic_diet_answer
+#   - action_weight_coach
+#   - action_meal_summary
+#   - action_food_coach
+#   - action_motivate_user
+#   - action_suggest_website
+
+# session_config:
+#   session_expiration_time: 60
+#   carry_over_slots_to_new_session: true
+
+# version: "3.1"
+
+# intents:
+#   - greet
+#   - affirm
+#   - deny
+#   - ask_food
+#   - ask_diet_plan
+#   - random_chat
+#   - provide_weight
+#   - provide_height
+#   - provide_medical
+#   - motivation
+#   - thanks
+#   - goodbye
+#   - gibberish
+#   - nlu_fallback
+
+# slots:
+#   conversation_mode:
+#     type: text
+#     influence_conversation: true
+#     mappings:
+#       - type: custom
+
+#   daily_calorie:
+#     type: float
+#     influence_conversation: false
+#     mappings:
+#       - type: custom
+
+#   body_weight:
+#     type: float
+#     influence_conversation: true
+#     mappings:
+#       - type: from_text
+#         intent: provide_weight
+
+#   height:
+#     type: float
+#     influence_conversation: false
+#     mappings:
+#       - type: from_text
+#         intent: provide_height
+
+#   medical_condition:
+#     type: text
+#     influence_conversation: false
+#     mappings:
+#       - type: from_text
+#         intent: provide_medical
+
+# responses:
+#   utter_greet:
+#     - text: |
+#         Hi 👋 I am your Smart AI Diet Assistant.
+
+#         I can help you track meals 🍱 estimate calories 🔥 and improve your health 🙂
+
+#   utter_ask_weight:
+#     - text: "⚖️ What is your current body weight?"
+
+#   utter_ask_height:
+#     - text: "📏 What is your height?"
+
+#   utter_ask_medical:
+#     - text: "🩺 Do you have any medical condition like diabetes, BP or cholesterol?"
+
+#   utter_continue_tracking:
+#     - text: "🙂 Shall we continue tracking your meals?"
+
+#   utter_diet_suggestion:
+#     - text: |
+#         🥗 Try to add more fiber, reduce fried food and drink more water.
+#         Even a 30 min walk daily helps.
+
+#   utter_fallback:
+#     - text: "😅 I didn’t understand that clearly. Can you rephrase?"
+
+#   utter_motivation:
+#     - text: "🔥 Small consistent healthy habits give big results."
+
+#   utter_goodbye:
+#     - text: "Take care 🙂 Stay healthy."
+
+# actions:
+#   - action_ask_meal_by_time
+#   - action_food_analysis
+#   - action_medical_awareness
+#   - action_dynamic_diet_answer
+#   - action_meal_summary
+#   - action_motivate_user
+#   - action_suggest_website
+
+# session_config:
+#   session_expiration_time: 60
+#   carry_over_slots_to_new_session: true
+
+# version: "3.1"
+
+# intents:
+#   - greet
+#   - ask_food
+#   - skip_meal
+#   - provide_weight
+#   - provide_height
+#   - provide_medical
+#   - affirm
+#   - deny
+#   - ask_diet_plan
+#   - meal_summary
+#   - random_chat
+#   - thanks
+#   - goodbye
+#   - nlu_fallback
+
+# slots:
+#   conversation_mode:
+#     type: text
+#     influence_conversation: true
+#     mappings:
+#       - type: custom
+
+#   daily_calorie:
+#     type: float
+#     influence_conversation: false
+#     mappings:
+#       - type: custom
+
+#   body_weight:
+#     type: float
+#     influence_conversation: false
+#     mappings:
+#       - type: custom
+
+#   height:
+#     type: float
+#     influence_conversation: false
+#     mappings:
+#       - type: custom
+
+#   medical_condition:
+#     type: text
+#     influence_conversation: false
+#     mappings:
+#       - type: custom
+
+# responses:
+#   utter_goodbye:
+#     - text: "Take care 🙂 Stay healthy and keep tracking your meals!"
+
+#   utter_thanks:
+#     - text: "Happy to help 🙂 Keep up the healthy habits!"
+
+# actions:
+#   - action_ask_meal_by_time
+#   - action_food_analysis
+#   - action_collect_weight
+#   - action_collect_height
+#   - action_medical_awareness
+#   - action_diet_suggestion
+#   - action_skip_meal
+#   - action_general_answer
+#   - action_meal_summary
+#   - action_fallback
+
+# session_config:
+#   session_expiration_time: 60
+#   carry_over_slots_to_new_session: true
+
+version: "3.1"
+
+intents:
+  - greet
+  - ask_food
+  - skip_meal
+  - provide_weight
+  - provide_height
+  - provide_medical
+  - affirm
+  - deny
+  - ask_diet_plan
+  - meal_summary
+  - random_chat
+  - thanks
+  - goodbye
+  - nlu_fallback
+
+# ================= SLOTS =================
+slots:
+  conversation_mode:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  daily_calorie:
+    type: float
+    influence_conversation: false
+    initial_value: 0
+    mappings:
+      - type: custom
+
+  body_weight:
+    type: float
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  height:
+    type: float
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  medical_condition:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+# ================= RESPONSES =================
+responses:
+  utter_goodbye:
+    - text: |
+        Take care 🙂 
+        Stay healthy and keep tracking your meals!
+
+  utter_thanks:
+    - text: |
+        Happy to help 🙂
+        Keep up the healthy habits!
+
+  utter_default:
+    - text: |
+        Hmm 🤔 I didn’t get that clearly.
+        Can you say it again in a simple way?
+
+  utter_encourage:
+    - text: |
+        You're doing great 💪
+        Small steps make big results!
+
+# ================= ACTIONS =================
+actions:
+  - action_ask_meal_by_time
+  - action_food_analysis
+  - action_collect_weight
+  - action_collect_height
+  - action_medical_awareness
+  - action_diet_suggestion
+  - action_skip_meal
+  - action_general_answer
+  - action_meal_summary
+  - action_fallback
+
+# ================= SESSION =================
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

@@ -8,6 +8,7 @@ import { Testimonials } from "./components/Testimonials";
 import { Insights } from "./components/Insights";
 import { CTA } from "./components/CTA";
 import { Footer } from "./components/Footer";
+import { Advisory } from "./components/Advisory";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Services />
         <HowItWorks />
         <About />
+        <Advisory />
         <Testimonials />
         <Insights />
         <CTA />

@@ -37,3 +37,35 @@ uploads/
 
 # OS
 .DS_Store
+
+
+
+#milan
+# =========================
+# NEW (Landingpage + Diet AI)
+# =========================
+
+# Node modules (all projects)
+**/node_modules/
+
+# Build files (Vite / React)
+landingpage/dist/
+landingpage/.vite/
+diet-assistant-ai/dist/
+
+# Env files (safety)
+landingpage/.env
+diet-assistant-ai/.env
+
+#frontend
+frontend/web/.env
+
+# Cache
+**/.cache/
+**/.vite/
+
+# Python cache (AI project)
+# RASA cache (AI project)
+diet-assistant-ai/.rasa/
+diet-assistant-ai/models/
+diet-assistant-ai/__pycache__/

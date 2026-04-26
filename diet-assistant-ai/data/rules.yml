@@ -1,0 +1,757 @@
+# version: "3.1"
+
+# rules:
+#   - rule: start diet tracking
+#     conversation_start: true
+#     steps:
+#       - action: utter_start_flow
+#       - action: diet_tracking_form
+#       - active_loop: diet_tracking_form
+#   - rule: Start diet assistant
+#     conversation_start: true
+#     steps:
+#       - intent: greet # Ensure you have a 'greet' intent in your nlu.yml
+#       - action: utter_greet
+
+#   - rule: Dynamic AI answer for food questions
+#     steps:
+#       - intent: ask_food
+#       - action: action_dynamic_diet_answer
+
+#   - rule: Dynamic random chat redirect
+#     steps:
+#       - intent: random_chat
+#       - action: action_redirect_to_diet
+
+#   - rule: fallback to dynamic ai
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_dynamic_diet_answer
+
+#   - rule: Hydration help
+#     steps:
+#       - intent: ask_water
+#       - action: utter_water_advice
+
+#   - rule: Connect with dietician
+#     steps:
+#       - intent: connect_dietician
+#       - action: utter_connect_dietician
+
+#   - rule: Goodbye
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# rules:
+#   # ⭐ Start conversation with greeting only
+#   - rule: Greet user on chat open
+#     conversation_start: true
+#     steps:
+#       - action: utter_greet
+
+#   # ⭐ Start meal tracking when user agrees
+#   - rule: Start diet tracking form
+#     steps:
+#       - intent: affirm
+#       - action: diet_tracking_form
+#       - active_loop: diet_tracking_form
+
+#   # ⭐ Submit form
+#   - rule: Submit diet tracking form
+#     condition:
+#       - active_loop: diet_tracking_form
+#     steps:
+#       - action: diet_tracking_form
+#       - active_loop: null
+#       - action: action_motivate_user
+#       - action: action_suggest_website
+
+#   # ⭐ Food dynamic answer
+#   - rule: Food AI answer
+#     steps:
+#       - intent: ask_food
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Random chat handled by AI (NOT redirect)
+#   - rule: Random AI chat
+#     steps:
+#       - intent: random_chat
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Fallback handled by AI
+#   - rule: AI fallback
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Hydration help
+#   - rule: Water help
+#     steps:
+#       - intent: ask_water
+#       - action: utter_water_advice
+
+#   # ⭐ Weight issue
+#   - rule: Weight coach
+#     steps:
+#       - intent: weight_issue
+#       - action: action_weight_coach
+
+#   # ⭐ Connect dietician
+#   - rule: Connect dietician
+#     steps:
+#       - intent: connect_dietician
+#       - action: utter_connect_dietician
+
+#   # ⭐ Goodbye
+#   - rule: Goodbye rule
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# rules:
+#   # ⭐ Conversation start
+#   - rule: Greet user on chat open
+#     conversation_start: true
+#     steps:
+#       - action: utter_greet
+
+#   # ⭐ Start diet tracking form
+#   - rule: Start diet tracking form
+#     steps:
+#       - intent: affirm
+#       - action: diet_tracking_form
+#       - active_loop: diet_tracking_form
+
+#   # ⭐ Submit diet tracking form
+#   - rule: Submit diet tracking form
+#     condition:
+#       - active_loop: diet_tracking_form
+#     steps:
+#       - action: diet_tracking_form
+#       - active_loop: null
+#       - action: action_meal_summary
+#       - action: utter_meal_tracking_done
+
+#   # ⭐ Diet plan
+#   - rule: Provide diet plan
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: utter_diet_plan
+
+#   # ⭐ Weight coach
+#   - rule: Weight coach
+#     steps:
+#       - intent: weight_issue
+#       - action: action_weight_coach
+
+#   # ⭐ Water help
+#   - rule: Water help
+#     steps:
+#       - intent: ask_water
+#       - action: utter_water_advice
+
+#   # ⭐ Food dynamic AI
+#   - rule: Food AI answer
+#     steps:
+#       - intent: ask_food
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Random AI chat
+#   - rule: Random AI chat
+#     steps:
+#       - intent: random_chat
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Global fallback
+#   - rule: AI fallback
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Connect expert
+#   - rule: Connect dietician
+#     steps:
+#       - intent: connect_dietician
+#       - action: utter_connect_dietician
+
+#   # ⭐ Goodbye
+#   - rule: Goodbye rule
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# rules:
+#   # ⭐ Conversation start
+#   - rule: greet on start
+#     conversation_start: true
+#     steps:
+#       - action: utter_greet
+
+#   # ⭐ Start meal tracking
+#   - rule: start meal tracking
+#     steps:
+#       - intent: affirm
+#       - action: action_set_meal_mode
+#       - action: diet_tracking_form
+#       - active_loop: diet_tracking_form
+
+#   # ⭐ Submit meal tracking
+#   - rule: submit meal form
+#     condition:
+#       - active_loop: diet_tracking_form
+#     steps:
+#       - action: diet_tracking_form
+#       - active_loop: null
+#       - action: action_meal_summary
+#       - action: utter_meal_tracking_done
+
+#   # ⭐ Pause form on random chat
+#   - rule: pause form on random chat
+#     condition:
+#       - active_loop: diet_tracking_form
+#     steps:
+#       - intent: random_chat
+#       - action: action_deactivate_loop
+#       - active_loop: null
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Pause form on diet questions
+#   - rule: pause form on diet advice
+#     condition:
+#       - active_loop: diet_tracking_form
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: action_deactivate_loop
+#       - active_loop: null
+#       - action: utter_diet_plan
+
+#   # ⭐ Pause form on food question
+#   - rule: pause form on food question
+#     condition:
+#       - active_loop: diet_tracking_form
+#     steps:
+#       - intent: ask_food
+#       - action: action_deactivate_loop
+#       - active_loop: null
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Resume tracking
+#   - rule: resume tracking
+#     steps:
+#       - intent: affirm
+#       - action: action_set_meal_mode
+#       - action: diet_tracking_form
+#       - active_loop: diet_tracking_form
+
+#   # ⭐ Water help
+#   - rule: water help
+#     steps:
+#       - intent: ask_water
+#       - action: utter_water_advice
+
+#   # ⭐ Weight coach
+#   - rule: weight coach
+#     steps:
+#       - intent: weight_issue
+#       - action: action_weight_coach
+
+#   # ⭐ Connect expert
+#   - rule: connect expert
+#     steps:
+#       - intent: connect_dietician
+#       - action: utter_connect_dietician
+
+#   # ⭐ Global fallback
+#   - rule: fallback
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_dynamic_diet_answer
+
+#   # ⭐ Goodbye
+#   - rule: goodbye
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# rules:
+#   - rule: Ask meal on start
+#     conversation_start: true
+#     steps:
+#       - action: action_ask_meal_by_time
+
+#   - rule: Food analysis
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   - rule: Medical awareness
+#     steps:
+#       - intent: provide_medical
+#       - action: action_medical_awareness
+
+#   - rule: Diet suggestion
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: utter_diet_suggestion
+
+#   - rule: Motivation
+#     steps:
+#       - intent: motivation
+#       - action: utter_motivation
+
+#   - rule: Thanks
+#     steps:
+#       - intent: thanks
+#       - action: action_suggest_website
+
+#   - rule: Fallback
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_dynamic_diet_answer
+
+#   - rule: Goodbye
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# rules:
+#   - rule: Start conversation
+#     conversation_start: true
+#     steps:
+#       - action: action_ask_meal_by_time
+
+#   - rule: User ate food
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   - rule: User skipped meal
+#     steps:
+#       - intent: skip_meal
+#       - action: action_skip_meal
+
+#   # ── Profiling chain ─────────────────────────────────────────────────────────
+#   - rule: Collect weight (only when in ask_weight step)
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_weight
+#     steps:
+#       - intent: provide_weight
+#       - action: action_collect_weight
+
+#   - rule: Collect height (only when in ask_height step)
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_height
+#     steps:
+#       - intent: provide_height
+#       - action: action_collect_height
+
+#   - rule: Collect medical info (only when in ask_medical step)
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_medical
+#     steps:
+#       - intent: provide_medical
+#       - action: action_medical_awareness
+
+#   # ── Post-awareness ───────────────────────────────────────────────────────────
+#   - rule: User wants diet tips (affirm after awareness)
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: awareness_done
+#     steps:
+#       - intent: affirm
+#       - action: action_diet_suggestion
+
+#   - rule: User denies tips
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: awareness_done
+#     steps:
+#       - intent: deny
+#       - action: action_fallback
+
+#   # ── General ──────────────────────────────────────────────────────────────────
+#   - rule: Direct diet plan request
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: action_diet_suggestion
+
+#   - rule: Meal calorie summary
+#     steps:
+#       - intent: meal_summary
+#       - action: action_meal_summary
+
+#   - rule: General question
+#     steps:
+#       - intent: random_chat
+#       - action: action_general_answer
+
+#   - rule: Fallback
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_fallback
+
+#   - rule: Thanks
+#     steps:
+#       - intent: thanks
+#       - action: utter_thanks
+
+#   - rule: Goodbye
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# rules:
+#   # ================= START =================
+#   - rule: Start conversation
+#     conversation_start: true
+#     steps:
+#       - action: action_ask_meal_by_time
+
+#   # ================= FOOD FLOW =================
+#   - rule: User ate food
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   - rule: User skipped meal
+#     steps:
+#       - intent: skip_meal
+#       - action: action_skip_meal
+
+#   # ================= PROFILE FLOW =================
+
+#   # WEIGHT
+#   - rule: Collect weight
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_weight
+#     steps:
+#       - intent: provide_weight
+#       - action: action_collect_weight
+
+#   # HEIGHT
+#   - rule: Collect height
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_height
+#     steps:
+#       - intent: provide_height
+#       - action: action_collect_height
+
+#   # MEDICAL
+#   - rule: Collect medical
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_medical
+#     steps:
+#       - intent: provide_medical
+#       - action: action_medical_awareness
+
+#   # ================= AFTER MEDICAL =================
+
+#   - rule: User wants tips
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: awareness_done
+#     steps:
+#       - intent: affirm
+#       - action: action_diet_suggestion
+
+#   - rule: User denies tips
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: awareness_done
+#     steps:
+#       - intent: deny
+#       - action: action_fallback
+
+#   # ================= GLOBAL HANDLING =================
+
+#   # 👉 If user asks diet directly anytime
+#   - rule: Direct diet request
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: action_diet_suggestion
+
+#   # 👉 Summary anytime
+#   - rule: Meal summary
+#     steps:
+#       - intent: meal_summary
+#       - action: action_meal_summary
+
+#   # 👉 General chat anytime (VERY IMPORTANT)
+#   - rule: General chat interrupt
+#     steps:
+#       - intent: random_chat
+#       - action: action_general_answer
+
+#   # 👉 Fallback (important)
+#   - rule: Global fallback
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_fallback
+
+#   # ================= SMALL INTENTS =================
+
+#   - rule: Thanks
+#     steps:
+#       - intent: thanks
+#       - action: utter_thanks
+
+#   - rule: Goodbye
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# rules:
+#   # ✅ THIS IS MAIN ENTRY POINT
+#   - rule: Greet → time based start
+#     steps:
+#       - intent: greet
+#       - action: action_ask_meal_by_time
+#   # ================= START =================
+#   - rule: Start conversation (time based greeting)
+#     conversation_start: true
+#     steps:
+#       - action: action_ask_meal_by_time
+
+#   # ================= FOOD FLOW =================
+#   - rule: User ate food
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   - rule: User skipped meal
+#     steps:
+#       - intent: skip_meal
+#       - action: action_skip_meal
+
+#   # ================= PROFILE FLOW =================
+
+#   # WEIGHT COLLECTION
+#   - rule: Collect weight (only when needed)
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_weight
+#     steps:
+#       - intent: provide_weight
+#       - action: action_collect_weight
+
+#   # HEIGHT COLLECTION
+#   - rule: Collect height (only when needed)
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_height
+#     steps:
+#       - intent: provide_height
+#       - action: action_collect_height
+
+#   # MEDICAL COLLECTION
+#   - rule: Collect medical (only when needed)
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_medical
+#     steps:
+#       - intent: provide_medical
+#       - action: action_medical_awareness
+
+#   # ================= AFTER MEDICAL =================
+
+#   - rule: User wants diet tips
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: awareness_done
+#     steps:
+#       - intent: affirm
+#       - action: action_diet_suggestion
+
+#   - rule: User denies diet tips
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: awareness_done
+#     steps:
+#       - intent: deny
+#       - action: action_fallback
+
+#   # ================= INTERRUPT HANDLING (VERY IMPORTANT) =================
+
+#   # 👉 If user asks random question during ANY step
+#   - rule: Interrupt with general chat
+#     steps:
+#       - intent: random_chat
+#       - action: action_general_answer
+
+#   # 👉 If user asks diet in middle of flow
+#   - rule: Interrupt with diet request
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: action_diet_suggestion
+
+#   # 👉 If user asks summary anytime
+#   - rule: Interrupt with summary
+#     steps:
+#       - intent: meal_summary
+#       - action: action_meal_summary
+
+#   # ================= RESUME FLOW (SMART BEHAVIOR) =================
+
+#   - rule: Resume weight step
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_weight
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   - rule: Resume height step
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_height
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   - rule: Resume medical step
+#     condition:
+#       - slot_was_set:
+#           - conversation_mode: ask_medical
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   # ================= FALLBACK =================
+
+#   - rule: Global fallback (AI recovery)
+#     steps:
+#       - intent: nlu_fallback
+#       - action: action_fallback
+
+#   # ================= SMALL INTENTS =================
+
+#   - rule: Thanks
+#     steps:
+#       - intent: thanks
+#       - action: utter_thanks
+
+#   - rule: Goodbye
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+version: "3.1"
+
+rules:
+  # ================= START =================
+  - rule: Greet → time based start
+    steps:
+      - intent: greet
+      - action: action_ask_meal_by_time
+
+  # ================= FOOD FLOW =================
+  - rule: User ate food
+    steps:
+      - intent: ask_food
+      - action: action_food_analysis
+
+  - rule: User skipped meal
+    steps:
+      - intent: skip_meal
+      - action: action_skip_meal
+
+  # ================= PROFILE FLOW =================
+
+  - rule: Collect weight
+    condition:
+      - slot_was_set:
+          - conversation_mode: ask_weight
+    steps:
+      - intent: provide_weight
+      - action: action_collect_weight
+
+  - rule: Collect height
+    condition:
+      - slot_was_set:
+          - conversation_mode: ask_height
+    steps:
+      - intent: provide_height
+      - action: action_collect_height
+
+  - rule: Collect medical
+    condition:
+      - slot_was_set:
+          - conversation_mode: ask_medical
+    steps:
+      - intent: provide_medical
+      - action: action_medical_awareness
+
+  # ================= AFTER MEDICAL =================
+
+  - rule: User wants diet tips
+    condition:
+      - slot_was_set:
+          - conversation_mode: awareness_done
+    steps:
+      - intent: affirm
+      - action: action_diet_suggestion
+
+  - rule: User denies diet tips
+    condition:
+      - slot_was_set:
+          - conversation_mode: awareness_done
+    steps:
+      - intent: deny
+      - action: action_fallback
+
+  # ================= INTERRUPTS =================
+
+  - rule: General chat interrupt
+    steps:
+      - intent: random_chat
+      - action: action_general_answer
+
+  - rule: Diet request interrupt
+    steps:
+      - intent: ask_diet_plan
+      - action: action_diet_suggestion
+
+  - rule: Summary interrupt
+    steps:
+      - intent: meal_summary
+      - action: action_meal_summary
+
+  # ================= FALLBACK =================
+
+  - rule: Global fallback
+    steps:
+      - intent: nlu_fallback
+      - action: action_fallback
+
+  # ================= SMALL =================
+
+  - rule: Thanks
+    steps:
+      - intent: thanks
+      - action: utter_thanks
+
+  - rule: Goodbye
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye

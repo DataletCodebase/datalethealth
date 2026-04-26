@@ -1,0 +1,329 @@
+# version: "3.1"
+
+# stories:
+#   # ================= GREETING FLOW =================
+#   - story: greet and start tracking
+#     steps:
+#       - intent: greet
+#       - action: utter_greet
+#       - intent: affirm
+#       - action: action_set_meal_mode
+#       - action: diet_tracking_form
+#       - active_loop: diet_tracking_form
+
+#   # ================= BREAKFAST FLOW =================
+#   - story: breakfast completed flow
+#     steps:
+#       - intent: breakfast_done
+#       - action: utter_breakfast_good
+
+#   - story: breakfast skipped flow
+#     steps:
+#       - intent: breakfast_skipped
+#       - action: utter_breakfast_skipped
+
+#   # ================= LUNCH FLOW =================
+#   - story: lunch completed flow
+#     steps:
+#       - intent: lunch_done
+#       - action: utter_lunch_good
+
+#   - story: lunch skipped flow
+#     steps:
+#       - intent: lunch_skipped
+#       - action: utter_lunch_skipped
+
+#   # ================= DINNER FLOW =================
+#   - story: dinner completed flow
+#     steps:
+#       - intent: dinner_done
+#       - action: utter_dinner_good
+
+#   - story: dinner skipped flow
+#     steps:
+#       - intent: dinner_skipped
+#       - action: utter_dinner_skipped
+
+#   # ================= FOOD QUESTION FLOW =================
+#   - story: food question flow
+#     steps:
+#       - intent: ask_food
+#       - action: action_dynamic_diet_answer
+
+#   # ================= RANDOM CHAT FLOW =================
+#   - story: random chat flow
+#     steps:
+#       - intent: random_chat
+#       - action: action_dynamic_diet_answer
+
+#   # ================= DIET PLAN FLOW =================
+#   - story: diet plan flow
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: utter_diet_plan
+
+#   # ================= WATER FLOW =================
+#   - story: water advice flow
+#     steps:
+#       - intent: ask_water
+#       - action: utter_water_advice
+
+#   # ================= WEIGHT FLOW =================
+#   - story: weight coaching flow
+#     steps:
+#       - intent: weight_issue
+#       - action: action_weight_coach
+
+#   # ================= EXPERT FLOW =================
+#   - story: connect expert flow
+#     steps:
+#       - intent: connect_dietician
+#       - action: utter_connect_dietician
+
+#   # ================= GOODBYE FLOW =================
+#   - story: goodbye flow
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+#   # ================= FORM COMPLETE FLOW =================
+#   - story: meal tracking complete
+#     steps:
+#       - action: diet_tracking_form
+#       - active_loop: null
+#       - action: action_meal_summary
+#       - action: utter_meal_tracking_done
+
+# version: "3.1"
+
+# stories:
+#   # ⭐ FOOD → HEALTH PROFILE FLOW
+#   - story: full calorie tracking flow
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+#       - intent: provide_weight
+#       - action: utter_ask_height
+#       - intent: provide_height
+#       - action: utter_ask_medical
+#       - intent: provide_medical
+#       - action: action_medical_awareness
+
+#   # ⭐ FOOD → USER DENIES PROFILE
+#   - story: food then deny health
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+#       - intent: deny
+#       - action: utter_continue_tracking
+
+#   # ⭐ USER ASKS DIET PLAN DIRECTLY
+#   - story: diet suggestion flow
+#     steps:
+#       - intent: ask_diet_plan
+#       - action: utter_diet_suggestion
+
+#   # ⭐ RANDOM CHAT INTERRUPT
+#   - story: interrupt with gk
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+#       - intent: random_chat
+#       - action: action_dynamic_diet_answer
+#       - action: utter_continue_tracking
+
+#   # ⭐ MOTIVATION
+#   - story: motivation story
+#     steps:
+#       - intent: motivation
+#       - action: utter_motivation
+
+#   # ⭐ THANKS
+#   - story: thanks story
+#     steps:
+#       - intent: thanks
+#       - action: action_suggest_website
+
+#   # ⭐ GOODBYE
+#   - story: goodbye story
+#     steps:
+#       - intent: goodbye
+#       - action: utter_goodbye
+
+# version: "3.1"
+
+# stories:
+#   - story: Complete meal tracking flow
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+#       - intent: provide_weight
+#       - action: action_collect_weight
+#       - intent: provide_height
+#       - action: action_collect_height
+#       - intent: provide_medical
+#       - action: action_medical_awareness
+#       - intent: affirm
+#       - action: action_diet_suggestion
+
+#   - story: Meal flow then user skips tips
+#     steps:
+#       - intent: ask_food
+#       - action: action_food_analysis
+#       - intent: provide_weight
+#       - action: action_collect_weight
+#       - intent: provide_height
+#       - action: action_collect_height
+#       - intent: provide_medical
+#       - action: action_medical_awareness
+#       - intent: deny
+#       - action: action_fallback
+
+#   - story: Skip meal flow
+#     steps:
+#       - intent: skip_meal
+#       - action: action_skip_meal
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+#   - story: General question then diet
+#     steps:
+#       - intent: random_chat
+#       - action: action_general_answer
+#       - intent: ask_food
+#       - action: action_food_analysis
+
+version: "3.1"
+
+stories:
+  # ================= FULL IDEAL FLOW =================
+  - story: full meal flow with tips
+    steps:
+      - intent: ask_food
+      - action: action_food_analysis
+      - intent: provide_weight
+      - action: action_collect_weight
+      - intent: provide_height
+      - action: action_collect_height
+      - intent: provide_medical
+      - action: action_medical_awareness
+      - intent: affirm
+      - action: action_diet_suggestion
+
+  # ================= DENY TIPS =================
+  - story: full meal flow deny tips
+    steps:
+      - intent: ask_food
+      - action: action_food_analysis
+      - intent: provide_weight
+      - action: action_collect_weight
+      - intent: provide_height
+      - action: action_collect_height
+      - intent: provide_medical
+      - action: action_medical_awareness
+      - intent: deny
+      - action: action_fallback
+
+  # ================= SKIP → THEN EAT =================
+  - story: skip then later eat
+    steps:
+      - intent: skip_meal
+      - action: action_skip_meal
+      - intent: ask_food
+      - action: action_food_analysis
+
+  # ================= INTERRUPT FLOW =================
+  - story: interrupt with general chat during flow
+    steps:
+      - intent: ask_food
+      - action: action_food_analysis
+      - intent: random_chat
+      - action: action_general_answer
+      - intent: provide_weight
+      - action: action_collect_weight
+
+  # ================= GENERAL → DIET =================
+  - story: general question then meal
+    steps:
+      - intent: random_chat
+      - action: action_general_answer
+      - intent: ask_food
+      - action: action_food_analysis
+
+  # ================= DIRECT PROFILE INPUT =================
+
+  - story: user directly gives weight
+    steps:
+      - intent: provide_weight
+      - action: action_collect_weight
+
+  - story: user directly gives height
+    steps:
+      - intent: provide_height
+      - action: action_collect_height
+
+  - story: user directly gives medical info
+    steps:
+      - intent: provide_medical
+      - action: action_medical_awareness
+
+  # ================= PARTIAL FLOW RECOVERY =================
+
+  - story: user gives weight after food
+    steps:
+      - intent: ask_food
+      - action: action_food_analysis
+      - intent: provide_weight
+      - action: action_collect_weight
+
+  - story: user gives height after weight
+    steps:
+      - intent: provide_weight
+      - action: action_collect_weight
+      - intent: provide_height
+      - action: action_collect_height
+
+  - story: user gives medical after height
+    steps:
+      - intent: provide_height
+      - action: action_collect_height
+      - intent: provide_medical
+      - action: action_medical_awareness
+
+  # ================= RANDOM INTERRUPT ANYTIME =================
+
+  - story: interrupt anytime with random chat
+    steps:
+      - intent: random_chat
+      - action: action_general_answer
+
+  - story: interrupt anytime with diet request
+    steps:
+      - intent: ask_diet_plan
+      - action: action_diet_suggestion
+
+  - story: interrupt anytime with summary
+    steps:
+      - intent: meal_summary
+      - action: action_meal_summary
+
+  # ================= FALLBACK RECOVERY =================
+
+  - story: fallback then recover
+    steps:
+      - intent: nlu_fallback
+      - action: action_fallback
+      - intent: ask_food
+      - action: action_food_analysis
+
+  # ================= SMALL FLOWS =================
+
+  - story: user thanks
+    steps:
+      - intent: thanks
+      - action: utter_thanks
+
+  - story: user goodbye
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye

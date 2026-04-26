@@ -1,0 +1,1088 @@
+# version: "3.1"
+
+# nlu:
+#   # ⭐ GREETING
+#   - intent: greet
+#     examples: |
+#       - hi
+#       - hello
+#       - hey
+#       - good morning
+#       - good evening
+#       - heyy
+#       - hii
+#       - start
+#       - open diet assistant
+#       - diet help
+#       - help me with diet
+
+#   # ⭐ USER FEELING
+#   - intent: mood_good
+#     examples: |
+#       - fine
+#       - good
+#       - okay
+#       - great
+#       - awesome
+#       - feeling well
+#       - doing good
+#       - I am okay
+#       - I feel energetic
+
+#   # ⭐ BREAKFAST DONE
+#   - intent: breakfast_done
+#     examples: |
+#       - yes
+#       - yes I had breakfast
+#       - breakfast done
+#       - I completed breakfast
+#       - I ate breakfast
+#       - I had oats
+#       - I ate dosa
+#       - I had fruits
+#       - I ate poha
+#       - done breakfast
+
+#   # ⭐ BREAKFAST SKIPPED
+#   - intent: breakfast_skipped
+#     examples: |
+#       - no
+#       - not yet
+#       - skipped breakfast
+#       - I didn't eat breakfast
+#       - I forgot breakfast
+#       - I missed breakfast
+#       - will eat later
+
+#   # ⭐ LUNCH DONE
+#   - intent: lunch_done
+#     examples: |
+#       - yes lunch done
+#       - I had lunch
+#       - completed lunch
+#       - ate rice and dal
+#       - ate roti sabji
+#       - lunch finished
+#       - done lunch
+
+#   # ⭐ LUNCH SKIPPED
+#   - intent: lunch_skipped
+#     examples: |
+#       - skipped lunch
+#       - didn't eat lunch
+#       - not yet lunch
+#       - will eat later
+#       - no lunch
+
+#   # ⭐ DINNER DONE
+#   - intent: dinner_done
+#     examples: |
+#       - dinner done
+#       - yes I had dinner
+#       - ate dinner
+#       - completed dinner
+#       - done dinner
+
+#   # ⭐ DINNER SKIPPED
+#   - intent: dinner_skipped
+#     examples: |
+#       - skipped dinner
+#       - didn't eat dinner
+#       - not yet dinner
+#       - will eat dinner later
+
+#   # ⭐ ASK DIET PLAN
+#   - intent: ask_diet_plan
+#     examples: |
+#       - tell me diet plan
+#       - what diet should I follow
+#       - give diet plan
+#       - healthy diet tips
+#       - suggest diet
+#       - daily diet routine
+#       - weight loss diet
+#       - muscle gain diet
+#       - balanced diet plan
+
+#   # ⭐ ASK FOOD QUESTIONS
+#   - intent: ask_food
+#     examples: |
+#       - can I eat rice
+#       - is banana good
+#       - can I drink milk
+#       - is egg healthy
+#       - can I eat pizza
+#       - should I avoid sugar
+#       - is oats good
+#       - can I eat bread
+#       - is apple good for diet
+#       - can I eat junk food
+
+#   # ⭐ WATER QUESTIONS
+#   - intent: ask_water
+#     examples: |
+#       - how much water should I drink
+#       - water intake
+#       - hydration advice
+#       - is drinking more water good
+#       - how many litres water
+
+#   # ⭐ WEIGHT ISSUE
+#   - intent: weight_issue
+#     examples: |
+#       - my weight is increasing
+#       - weight going down
+#       - I lost weight
+#       - I am gaining weight
+#       - weight problem
+#       - I want weight control
+#       - I want fat loss
+
+#   # ⭐ DISEASE DIET
+#   - intent: disease_diet
+#     examples: |
+#       - diabetic diet
+#       - kidney diet
+#       - heart patient diet
+#       - thyroid diet
+#       - BP diet
+#       - sugar patient food
+#       - low sodium diet
+
+#   # ⭐ MOTIVATION
+#   - intent: motivation
+#     examples: |
+#       - motivate me
+#       - I feel lazy
+#       - not feeling motivated
+#       - give motivation
+#       - encourage me
+
+#   # ⭐ CONNECT EXPERT
+#   - intent: connect_dietician
+#     examples: |
+#       - connect dietician
+#       - talk to expert
+#       - I want diet expert
+#       - connect nutritionist
+#       - expert help
+
+#   # ⭐ RANDOM CHAT
+#   - intent: random_chat
+#     examples: |
+#       - who is virat kohli
+#       - tell me about fitness
+#       - what is gym
+#       - what is health
+#       - tell something
+#       - what are you doing
+#       - are you bot
+
+#   # ⭐ THANKS
+#   - intent: thanks
+#     examples: |
+#       - thanks
+#       - thank you
+#       - ok thanks
+#       - great thanks
+
+#   # ⭐ GOODBYE
+#   - intent: goodbye
+#     examples: |
+#       - bye
+#       - see you
+#       - goodbye
+#       - talk later
+
+# version: "3.1"
+
+# nlu:
+#   # ================= GREETING =================
+#   - intent: greet
+#     examples: |
+#       - hi
+#       - hello
+#       - hey
+#       - good morning
+#       - good evening
+#       - start
+#       - open diet assistant
+#       - diet help
+
+#   # ================= AFFIRM =================
+#   - intent: affirm
+#     examples: |
+#       - yes
+#       - yeah
+#       - yup
+#       - ok
+#       - okay
+#       - sure
+#       - correct
+#       - of course
+#       - yes please
+
+#   # ================= DENY =================
+#   - intent: deny
+#     examples: |
+#       - no
+#       - nope
+#       - not now
+#       - later
+#       - don't want
+#       - maybe later
+
+#   # ================= BREAKFAST DONE =================
+#   - intent: breakfast_done
+#     examples: |
+#       - I had breakfast
+#       - breakfast done
+#       - finished breakfast
+#       - I ate oats
+#       - I ate dosa
+#       - I had fruits
+#       - I ate idli
+
+#   # ================= BREAKFAST SKIPPED =================
+#   - intent: breakfast_skipped
+#     examples: |
+#       - skipped breakfast
+#       - didn't eat breakfast
+#       - missed breakfast
+
+#   # ================= LUNCH DONE =================
+#   - intent: lunch_done
+#     examples: |
+#       - I had lunch
+#       - lunch done
+#       - ate rice and dal
+#       - ate roti sabji
+#       - I ate chicken
+
+#   # ================= LUNCH SKIPPED =================
+#   - intent: lunch_skipped
+#     examples: |
+#       - skipped lunch
+#       - didn't eat lunch
+#       - missed lunch
+
+#   # ================= DINNER DONE =================
+#   - intent: dinner_done
+#     examples: |
+#       - I had dinner
+#       - dinner done
+#       - ate dinner
+
+#   # ================= DINNER SKIPPED =================
+#   - intent: dinner_skipped
+#     examples: |
+#       - skipped dinner
+#       - didn't eat dinner
+
+#   # ================= FOOD QUESTION =================
+#   - intent: ask_food
+#     examples: |
+#       - can I eat rice
+#       - is egg healthy
+#       - is apple good
+#       - can I eat junk food
+#       - is pizza bad
+#       - should I eat chicken
+#       - is milk good for diet
+
+#   # ================= DIET PLAN =================
+#   - intent: ask_diet_plan
+#     examples: |
+#       - tell me diet plan
+#       - suggest diet
+#       - weight loss diet
+#       - muscle gain diet
+#       - healthy diet routine
+#       - give me diet chart
+
+#   # ================= WATER =================
+#   - intent: ask_water
+#     examples: |
+#       - how much water should I drink
+#       - hydration advice
+#       - daily water intake
+#       - is drinking more water good
+
+#   # ================= WEIGHT =================
+#   - intent: weight_issue
+#     examples: |
+#       - my weight is increasing
+#       - I am gaining weight
+#       - I want fat loss
+#       - weight control tips
+#       - how to lose weight
+
+#   # ================= MOTIVATION =================
+#   - intent: motivation
+#     examples: |
+#       - motivate me
+#       - I feel lazy
+#       - encourage me
+#       - I want motivation
+
+#   # ================= CONNECT EXPERT =================
+#   - intent: connect_dietician
+#     examples: |
+#       - connect dietician
+#       - talk to nutritionist
+#       - expert help
+#       - I want diet expert
+
+#   # ================= GENERAL CHAT =================
+#   - intent: random_chat
+#     examples: |
+#       - who is virat kohli
+#       - who is prime minister
+#       - what is gym
+#       - are you human
+#       - tell me joke
+#       - what is india
+#       - what are you doing
+
+#   # ================= GIBBERISH =================
+#   - intent: gibberish
+#     examples: |
+#       - asdfgh
+#       - ghjkl
+#       - 123123
+#       - dfdfdf
+#       - random text
+#       - sdfsdfsdf
+
+#   # ================= THANKS =================
+#   - intent: thanks
+#     examples: |
+#       - thanks
+#       - thank you
+#       - ok thanks
+#       - great thanks
+
+#   # ================= GOODBYE =================
+#   - intent: goodbye
+#     examples: |
+#       - bye
+#       - goodbye
+#       - see you
+#       - talk later
+
+# version: "3.1"
+
+# nlu:
+#   # ===== GREET =====
+#   - intent: greet
+#     examples: |
+#       - hi
+#       - hello
+#       - hey
+#       - good morning
+#       - good evening
+#       - start
+
+#   # ===== FOOD LOGGING (VERY IMPORTANT) =====
+#   - intent: ask_food
+#     examples: |
+#       - I ate dosa
+#       - I had biryani
+#       - I ate fish fry
+#       - I ate pizza
+#       - I had rice and dal
+#       - I ate chicken
+#       - I ate idli
+#       - I had burger
+#       - I ate lunch
+#       - I ate dinner
+#       - I had snacks
+#       - I just ate food
+
+#   # ===== DIET PLAN =====
+#   - intent: ask_diet_plan
+#     examples: |
+#       - suggest diet
+#       - give diet plan
+#       - weight loss diet
+#       - muscle gain diet
+#       - healthy diet routine
+
+#   # ===== MEDICAL INFO =====
+#   - intent: provide_medical
+#     examples: |
+#       - I have diabetes
+#       - I am diabetic
+#       - I have cholesterol
+#       - I have BP
+#       - I have thyroid
+#       - I have sugar problem
+
+#   # ===== WEIGHT =====
+#   - intent: provide_weight
+#     examples: |
+#       - my weight is 75
+#       - I am 80 kg
+#       - weight 68
+#       - I weigh 90
+
+#   # ===== HEIGHT =====
+#   - intent: provide_height
+#     examples: |
+#       - my height is 170 cm
+#       - I am 5.8 feet
+#       - height 165
+
+#   # ===== RANDOM CHAT =====
+#   - intent: random_chat
+#     examples: |
+#       - who is virat kohli
+#       - who is sachin tendulkar
+#       - what is gym
+#       - tell me joke
+#       - what is india
+#       - are you bot
+#       - tell me about odisha
+
+#   # ===== THANKS =====
+#   - intent: thanks
+#     examples: |
+#       - thanks
+#       - thank you
+#       - ok thanks
+
+#   # ===== GOODBYE =====
+#   - intent: goodbye
+#     examples: |
+#       - bye
+#       - goodbye
+#       - see you
+
+#   # ===== GIBBERISH =====
+#   - intent: gibberish
+#     examples: |
+#       - asdfgh
+#       - 123123
+#       - sdfsdfsdf
+
+# version: "3.1"
+
+# nlu:
+#   - intent: greet
+#     examples: |
+#       - hi
+#       - hello
+#       - hey
+#       - good morning
+#       - start
+#       - hii
+
+#   - intent: ask_food
+#     examples: |
+#       - I ate dosa
+#       - I had biryani
+#       - I ate fish fry
+#       - I had chicken biryani
+#       - I ate pizza
+#       - I had rice and dal
+#       - I ate chicken
+#       - I had burger
+#       - yes I ate
+#       - yes I had lunch
+#       - I just had food
+#       - had something
+#       - ate rice
+#       - I had my breakfast
+#       - yes I did eat
+#       - I had idli
+#       - egg rice
+#       - I ate roti and dal
+
+#   - intent: skip_meal
+#     examples: |
+#       - no I didn't eat
+#       - I skipped breakfast
+#       - haven't eaten yet
+#       - no not yet
+#       - I didn't have lunch
+#       - skipped it
+#       - no I haven't
+#       - not yet
+#       - no
+
+#   - intent: provide_weight
+#     examples: |
+#       - my weight is 75
+#       - I am 80 kg
+#       - weight 68
+#       - 75 kg
+#       - I weigh 90
+#       - around 70 kilos
+#       - 65
+#       - 72 kg
+#       - 58 kgs
+
+#   - intent: provide_height
+#     examples: |
+#       - my height is 170 cm
+#       - I am 5.8 feet
+#       - height 165
+#       - 170
+#       - around 168 cm
+#       - 5 feet 7
+#       - 160 cm
+#       - 175
+
+#   - intent: provide_medical
+#     examples: |
+#       - I have diabetes
+#       - I am diabetic
+#       - I have cholesterol
+#       - I have BP
+#       - I have high blood pressure
+#       - I have thyroid
+#       - no medical condition
+#       - I am healthy
+#       - none
+#       - no issues
+#       - nothing
+#       - I have sugar problem
+#       - no I don't have any
+
+#   - intent: affirm
+#     examples: |
+#       - yes
+#       - yes please
+#       - sure
+#       - yes I want tips
+#       - ok
+#       - please tell me
+#       - yes tell me how
+#       - I want to improve
+
+#   - intent: deny
+#     examples: |
+#       - no
+#       - no thanks
+#       - not now
+#       - I am fine
+#       - skip it
+#       - maybe later
+
+#   - intent: ask_diet_plan
+#     examples: |
+#       - suggest diet
+#       - give diet plan
+#       - weight loss diet
+#       - how to improve diet
+#       - how to control this
+#       - help me with diet
+
+#   - intent: meal_summary
+#     examples: |
+#       - how many calories today
+#       - what is my calorie count
+#       - show me summary
+#       - total calories today
+#       - calorie summary
+
+#   - intent: random_chat
+#     examples: |
+#       - who is virat kohli
+#       - tell me about sachin
+#       - what is gym
+#       - tell me about odisha
+#       - tell me about balasore
+#       - are you a bot
+#       - who are you
+#       - what can you do
+#       - tell me a joke
+
+#   - intent: thanks
+#     examples: |
+#       - thanks
+#       - thank you
+#       - ok thanks
+#       - great
+#       - awesome
+
+#   - intent: goodbye
+#     examples: |
+#       - bye
+#       - goodbye
+#       - see you
+#       - take care
+#       - cya
+
+# version: "3.1"
+
+# nlu:
+#   # ================= GREET =================
+#   - intent: greet
+#     examples: |
+#       - hi
+#       - hello
+#       - hey
+#       - hii
+#       - heyy
+#       - good morning
+#       - good evening
+#       - start
+#       - open chatbot
+#       - hey bot
+#       - hi there
+
+#   # ================= FOOD (VERY IMPORTANT) =================
+#   - intent: ask_food
+#     examples: |
+#       - I ate dosa
+#       - I had chicken biryani
+#       - I ate fish fry
+#       - I had rice and dal
+#       - I ate pizza
+#       - I had burger
+#       - I ate idli
+#       - I had egg rice
+#       - I ate roti and dal
+#       - I had chicken
+#       - yes I ate
+#       - yes I had lunch
+#       - yes I had dinner
+#       - yes I had breakfast
+#       - I just ate
+#       - I had food
+#       - I ate something
+#       - I ate a little
+#       - I had my meal
+#       - I just had lunch
+#       - I just had dinner
+#       - I ate biryani today
+#       - I ate fish curry
+#       - I ate veg thali
+#       - I had paneer
+#       - I had poha
+#       - I had upma
+#       - I had noodles
+#       - I had pasta
+#       - I ate chapati
+#       - I ate paratha
+#       - I ate samosa
+#       - I had snacks
+#       - I ate evening snacks
+#       - I ate street food
+
+#   # ================= SKIP MEAL =================
+#   - intent: skip_meal
+#     examples: |
+#       - no I didn't eat
+#       - I skipped breakfast
+#       - I skipped lunch
+#       - I skipped dinner
+#       - haven't eaten yet
+#       - no not yet
+#       - I didn't eat anything
+#       - skipped it
+#       - no I haven't
+#       - not yet
+#       - no
+#       - I am fasting
+#       - I didn't have food today
+
+#   # ================= WEIGHT =================
+#   - intent: provide_weight
+#     examples: |
+#       - my weight is 75
+#       - I am 80 kg
+#       - weight 68
+#       - 75 kg
+#       - I weigh 90
+#       - around 70 kilos
+#       - 65
+#       - 72 kg
+#       - 58 kgs
+#       - it's 60
+#       - about 68
+#       - near 75
+#       - maybe 70 kg
+
+#   # ================= HEIGHT =================
+#   - intent: provide_height
+#     examples: |
+#       - my height is 170 cm
+#       - I am 5.8 feet
+#       - height 165
+#       - 170
+#       - around 168 cm
+#       - 5 feet 7
+#       - 160 cm
+#       - 175
+#       - it's 5.6
+#       - about 172 cm
+#       - near 165
+
+#   # ================= MEDICAL =================
+#   - intent: provide_medical
+#     examples: |
+#       - I have diabetes
+#       - I am diabetic
+#       - I have sugar problem
+#       - I have cholesterol
+#       - I have BP
+#       - I have high blood pressure
+#       - I have thyroid
+#       - no medical condition
+#       - I am healthy
+#       - none
+#       - no issues
+#       - nothing
+#       - I don't have anything
+#       - I am perfectly fine
+#       - no problem
+
+#   # ================= AFFIRM =================
+#   - intent: affirm
+#     examples: |
+#       - yes
+#       - yes please
+#       - sure
+#       - ok
+#       - okay
+#       - yeah
+#       - yup
+#       - tell me
+#       - yes tell me
+#       - I want tips
+#       - please tell me
+#       - yes help me
+#       - yes improve
+#       - go ahead
+
+#   # ================= DENY =================
+#   - intent: deny
+#     examples: |
+#       - no
+#       - no thanks
+#       - not now
+#       - later
+#       - I am fine
+#       - skip it
+#       - maybe later
+#       - not interested
+#       - no need
+#       - leave it
+
+#   # ================= DIET PLAN =================
+#   - intent: ask_diet_plan
+#     examples: |
+#       - suggest diet
+#       - give diet plan
+#       - weight loss diet
+#       - how to improve diet
+#       - how to control this
+#       - help me with diet
+#       - what should I eat
+#       - give me healthy diet
+#       - what is best diet
+#       - diet for fitness
+
+#   # ================= SUMMARY =================
+#   - intent: meal_summary
+#     examples: |
+#       - how many calories today
+#       - what is my calorie count
+#       - show me summary
+#       - total calories today
+#       - calorie summary
+#       - what did I eat today
+#       - my diet summary
+
+#   # ================= RANDOM CHAT =================
+#   - intent: random_chat
+#     examples: |
+#       - who is virat kohli
+#       - tell me about sachin
+#       - what is gym
+#       - tell me about odisha
+#       - tell me about balasore
+#       - are you a bot
+#       - who are you
+#       - what can you do
+#       - tell me a joke
+#       - what is cricket
+#       - who is prime minister
+#       - explain fitness
+#       - what is health
+
+#   # ================= THANKS =================
+#   - intent: thanks
+#     examples: |
+#       - thanks
+#       - thank you
+#       - ok thanks
+#       - great
+#       - awesome
+#       - nice
+#       - good
+#       - helpful
+
+#   # ================= GOODBYE =================
+#   - intent: goodbye
+#     examples: |
+#       - bye
+#       - goodbye
+#       - see you
+#       - take care
+#       - cya
+#       - talk later
+
+version: "3.1"
+
+nlu:
+  # ================= GREET =================
+  - intent: greet
+    examples: |
+      - hi
+      - hello
+      - hey
+      - hii
+      - heyy
+      - good morning
+      - good evening
+      - good afternoon
+      - start
+      - open chatbot
+      - hey bot
+      - hi there
+      - hello bot
+
+  # ================= FOOD (VERY IMPORTANT) =================
+  - intent: ask_food
+    examples: |
+      - I ate dosa
+      - I had chicken biryani
+      - I ate fish fry
+      - I had rice and dal
+      - I ate pizza
+      - I had burger
+      - I ate idli
+      - I had egg rice
+      - I ate roti and dal
+      - I had chicken
+      - I ate biryani today
+      - I ate fish curry
+      - I ate veg thali
+      - I had paneer
+      - I had poha
+      - I had upma
+      - I had noodles
+      - I had pasta
+      - I ate chapati
+      - I ate paratha
+      - I ate samosa
+      - I had snacks
+      - I ate evening snacks
+      - I ate street food
+      - yes I ate
+      - yes I had food
+      - yes I had lunch
+      - yes I had dinner
+      - yes I had breakfast
+      - I just ate
+      - I had something
+      - I ate a little
+      - I had my meal
+      - just finished eating
+      - I completed my lunch
+      - I completed my dinner
+      - I completed my breakfast
+
+  # ================= SKIP MEAL =================
+  - intent: skip_meal
+    examples: |
+      - no I didn't eat
+      - I skipped breakfast
+      - I skipped lunch
+      - I skipped dinner
+      - haven't eaten yet
+      - no not yet
+      - I didn't eat anything
+      - skipped it
+      - no I haven't
+      - not yet
+      - I am fasting
+      - I didn't have food today
+      - I missed my meal
+      - no food today
+      - I am not eating
+
+  # ================= WEIGHT =================
+  - intent: provide_weight
+    examples: |
+      - my weight is 75
+      - I am 80 kg
+      - weight 68
+      - 75 kg
+      - I weigh 90
+      - around 70 kilos
+      - 65
+      - 72 kg
+      - 58 kgs
+      - it's 60
+      - about 68
+      - near 75
+      - maybe 70 kg
+      - 82 kilos
+
+  # ================= HEIGHT =================
+  - intent: provide_height
+    examples: |
+      - my height is 170 cm
+      - I am 5.8 feet
+      - height 165
+      - 170
+      - around 168 cm
+      - 5 feet 7
+      - 160 cm
+      - 175
+      - it's 5.6
+      - about 172 cm
+      - near 165
+      - 180 cm
+
+  # ================= MEDICAL =================
+  - intent: provide_medical
+    examples: |
+      - I have diabetes
+      - I am diabetic
+      - I have sugar problem
+      - I have cholesterol
+      - I have BP
+      - I have high blood pressure
+      - I have thyroid
+      - I have hypertension
+      - no medical condition
+      - I am healthy
+      - none
+      - no issues
+      - nothing
+      - I don't have anything
+      - I am perfectly fine
+      - no problem
+      - I am fit
+
+  # ================= AFFIRM =================
+  - intent: affirm
+    examples: |
+      - yes
+      - yes please
+      - sure
+      - ok
+      - okay
+      - yeah
+      - yup
+      - tell me
+      - yes tell me
+      - I want tips
+      - please tell me
+      - yes help me
+      - yes improve
+      - go ahead
+      - yes continue
+
+  # ================= DENY =================
+  - intent: deny
+    examples: |
+      - no
+      - no thanks
+      - not now
+      - later
+      - I am fine
+      - skip it
+      - maybe later
+      - not interested
+      - no need
+      - leave it
+      - no I don't want
+
+  # ================= DIET PLAN =================
+  - intent: ask_diet_plan
+    examples: |
+      - suggest diet
+      - give diet plan
+      - weight loss diet
+      - muscle gain diet
+      - how to improve diet
+      - how to control this
+      - help me with diet
+      - what should I eat
+      - give me healthy diet
+      - what is best diet
+      - diet for fitness
+      - plan my diet
+
+  # ================= SUMMARY =================
+  - intent: meal_summary
+    examples: |
+      - how many calories today
+      - what is my calorie count
+      - show me summary
+      - total calories today
+      - calorie summary
+      - what did I eat today
+      - my diet summary
+      - today's intake
+      - how much I ate today
+
+  # ================= RANDOM CHAT =================
+  - intent: random_chat
+    examples: |
+      - who is virat kohli
+      - tell me about sachin
+      - what is gym
+      - tell me about odisha
+      - tell me about balasore
+      - are you a bot
+      - who are you
+      - what can you do
+      - tell me a joke
+      - what is cricket
+      - who is prime minister
+      - explain fitness
+      - what is health
+      - what is exercise
+      - why fitness is important
+
+  # ================= THANKS =================
+  - intent: thanks
+    examples: |
+      - thanks
+      - thank you
+      - ok thanks
+      - great
+      - awesome
+      - nice
+      - good
+      - helpful
+      - appreciate it
+
+  # ================= GOODBYE =================
+  - intent: goodbye
+    examples: |
+      - bye
+      - goodbye
+      - see you
+      - take care
+      - cya
+      - talk later
+      - see you later
+
+  # ================= FALLBACK (VERY IMPORTANT) =================
+  - intent: nlu_fallback
+    examples: |
+      - asdfgh
+      - qwerty
+      - 123456
+      - random text
+      - blah blah
+      - sdfsdfsdf
+      - ghjkl

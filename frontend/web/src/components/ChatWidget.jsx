@@ -10,8 +10,8 @@ const SOCKET_URL =
   typeof import.meta !== "undefined" && import.meta.env?.VITE_SOCKET_URL
     ? import.meta.env.VITE_SOCKET_URL
     : (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
-        ? window.location.origin
-        : "http://localhost:8000");
+      ? window.location.origin
+      : "http://localhost:8000");
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 function fmtTime(d) {
@@ -209,7 +209,7 @@ export default function ChatWidget() {
         // Also load assigned dietician directly from profile to avoid extra call
         if (data.assigned_dietician) setAssignedDietician(data.assigned_dietician);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   /* ── build conversation when userName is ready ── */
@@ -227,7 +227,7 @@ export default function ChatWidget() {
       .then((data) => {
         if (data?.assigned_dietician) setAssignedDietician(data.assigned_dietician);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [userId]);
 
   /* ── socket.io setup ── */
@@ -308,7 +308,7 @@ export default function ChatWidget() {
         });
       }
       setHistoryLoaded(true);
-    } catch {}
+    } catch { }
   }, [userId, historyLoaded, assignedDietician]);
 
   /* ── start assistant conversation when chat opens ── */
@@ -326,7 +326,7 @@ export default function ChatWidget() {
             setUnreadCount(0);
             return; // restored — don't replay from step 0
           }
-        } catch {}
+        } catch { }
       }
       if (messages.length === 0) {
         runAssistantStep(0);
@@ -377,8 +377,8 @@ export default function ChatWidget() {
       if (text === "__CONNECT_DIETICIAN__") {
         const token = localStorage.getItem("token");
         // Re-fetch to be sure (in case approved since last load)
-        const dRes = await fetch(`/api/diet-chat/dietician/${userId}`, { 
-          headers: { Authorization: `Bearer ${token}` } 
+        const dRes = await fetch(`/api/diet-chat/dietician/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         let latestDietician = assignedDietician;
         if (dRes.ok) {
@@ -471,7 +471,7 @@ export default function ChatWidget() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId, message: text, sender: "patient", dietician: assignedDietician }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 
@@ -503,7 +503,7 @@ export default function ChatWidget() {
           setMessages(parsed);
           return;
         }
-      } catch {}
+      } catch { }
     }
     setMessages([]);
     const ctx = getTimeContext();

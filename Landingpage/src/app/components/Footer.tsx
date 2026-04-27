@@ -4,7 +4,7 @@ import dataletLogo from "../../imports/healthcare_logo2.svg";
 
 const cols = {
   "Quick Links": ["Home", "Solutions", "How It Works", "About", "Testimonials"],
-  Contact: ["info@datalet.health", "1-800-DATALET", "San Francisco, CA 94105"],
+  Contact: ["info@datalet.in", "1-800-DATALET", "San Francisco, CA 94105"],
   "Company": ["Careers", "Press Room", "Privacy Policy", "Terms of Service", "HIPAA Notice"],
 };
 

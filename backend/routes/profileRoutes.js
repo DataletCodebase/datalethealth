@@ -123,7 +123,7 @@ WHERE id = ?;
     // Fetch updated profile
     const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
     const user = rows[0];
-    
+
     // Partially decrypt only what we need for the response or full object
     const decryptedUser = {
       ...user,

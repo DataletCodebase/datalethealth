@@ -9,12 +9,14 @@ const API_BASE =
 const SOCKET_URL =
   typeof import.meta !== "undefined" && import.meta.env?.VITE_SOCKET_URL
     ? import.meta.env.VITE_SOCKET_URL
-    : "http://localhost:8000";
+    : (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+      ? window.location.origin
+      : "http://localhost:8000");
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 function fmtTime(d) {
   const dt = typeof d === "string" ? new Date(d) : d;
-  return dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
 }
 
 function getTimeContext() {
@@ -207,7 +209,7 @@ export default function ChatWidget() {
         // Also load assigned dietician directly from profile to avoid extra call
         if (data.assigned_dietician) setAssignedDietician(data.assigned_dietician);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   /* ── build conversation when userName is ready ── */
@@ -225,7 +227,7 @@ export default function ChatWidget() {
       .then((data) => {
         if (data?.assigned_dietician) setAssignedDietician(data.assigned_dietician);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [userId]);
 
   /* ── socket.io setup ── */
@@ -286,15 +288,28 @@ export default function ChatWidget() {
         dietician: m.dietician,
         timestamp: m.created_at,
       }));
-      setMessages((prev) => {
-        // Avoid duplicates — keep existing messages, prepend history
-        const existingIds = new Set(prev.map((m) => m.id));
-        const newOnes = mapped.filter((m) => !existingIds.has(m.id));
-        return [...newOnes, ...prev];
-      });
+
+      // If no history yet — inject a greeting from the dietician
+      if (mapped.length === 0) {
+        const dietName = assignedDietician || "your Dietician";
+        const greetMsg = {
+          id: `greet_${Date.now()}`,
+          sender: "dietician",
+          text: `👋 Hello! I'm **${dietName}**, your assigned dietician. Feel free to message me with any questions about your diet plan, health goals, or meal adjustments. I'm here to help! 🥗`,
+          dietician: dietName,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages([greetMsg]);
+      } else {
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newOnes = mapped.filter((m) => !existingIds.has(m.id));
+          return [...newOnes, ...prev];
+        });
+      }
       setHistoryLoaded(true);
-    } catch {}
-  }, [userId, historyLoaded]);
+    } catch { }
+  }, [userId, historyLoaded, assignedDietician]);
 
   /* ── start assistant conversation when chat opens ── */
   useEffect(() => {
@@ -311,7 +326,7 @@ export default function ChatWidget() {
             setUnreadCount(0);
             return; // restored — don't replay from step 0
           }
-        } catch {}
+        } catch { }
       }
       if (messages.length === 0) {
         runAssistantStep(0);
@@ -362,8 +377,8 @@ export default function ChatWidget() {
       if (text === "__CONNECT_DIETICIAN__") {
         const token = localStorage.getItem("token");
         // Re-fetch to be sure (in case approved since last load)
-        const dRes = await fetch(`/api/diet-chat/dietician/${userId}`, { 
-          headers: { Authorization: `Bearer ${token}` } 
+        const dRes = await fetch(`/api/diet-chat/dietician/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         let latestDietician = assignedDietician;
         if (dRes.ok) {
@@ -456,7 +471,7 @@ export default function ChatWidget() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId, message: text, sender: "patient", dietician: assignedDietician }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 
@@ -488,7 +503,7 @@ export default function ChatWidget() {
           setMessages(parsed);
           return;
         }
-      } catch {}
+      } catch { }
     }
     setMessages([]);
     const ctx = getTimeContext();

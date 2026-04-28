@@ -307,7 +307,7 @@ export default function Auth({ isLoginDefault = true }) {
 
         <div className="auth-tabs">
           <button onClick={() => setIsLogin(true)} className={isLogin ? "active" : ""}>Login</button>
-          <button onClick={() => setIsLogin(false)} className={!isLogin ? "active" : ""}>Signup to datalet</button>
+          <button onClick={() => setIsLogin(false)} className={!isLogin ? "active" : ""}>Sign up</button>
         </div>
 
         <form onSubmit={handleSubmit} className="form">
@@ -371,8 +371,8 @@ export default function Auth({ isLoginDefault = true }) {
 
           {isLogin && (
             <div className="checkbox-row">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id="otp-checkbox"
                 checked={loginMode === "otp"}
                 onChange={(e) => {
@@ -399,7 +399,7 @@ export default function Auth({ isLoginDefault = true }) {
 
         {isLogin && (
           <div className="auth-footer" style={{ marginTop: "15px", textAlign: "center" }}>
-            <button 
+            <button
               onClick={() => navigate("/reset-password")}
               className="text-btn"
               style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", textDecoration: "underline", fontSize: "14px" }}

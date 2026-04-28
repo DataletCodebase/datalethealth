@@ -200,4 +200,64 @@ router.post("/login", async (req, res) => {
 });
 
 
+/* =========================
+   CHECK USER EXISTENCE
+========================= */
+router.post("/check-user", async (req, res) => {
+    try {
+        const { identifier } = req.body;
+        if (!identifier) return res.status(400).json({ message: "Identifier required" });
+
+        const encryptedIdentifier = encryptDeterministic(identifier);
+        const [rows] = await db.query(
+            "SELECT id FROM users WHERE email = ? OR mobile = ?",
+            [encryptedIdentifier, encryptedIdentifier]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "No account found with this email or phone number." });
+        }
+
+        res.status(200).json({ exists: true });
+    } catch (err) {
+        console.error("Check User Error:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+/* =========================
+   RESET PASSWORD API
+========================= */
+router.post("/reset-password", async (req, res) => {
+    try {
+        const { identifier, newPassword } = req.body;
+
+        if (!identifier || !newPassword) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+
+        // Encrypt the identifier to find the user in the DB
+        const encryptedIdentifier = encryptDeterministic(identifier);
+
+        // Hash the new password
+        const password_hash = await bcrypt.hash(newPassword, 10);
+
+        // Update the password in the users table
+        const [result] = await db.query(
+            "UPDATE users SET password_hash = ? WHERE email = ? OR mobile = ?",
+            [password_hash, encryptedIdentifier, encryptedIdentifier]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json({ message: "Password updated successfully" });
+
+    } catch (err) {
+        console.error("Reset Password Error:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+});
+
 export default router;

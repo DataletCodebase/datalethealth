@@ -23,8 +23,6 @@ export function useAuth() {
     localStorage.setItem("user", JSON.stringify(data.user));
 
 
-
-
     navigate("/dashboard");
   };
 

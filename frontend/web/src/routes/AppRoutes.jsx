@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "../pages/Auth";
+import ResetPassword from "../pages/ResetPassword";
 import App from "../App";
 import AdminLogin from "../admin/pages/AdminLogin";
 import AdminDashboard from "../admin/pages/AdminDashboard";
@@ -22,11 +23,14 @@ export default function AppRouter() {
       {/* ================= USER FLOW ================= */}
 
 
-      {/* Signup FIRST */}
-      <Route path="/" element={<Auth isLoginDefault={false} />} />
+      {/* Login FIRST */}
+      <Route path="/" element={<Auth isLoginDefault={true} />} />
 
       {/* Login */}
       <Route path="/login" element={<Auth isLoginDefault={true} />} />
+
+      {/* Reset Password */}
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* After login */}
       <Route path="/dashboard/*" element={<App />} />

@@ -310,30 +310,6 @@ export default function Auth({ isLoginDefault = true }) {
           <button onClick={() => setIsLogin(false)} className={!isLogin ? "active" : ""}>Signup to datalet</button>
         </div>
 
-        {/* LOGIN MODE SWITCH */}
-        {isLogin && (
-          <div className="auth-tabs">
-            <button
-              className={loginMode === "password" ? "active" : ""}
-              onClick={() => {
-                setLoginMode("password");
-                setOtpStep(false);
-              }}
-            >
-              Password
-            </button>
-            <button
-              className={loginMode === "otp" ? "active" : ""}
-              onClick={() => {
-                setLoginMode("otp");
-                setOtpStep(false);
-              }}
-            >
-              OTP
-            </button>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="form">
           {!isLogin && (
             <input
@@ -393,6 +369,21 @@ export default function Auth({ isLoginDefault = true }) {
             />
           )}
 
+          {isLogin && (
+            <div className="checkbox-row">
+              <input 
+                type="checkbox" 
+                id="otp-checkbox"
+                checked={loginMode === "otp"}
+                onChange={(e) => {
+                  setLoginMode(e.target.checked ? "otp" : "password");
+                  setOtpStep(false);
+                }}
+              />
+              <label htmlFor="otp-checkbox">Login with OTP</label>
+            </div>
+          )}
+
           {errors.api && <p className="inline-error">{errors.api}</p>}
 
           <button className="auth-btn" type="submit" disabled={loading}>
@@ -405,6 +396,18 @@ export default function Auth({ isLoginDefault = true }) {
                   : "Signup"}
           </button>
         </form>
+
+        {isLogin && (
+          <div className="auth-footer" style={{ marginTop: "15px", textAlign: "center" }}>
+            <button 
+              onClick={() => navigate("/reset-password")}
+              className="text-btn"
+              style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", textDecoration: "underline", fontSize: "14px" }}
+            >
+              Forget Password
+            </button>
+          </div>
+        )}
 
         {/* 🔥 REQUIRED FOR FIREBASE */}
         <div id="recaptcha-container"></div>

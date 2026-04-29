@@ -26,6 +26,21 @@ export function useAuth() {
     navigate("/dashboard");
   };
 
+  const loginOTP = async (payload) => {
+    const res = await fetch(`${API}/login-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    saveToken(data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    navigate("/dashboard");
+  };
+
   const signup = async (payload) => {
     const res = await fetch(`${API}/signup`, {
       method: "POST",
@@ -59,5 +74,5 @@ export function useAuth() {
     navigate("/login");
   };
 
-  return { login, signup, logout };
+  return { login, loginOTP, signup, logout };
 }

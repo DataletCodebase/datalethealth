@@ -199,6 +199,64 @@ router.post("/login", async (req, res) => {
     }
 });
 
+/* =========================
+   OTP LOGIN API
+========================= */
+router.post("/login-otp", async (req, res) => {
+    try {
+        const { identifier } = req.body;
+        
+        if (!identifier) {
+            return res.status(400).json({ message: "Missing login credentials" });
+        }
+
+        // Encrypt the incoming identifier to find the user
+        const encryptedIdentifier = encryptDeterministic(identifier);
+
+        // Fetch user
+        const [rows] = await db.query(
+            "SELECT * FROM users WHERE mobile = ?",
+            [encryptedIdentifier]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const user = rows[0];
+
+        // Decrypt user data for token
+        const decryptedEmail = user.email ? decryptDeterministic(user.email) : null;
+        const decryptedFullName = decrypt(user.full_name);
+
+        // Generate token
+        const token = jwt.sign(
+            {
+                id: user.id,
+                role: user.role,
+                email: decryptedEmail,
+            },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        return res.status(200).json({
+            message: "Login successful",
+            token,
+            user: {
+                id: user.id,
+                full_name: decryptedFullName,
+                email: decryptedEmail,
+                role: user.role,
+            },
+        });
+
+    } catch (err) {
+        console.error("OTP Login error:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+});
+
 
 /* =========================
    CHECK USER EXISTENCE

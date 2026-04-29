@@ -185,7 +185,7 @@ const passwordRegex =
 
 export default function Auth({ isLoginDefault = true }) {
   const navigate = useNavigate();
-  const { login, signup } = useAuth();
+  const { login, signup, loginOTP } = useAuth();
 
   const [isLogin, setIsLogin] = useState(isLoginDefault);
   const [loginMode, setLoginMode] = useState("password"); // password | otp
@@ -220,7 +220,7 @@ export default function Auth({ isLoginDefault = true }) {
         identifier: form.identifier,
         password: form.password,
       });
-      navigate("/dashboard");
+      // navigate("/dashboard"); login function handles navigation
     } else {
       // OTP LOGIN
       if (!otpStep) {
@@ -233,7 +233,7 @@ export default function Auth({ isLoginDefault = true }) {
         setOtpStep(true);
       } else {
         await verifyPhoneOTP(otp);
-        navigate("/dashboard");
+        await loginOTP({ identifier: form.identifier });
       }
     }
   };

@@ -54,6 +54,16 @@ export function useAuth() {
     navigate("/login");
   };
 
+  const checkUserExists = async (identifier) => {
+    const res = await fetch(`${API}/check-user`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier }),
+    });
+    // The backend returns 200 {exists: true} if found, 404 if not found
+    return res.ok;
+  };
+
   const logout = () => {
     removeToken();
     localStorage.removeItem("user");
@@ -74,5 +84,5 @@ export function useAuth() {
     navigate("/login");
   };
 
-  return { login, loginOTP, signup, logout };
+  return { login, loginOTP, signup, checkUserExists, logout };
 }

@@ -185,7 +185,7 @@ const passwordRegex =
 
 export default function Auth({ isLoginDefault = true }) {
   const navigate = useNavigate();
-  const { login, signup, loginOTP } = useAuth();
+  const { login, signup, loginOTP, checkUserExists } = useAuth();
 
   const [isLogin, setIsLogin] = useState(isLoginDefault);
   const [loginMode, setLoginMode] = useState("password"); // password | otp
@@ -194,6 +194,13 @@ export default function Auth({ isLoginDefault = true }) {
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState("");
   const [errors, setErrors] = useState({});
+
+  const switchTab = (toLogin) => {
+    setIsLogin(toLogin);
+    setOtpStep(false);
+    setOtp("");
+    setErrors({});
+  };
 
   const [form, setForm] = useState({
     full_name: "",
@@ -229,6 +236,12 @@ export default function Auth({ isLoginDefault = true }) {
           return;
         }
 
+        const exists = await checkUserExists(form.identifier);
+        if (!exists) {
+          setErrors({ api: "No account found with this mobile number. Please signup." });
+          return;
+        }
+
         await sendPhoneOTP("+91" + form.identifier);
         setOtpStep(true);
       } else {
@@ -245,6 +258,12 @@ export default function Auth({ isLoginDefault = true }) {
     // PHONE SIGNUP WITH OTP
     if (isMobile(id)) {
       if (!otpStep) {
+        const exists = await checkUserExists(id);
+        if (exists) {
+          setErrors({ api: "An account already exists with this mobile number. Please login." });
+          return;
+        }
+
         await sendPhoneOTP("+91" + id);
         setOtpStep(true);
         return;
@@ -306,8 +325,8 @@ export default function Auth({ isLoginDefault = true }) {
         <h1 className="brand gradient-text">Datalet AI</h1>
 
         <div className="auth-tabs">
-          <button onClick={() => setIsLogin(true)} className={isLogin ? "active" : ""}>Login</button>
-          <button onClick={() => setIsLogin(false)} className={!isLogin ? "active" : ""}>Signup to datalet</button>
+          <button type="button" onClick={() => switchTab(true)} className={isLogin ? "active" : ""}>Login</button>
+          <button type="button" onClick={() => switchTab(false)} className={!isLogin ? "active" : ""}>Signup to datalet</button>
         </div>
 
         <form onSubmit={handleSubmit} className="form">
@@ -391,9 +410,11 @@ export default function Auth({ isLoginDefault = true }) {
               ? "Please wait..."
               : otpStep
                 ? "Verify OTP"
-                : isLogin
-                  ? "Login"
-                  : "Signup"}
+                : (isLogin && loginMode === "otp") || (!isLogin && isMobile(form.identifier))
+                  ? "Send OTP"
+                  : isLogin
+                    ? "Login"
+                    : "Signup"}
           </button>
         </form>
 

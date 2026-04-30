@@ -218,7 +218,7 @@ export function Navbar() {
           <img
             src={dataletLogo}
             alt="Datalet Healthcare"
-            className="h-12 w-auto object-contain"
+            className="h-16 w-auto object-contain"
           />
         </button>
 
@@ -260,12 +260,12 @@ export function Navbar() {
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => (window.location.href = signupUrl)}
-            className="px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-lg shadow-[#8B00DC]/25"
+            className="px-6 py-2.5 text-sm font-semibold text-white rounded-full shadow-lg shadow-[#8B00DC]/25 transition-all"
             style={{
               background: "linear-gradient(135deg, #7B00CC 0%, #CC00FF 100%)",
             }}
           >
-            Get Started
+            Try Datalet ↗
           </motion.button>
         </div>
 

@@ -434,9 +434,9 @@ export default function Auth({ isLoginDefault = true }) {
                 {timer > 0 ? (
                   <span className="timer-text">Resend OTP in {timer}s</span>
                 ) : (
-                  <button 
-                    type="button" 
-                    className="resend-btn" 
+                  <button
+                    type="button"
+                    className="resend-btn"
                     onClick={handleResendOTP}
                     disabled={loading}
                   >
@@ -449,8 +449,8 @@ export default function Auth({ isLoginDefault = true }) {
 
           {isLogin && (
             <div className="checkbox-row">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id="otp-checkbox"
                 checked={loginMode === "otp"}
                 onChange={(e) => {
@@ -479,7 +479,7 @@ export default function Auth({ isLoginDefault = true }) {
 
         {isLogin && (
           <div className="auth-footer" style={{ marginTop: "15px", textAlign: "center" }}>
-            <button 
+            <button
               onClick={() => navigate("/reset-password")}
               className="text-btn"
               style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", textDecoration: "underline", fontSize: "14px" }}

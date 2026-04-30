@@ -6,10 +6,10 @@ const client = new DocumentProcessorServiceClient({
   apiEndpoint: "us-documentai.googleapis.com"
 });
 
-const projectId = "ocr-test-project-485613";
+const projectId = "datalet-health";
 const location = "us";
-// const processorId = "259d9f8f9ec2abba";
-const processorId = "792e505733bb0556";
+const processorId = "f27935778871c75a";
+// const processorId = "792e505733bb0556";
 
 export async function runOCR(filePath) {
   const file = fs.readFileSync(filePath);

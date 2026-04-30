@@ -251,7 +251,7 @@ export function Navbar() {
             onClick={() => (window.location.href = loginUrl)}
             className="px-5 py-2.5 text-sm text-[#5A5A72] rounded-xl font-medium transition-colors"
           >
-            Sign In
+            Sign-In
           </motion.button>
           <motion.button
             initial={{ opacity: 0, scale: 0.9 }}

@@ -369,7 +369,7 @@ export default function Auth({ isLoginDefault = true }) {
 
         <div className="auth-tabs">
           <button type="button" onClick={() => switchTab(true)} className={isLogin ? "active" : ""}>Login</button>
-          <button type="button" onClick={() => switchTab(false)} className={!isLogin ? "active" : ""}>Signup to datalet</button>
+          <button type="button" onClick={() => switchTab(false)} className={!isLogin ? "active" : ""}>Signup</button>
         </div>
 
         <form onSubmit={handleSubmit} className="form">

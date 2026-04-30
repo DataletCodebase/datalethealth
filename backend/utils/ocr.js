@@ -3,11 +3,11 @@ import { DocumentProcessorServiceClient } from "@google-cloud/documentai";
 
 const client = new DocumentProcessorServiceClient({
   keyFilename: "key.json", // path to your service account key
-  apiEndpoint: "us-documentai.googleapis.com"
+  apiEndpoint: "asia-south1-documentai.googleapis.com"
 });
 
 const projectId = "datalet-health";
-const location = "us";
+const location = "asia-south1";
 const processorId = "f27935778871c75a";
 // const processorId = "792e505733bb0556";
 

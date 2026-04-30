@@ -288,3 +288,96 @@ html, body, #root {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
 }
+
+/* =========================
+   OTP RESEND & TIMER
+========================= */
+.otp-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.otp-timer-row {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 13px;
+}
+
+.timer-text {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.resend-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================
+   STATUS POPUP
+========================= */
+.status-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.status-popup {
+  background: #1a2a4f;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.status-icon {
+  font-size: 40px;
+  margin-bottom: 15px;
+}
+
+.status-popup p {
+  font-size: 16px;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.status-popup button {
+  padding: 10px 30px;
+  border-radius: 10px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.status-popup-overlay.error .status-popup {
+  border-top: 4px solid #ef4444;
+}
+
+.status-popup-overlay.success .status-popup {
+  border-top: 4px solid #10b981;
+}

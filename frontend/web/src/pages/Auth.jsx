@@ -174,7 +174,7 @@
 // }
 
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { sendPhoneOTP, verifyPhoneOTP } from "../firebase/auth";
@@ -185,7 +185,7 @@ const passwordRegex =
 
 export default function Auth({ isLoginDefault = true }) {
   const navigate = useNavigate();
-  const { login, signup } = useAuth();
+  const { login, signup, loginOTP, checkUserExists } = useAuth();
 
   const [isLogin, setIsLogin] = useState(isLoginDefault);
   const [loginMode, setLoginMode] = useState("password"); // password | otp
@@ -194,6 +194,44 @@ export default function Auth({ isLoginDefault = true }) {
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState("");
   const [errors, setErrors] = useState({});
+  const [timer, setTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [statusMsg, setStatusMsg] = useState(null);
+
+  useEffect(() => {
+    let interval;
+    if (otpStep && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (timer === 0) {
+      setCanResend(true);
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [otpStep, timer]);
+
+  const handleResendOTP = async () => {
+    try {
+      setLoading(true);
+      const id = form.identifier.trim();
+      await sendPhoneOTP("+91" + id);
+      setTimer(60);
+      setCanResend(false);
+      setStatusMsg({ type: "success", text: "OTP Resent Successfully!" });
+    } catch (err) {
+      setStatusMsg({ type: "error", text: err.message || "Failed to resend OTP" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchTab = (toLogin) => {
+    setIsLogin(toLogin);
+    setOtpStep(false);
+    setOtp("");
+    setErrors({});
+  };
 
   const [form, setForm] = useState({
     full_name: "",
@@ -220,7 +258,7 @@ export default function Auth({ isLoginDefault = true }) {
         identifier: form.identifier,
         password: form.password,
       });
-      navigate("/dashboard");
+      // navigate("/dashboard"); login function handles navigation
     } else {
       // OTP LOGIN
       if (!otpStep) {
@@ -229,11 +267,23 @@ export default function Auth({ isLoginDefault = true }) {
           return;
         }
 
+        const exists = await checkUserExists(form.identifier);
+        if (!exists) {
+          setErrors({ api: "No account found with this mobile number. Please signup." });
+          return;
+        }
+
         await sendPhoneOTP("+91" + form.identifier);
         setOtpStep(true);
       } else {
-        await verifyPhoneOTP(otp);
-        navigate("/dashboard");
+        try {
+          await verifyPhoneOTP(otp);
+          setStatusMsg({ type: "success", text: "OTP Validated Successfully!" });
+          await loginOTP({ identifier: form.identifier });
+        } catch (err) {
+          setStatusMsg({ type: "error", text: "Invalid OTP! Please try again." });
+          throw err;
+        }
       }
     }
   };
@@ -245,22 +295,34 @@ export default function Auth({ isLoginDefault = true }) {
     // PHONE SIGNUP WITH OTP
     if (isMobile(id)) {
       if (!otpStep) {
+        const exists = await checkUserExists(id);
+        if (exists) {
+          setErrors({ api: "An account already exists with this mobile number. Please login." });
+          return;
+        }
+
         await sendPhoneOTP("+91" + id);
         setOtpStep(true);
         return;
       } else {
-        await verifyPhoneOTP(otp);
+        try {
+          await verifyPhoneOTP(otp);
+          setStatusMsg({ type: "success", text: "OTP Validated Successfully!" });
 
-        const payload = {
-          full_name: form.full_name,
-          password: form.password,
-          mobile: id,
-        };
+          const payload = {
+            full_name: form.full_name,
+            password: form.password,
+            mobile: id,
+          };
 
-        await signup(payload);
-        setShowSuccess(true);
-        setIsLogin(true);
-        setOtpStep(false);
+          await signup(payload);
+          setShowSuccess(true);
+          setIsLogin(true);
+          setOtpStep(false);
+        } catch (err) {
+          setStatusMsg({ type: "error", text: "Invalid OTP! Please try again." });
+          throw err;
+        }
       }
     }
 
@@ -306,8 +368,8 @@ export default function Auth({ isLoginDefault = true }) {
         <h1 className="brand gradient-text">Datalet AI</h1>
 
         <div className="auth-tabs">
-          <button onClick={() => setIsLogin(true)} className={isLogin ? "active" : ""}>Login</button>
-          <button onClick={() => setIsLogin(false)} className={!isLogin ? "active" : ""}>Sign up</button>
+          <button type="button" onClick={() => switchTab(true)} className={isLogin ? "active" : ""}>Login</button>
+          <button type="button" onClick={() => switchTab(false)} className={!isLogin ? "active" : ""}>Signup</button>
         </div>
 
         <form onSubmit={handleSubmit} className="form">
@@ -360,13 +422,29 @@ export default function Auth({ isLoginDefault = true }) {
 
           {/* OTP INPUT */}
           {otpStep && (
-            <input
-              className="input"
-              placeholder="Enter OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              required
-            />
+            <div className="otp-container">
+              <input
+                className="input"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+              />
+              <div className="otp-timer-row">
+                {timer > 0 ? (
+                  <span className="timer-text">Resend OTP in {timer}s</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="resend-btn"
+                    onClick={handleResendOTP}
+                    disabled={loading}
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
+            </div>
           )}
 
           {isLogin && (
@@ -391,9 +469,11 @@ export default function Auth({ isLoginDefault = true }) {
               ? "Please wait..."
               : otpStep
                 ? "Verify OTP"
-                : isLogin
-                  ? "Login"
-                  : "Signup"}
+                : (isLogin && loginMode === "otp") || (!isLogin && isMobile(form.identifier))
+                  ? "Send OTP"
+                  : isLogin
+                    ? "Login"
+                    : "Signup"}
           </button>
         </form>
 
@@ -418,6 +498,18 @@ export default function Auth({ isLoginDefault = true }) {
           <div className="popup" onClick={(e) => e.stopPropagation()}>
             <h2>🎉 Signup Successful</h2>
             <button onClick={() => setShowSuccess(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {statusMsg && (
+        <div className={`status-popup-overlay ${statusMsg.type}`} onClick={() => setStatusMsg(null)}>
+          <div className="status-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="status-icon">
+              {statusMsg.type === "success" ? "✅" : "❌"}
+            </div>
+            <p>{statusMsg.text}</p>
+            <button onClick={() => setStatusMsg(null)}>OK</button>
           </div>
         </div>
       )}

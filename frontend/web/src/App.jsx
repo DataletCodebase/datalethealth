@@ -1,5 +1,5 @@
 import React, { useEffect, useState, createContext, useContext, useCallback } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Signup from "./pages/Signup.jsx";
 import ChatHistory from "./pages/ChatHistory";
 import "./styles/App.css";
@@ -76,7 +76,7 @@ async function postJsonWithFallback(urls = [], payload = {}, options = {}) {
 }
 
 function AppContent() {
-
+  const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -140,7 +140,10 @@ function AppContent() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
     const fetchProfile = async () => {
       try {
@@ -169,11 +172,13 @@ function AppContent() {
         setIsInitialized(true);
       } catch (err) {
         console.error("Profile fetch error:", err);
+        localStorage.removeItem("token");
+        navigate("/login");
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
 
   const handleAsk = async (e) => {

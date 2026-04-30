@@ -26,6 +26,21 @@ export function useAuth() {
     navigate("/dashboard");
   };
 
+  const loginOTP = async (payload) => {
+    const res = await fetch(`${API}/login-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    saveToken(data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    navigate("/dashboard");
+  };
+
   const signup = async (payload) => {
     const res = await fetch(`${API}/signup`, {
       method: "POST",
@@ -37,6 +52,16 @@ export function useAuth() {
     if (!res.ok) throw new Error(data.message);
 
     navigate("/login");
+  };
+
+  const checkUserExists = async (identifier) => {
+    const res = await fetch(`${API}/check-user`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier }),
+    });
+    // The backend returns 200 {exists: true} if found, 404 if not found
+    return res.ok;
   };
 
   const logout = () => {
@@ -59,5 +84,5 @@ export function useAuth() {
     navigate("/login");
   };
 
-  return { login, signup, logout };
+  return { login, loginOTP, signup, checkUserExists, logout };
 }

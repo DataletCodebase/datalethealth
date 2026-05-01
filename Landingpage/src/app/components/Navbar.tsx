@@ -165,8 +165,11 @@ const navLinks = [
   { label: "About", href: "#about" },
   { label: "Programs", href: "#how-it-works" },
   { label: "Advisory", href: "#advisory" }, //milan
-  { label: "Well", href: "#well" }, //milan
+  { label: "Services", href: "#service" }, //milan
   { label: "Team", href: "#team" },
+  { label: "Blog", href: "#blog" },
+  { label: "Publications", href: "#publications" },
+  { label: "News", href: "#news-updates" }, // ← added
 ];
 
 // @ts-ignore
@@ -177,7 +180,6 @@ const loginUrl = import.meta.env.DEV
 const signupUrl = import.meta.env.DEV
   ? "http://localhost:5174/app/signup"
   : "/app/signup";
-
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -197,7 +199,6 @@ export function Navbar() {
       behavior: "smooth",
     });
   };
-
   return (
     <motion.nav
       initial={{ y: -80, opacity: 0 }}
@@ -242,6 +243,7 @@ export function Navbar() {
           ))}
         </div>
 
+        {/* Sign-In + Try Datalet */}
         <div className="hidden md:flex items-center gap-3">
           <motion.button
             initial={{ opacity: 0 }}
@@ -269,6 +271,7 @@ export function Navbar() {
           </motion.button>
         </div>
 
+        {/* Mobile hamburger */}
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => setOpen(!open)}

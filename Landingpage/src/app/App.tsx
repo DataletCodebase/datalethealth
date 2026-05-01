@@ -31,7 +31,7 @@
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
 import { Stats } from "./components/Stats";
-import { Services } from "./components/Services";
+import { Help } from "./components/Help";
 import { HowItWorks } from "./components/HowItWorks";
 import { About } from "./components/About";
 import { Testimonials } from "./components/Testimonials";
@@ -39,8 +39,11 @@ import { Insights } from "./components/Insights";
 import { CTA } from "./components/CTA";
 import { Footer } from "./components/Footer";
 import { Advisory } from "./components/Advisory";
-import { Well } from "./components/Features";
+import { Service } from "./components/Services";
 import { Team } from "./components/Team";
+import { Blog } from "./components/Blog";
+import { Publications } from "./components/Publications";
+import { NewsUpdates } from "./components/News";
 
 export default function App() {
   return (
@@ -49,12 +52,15 @@ export default function App() {
       <main className="relative">
         <Hero />
         <Stats />
-        <Services />
+        <Help />
         <HowItWorks />
         <About />
-        <Well />
+        <Service />
         <Advisory />
         <Team />
+        <Blog />
+        <Publications />
+        <NewsUpdates />
         <Testimonials />
         <Insights />
         <CTA />

@@ -9,7 +9,7 @@ import authMiddleware from "../middleware/auth.js";
 import { uploadProfile } from "../middleware/upload.js";
 import { uploadPrescription } from "../middleware/uploadPrescription.js";
 import { runOCR } from "../utils/ocr.js";
-import { extractMedicalValuesFromTables } from "../utils/medicalParser.js";
+import { extractMedicalValues } from "../utils/medicalParser.js";
 import { encrypt, decrypt, encryptDeterministic, decryptDeterministic } from "../utils/encryption.js";
 
 const router = express.Router();
@@ -184,7 +184,7 @@ router.post(
 
         // 3️⃣ Parse ALL medical values
         // const medicalData = extractMedicalValues(extractedText);
-        const medicalData = extractMedicalValuesFromTables(document);
+        const medicalData = extractMedicalValues(document);
 
         console.log("PARSED DATA ======");
         console.log(medicalData);
@@ -258,7 +258,8 @@ router.post(
               bmi = ?,
               fasting_glucose = ?,
               postprandial_glucose = ?,
-              hba1c = ?
+              hba1c = ?,
+              updated_at = NOW()
             WHERE user_id = ?`,
             [
               encrypt(medicalData.creatinine || null),

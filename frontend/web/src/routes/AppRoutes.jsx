@@ -34,6 +34,7 @@ export default function AppRouter() {
 
       {/* After login */}
       <Route path="/dashboard/*" element={<App />} />
+      <Route path="/privacy-policy" element={<App />} />
 
       
 

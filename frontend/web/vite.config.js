@@ -11,7 +11,7 @@ export default defineConfig({
     // 🔹 PWA Plugin (added safely — does NOT affect API proxy)
     VitePWA({
       registerType: "autoUpdate",
-      devOptions: { enabled: true },
+      devOptions: { enabled: false },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         skipWaiting: true,
@@ -26,7 +26,7 @@ export default defineConfig({
       manifest: {
         name: "Kidney Health App",
         short_name: "KidneyApp",
-        start_url: "/app/",
+        start_url: "/",
         display: "standalone",
         background_color: "#0b1220",
         theme_color: "#0ea5e9",

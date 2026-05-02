@@ -1,567 +1,480 @@
-// import { ArrowUpRight } from "lucide-react";
-// import { motion, useScroll, useTransform, useSpring } from "motion/react";
-// import { useRef } from "react";
-// import { TiltCard } from "./ui/TiltCard";
-// import { ParallaxLayer } from "./ui/ParallaxLayer";
-// import { WellnessWidgetDashboard } from "./WellnessWidgets";
+import { motion } from "motion/react";
+import {
+  Activity,
+  Brain,
+  PhoneCall,
+  Dumbbell,
+  Bot,
+  HeartPulse,
+  Apple,
+  Footprints,
+  Moon,
+  Watch,
+  Stethoscope,
+  ShieldCheck,
+} from "lucide-react";
 
-// // Replaced nurse image → health data analytics dashboard
-// const imgDoctorTablet = "https://images.unsplash.com/photo-1758691463610-3c2ecf5fb3fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-// const imgMedTeam      = "https://images.unsplash.com/photo-1770221797869-81e508282ac4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-// const imgDataViz      = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-
-// const bridgePoints = [
-//   { label: "Increasing Talent",       sub: "AI reduces administrative load" },
-//   { label: "Lowering Friction",       sub: "Seamless workflow integration" },
-//   { label: "Enhancing Pharma Insight", sub: "Real-world evidence platform" },
-// ];
-
-// // ── 3-D photo card with tilt + parallax inner zoom ───────────────────────────
-// function PhotoCard({
-//   src, alt, badge, badgeLabel, badgeSub, tall = false, delay = 0,
-// }: {
-//   src: string; alt: string; badge?: boolean; badgeLabel?: string;
-//   badgeSub?: string; tall?: boolean; delay?: number;
-// }) {
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, y: 24 }}
-//       whileInView={{ opacity: 1, y: 0 }}
-//       viewport={{ once: true }}
-//       transition={{ delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-//       className={tall ? "row-span-2" : ""}
-//     >
-//       <TiltCard
-//         intensity={8}
-//         glowColor="rgba(139,0,220,0.14)"
-//         className={`relative rounded-3xl overflow-hidden border border-[#E8E0F5] shadow-xl shadow-[#8B00DC]/[0.07] group ${tall ? "h-full" : ""}`}
-//         style={{ aspectRatio: tall ? "3/5" : "1" }}
-//       >
-//         {/* Image with inner parallax on hover */}
-//         <motion.img
-//           src={src}
-//           alt={alt}
-//           className="w-full h-full object-cover transition-transform duration-700"
-//           whileHover={{ scale: 1.08 }}
-//           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-//         />
-//         <div className="absolute inset-0 bg-gradient-to-t from-[#1a0030]/65 via-[#1a0030]/10 to-transparent" />
-
-//         {badge && (
-//           <motion.div
-//             className="absolute bottom-4 left-4 right-4"
-//             initial={{ y: 8, opacity: 0 }}
-//             whileInView={{ y: 0, opacity: 1 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: delay + 0.3, duration: 0.5 }}
-//           >
-//             <div className="bg-white/90 backdrop-blur-md border border-[#8B00DC]/15 rounded-2xl px-4 py-3 shadow-lg">
-//               <motion.div
-//                 className="font-bold text-sm"
-//                 style={{ color: "#8B00DC" }}
-//                 whileHover={{ letterSpacing: "0.03em" }}
-//                 transition={{ duration: 0.2 }}
-//               >
-//                 {badgeLabel}
-//               </motion.div>
-//               {badgeSub && <div className="text-[#9898A8] text-xs mt-0.5">{badgeSub}</div>}
-//             </div>
-//           </motion.div>
-//         )}
-
-//         {/* Corner accent that appears on hover */}
-//         <motion.div
-//           className="absolute top-3 right-3 w-7 h-7 rounded-xl flex items-center justify-center"
-//           style={{ background: "linear-gradient(135deg, #7B00CC, #CC00FF)" }}
-//           initial={{ opacity: 0, scale: 0.5 }}
-//           whileHover={{ opacity: 1, scale: 1 }}
-//           transition={{ duration: 0.25 }}
-//         >
-//           <ArrowUpRight className="w-3.5 h-3.5 text-white" />
-//         </motion.div>
-//       </TiltCard>
-//     </motion.div>
-//   );
-// }
-
-// export function Services() {
-//   const sectionRef = useRef<HTMLDivElement>(null);
-//   const go = () => {
-//     const el = document.querySelector("#contact") as HTMLElement | null;
-//     if (!el) return;
-//     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" });
-//   };
-
-//   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
-//   const orbY = useSpring(useTransform(scrollYProgress, [0, 1], [-60, 60]), { damping: 30, stiffness: 100 });
-
-//   return (
-//     <section id="solutions" ref={sectionRef} className="bg-white py-20 lg:py-36 relative overflow-hidden">
-//       {/* Parallax background orb */}
-//       <motion.div
-//         style={{ y: orbY }}
-//         className="absolute top-1/2 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.06] blur-[120px] pointer-events-none"
-//         aria-hidden
-//       >
-//         <div className="w-full h-full rounded-full" style={{ background: "radial-gradient(circle, #AA00FF, transparent 70%)" }} />
-//       </motion.div>
-
-//       <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
-//         {/* Header */}
-//         <motion.div
-//           initial={{ opacity: 0, y: 24 }}
-//           whileInView={{ opacity: 1, y: 0 }}
-//           viewport={{ once: true }}
-//           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-//           className="mb-14"
-//         >
-//           <div className="flex items-center gap-3 mb-6">
-//             <motion.div
-//               className="h-0.5 rounded"
-//               style={{ background: "linear-gradient(90deg, #7B00CC, #CC00FF)" }}
-//               initial={{ width: 0 }}
-//               whileInView={{ width: 24 }}
-//               viewport={{ once: true }}
-//               transition={{ duration: 0.6, delay: 0.2 }}
-//             />
-//             <span className="text-[#8B00DC] text-xs uppercase tracking-widest font-semibold">Our Solutions</span>
-//           </div>
-//           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-//             <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-[#0D0D0D] max-w-lg leading-tight">
-//               Clinical Solutions<br />That Scale
-//             </h2>
-//             <p className="text-[#5A5A72] text-sm max-w-xs leading-relaxed lg:pb-2">
-//               Real-time patient intelligence powering smarter care decisions at population scale.
-//             </p>
-//           </div>
-//         </motion.div>
-
-//         {/* ── Wellness Widget Dashboard replaces old service cards ── */}
-//         <WellnessWidgetDashboard />
-
-//         {/* Bridge section */}
-//         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center pt-20 border-t border-[#8B00DC]/[0.08]">
-//           <motion.div
-//             initial={{ opacity: 0, x: -28 }}
-//             whileInView={{ opacity: 1, x: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-//           >
-//             <div className="flex items-center gap-3 mb-6">
-//               <div className="w-6 h-0.5 rounded" style={{ background: "linear-gradient(90deg, #7B00CC, #CC00FF)" }} />
-//               <span className="text-[#8B00DC] text-xs uppercase tracking-widest font-semibold">How We Help</span>
-//             </div>
-//             <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#0D0D0D] mb-14 leading-tight">
-//               Datalet bridges<br />this gap by:
-//             </h3>
-//             <div className="space-y-7">
-//               {bridgePoints.map((pt, i) => (
-//                 <motion.div
-//                   key={i}
-//                   initial={{ opacity: 0, x: -16 }}
-//                   whileInView={{ opacity: 1, x: 0 }}
-//                   viewport={{ once: true }}
-//                   transition={{ delay: 0.1 + i * 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-//                   className="flex items-start gap-5 group/item"
-//                 >
-//                   <motion.div
-//                     className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 shadow-lg shadow-[#8B00DC]/15"
-//                     style={{ background: "linear-gradient(135deg, #7B00CC 0%, #CC00FF 100%)" }}
-//                     whileHover={{ scale: 1.15, rotate: 8, boxShadow: "0 12px 32px rgba(139,0,220,0.30)" }}
-//                     transition={{ type: "spring", stiffness: 280 }}
-//                   >
-//                     <span className="text-white font-bold text-sm">0{i + 1}</span>
-//                   </motion.div>
-//                   <div>
-//                     <div className="font-semibold text-[#0D0D0D] group-hover/item:text-[#8B00DC] transition-colors mb-0.5">{pt.label}</div>
-//                     <div className="text-[#9898A8] text-sm">{pt.sub}</div>
-//                   </div>
-//                 </motion.div>
-//               ))}
-//             </div>
-//           </motion.div>
-
-//           {/* Right photo grid */}
-//           <motion.div
-//             initial={{ opacity: 0, x: 28 }}
-//             whileInView={{ opacity: 1, x: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-//             className="relative"
-//           >
-//             <div className="absolute -inset-8 rounded-3xl opacity-20 blur-3xl -z-10"
-//               style={{ background: "radial-gradient(circle, #AA00FF, transparent 70%)" }} />
-
-//             {/* Mobile: single column stack */}
-//             <div className="flex flex-col gap-4 md:hidden">
-//               <PhotoCard
-//                 src={imgDoctorTablet}
-//                 alt="Doctor reviewing health data"
-//                 badge badgeLabel="AI Health Coach" badgeSub="24/7 Clinical Support"
-//                 delay={0}
-//               />
-//               <PhotoCard src={imgMedTeam} alt="Medical team collaboration" delay={0.1} />
-//               <PhotoCard
-//                 src={imgDataViz}
-//                 alt="Health data analytics dashboard"
-//                 badge badgeLabel="Live Analytics" badgeSub="Real-time insights"
-//                 delay={0.2}
-//               />
-//             </div>
-
-//             {/* Desktop: 2-column grid with row-span */}
-//             <div className="hidden md:grid grid-cols-2 gap-4">
-//               <ParallaxLayer speed={-0.12} className="row-span-2">
-//                 <PhotoCard
-//                   src={imgDoctorTablet}
-//                   alt="Doctor reviewing health data"
-//                   badge badgeLabel="AI Health Coach" badgeSub="24/7 Clinical Support"
-//                   tall delay={0}
-//                 />
-//               </ParallaxLayer>
-//               <ParallaxLayer speed={0.08}>
-//                 <PhotoCard src={imgMedTeam} alt="Medical team collaboration" delay={0.1} />
-//               </ParallaxLayer>
-//               <ParallaxLayer speed={0.18}>
-//                 <PhotoCard
-//                   src={imgDataViz}
-//                   alt="Health data analytics dashboard"
-//                   badge badgeLabel="Live Analytics" badgeSub="Real-time insights"
-//                   delay={0.2}
-//                 />
-//               </ParallaxLayer>
-//             </div>
-//           </motion.div>
-//         </div>
-//       </div>
-//     </section>
-//   );
-// }
-
-import { ArrowUpRight } from "lucide-react";
-import { motion, useScroll, useTransform, useSpring } from "motion/react";
-import { useRef } from "react";
-import { TiltCard } from "./ui/TiltCard";
-import { ParallaxLayer } from "./ui/ParallaxLayer";
-import { WellnessWidgetDashboard } from "./WellnessWidgets";
-import doctorIndian from "../../assets/images/HealthCoach.avif";
-import doctorIndian1 from "../../assets/images/doctor5.avif";
-
-// Replaced nurse image → health data analytics dashboard
-const imgDoctorTablet =
-  // "https://images.unsplash.com/photo-1758691463610-3c2ecf5fb3fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-  doctorIndian;
-const imgMedTeam =
-  // "https://images.unsplash.com/photo-1770221797869-81e508282ac4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-  doctorIndian1;
-const imgDataViz =
-  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
-
-const bridgePoints = [
-  { label: "Increasing Talent", sub: "AI reduces administrative load" },
-  { label: "Lowering Friction", sub: "Seamless workflow integration" },
-  { label: "Enhancing Pharma Insight", sub: "Real-world evidence platform" },
+const features = [
+  {
+    title: "AI Health Coach",
+    desc: "24/7 personalized guidance powered by intelligent algorithms that learn your habits and adapt over time.",
+    icon: Bot,
+    wide: true,
+  },
+  {
+    title: "Health Tracking",
+    desc: "Monitor vitals, habits, and progress in real-time.",
+    icon: Watch,
+    wide: false,
+  },
+  {
+    title: "Mental Health",
+    desc: "AI-driven emotional wellness and stress management.",
+    icon: Brain,
+    wide: false,
+  },
+  {
+    title: "Doctor Consultation",
+    desc: "Connect with certified doctors anytime, anywhere.",
+    icon: PhoneCall,
+    wide: false,
+  },
+  {
+    title: "Daily Exercise",
+    desc: "Smart fitness routines tailored to your lifestyle.",
+    icon: Activity,
+    wide: false,
+  },
+  {
+    title: "Workout Plans",
+    desc: "AI-generated plans for every fitness level — from beginner to advanced.",
+    icon: Dumbbell,
+    wide: true,
+  },
+  {
+    title: "Healthy Nutrition",
+    desc: "Personalized diet plans and calorie tracking.",
+    icon: Apple,
+    wide: false,
+  },
+  {
+    title: "Step Tracking",
+    desc: "Track daily activity and improve movement habits.",
+    icon: Footprints,
+    wide: false,
+  },
+  {
+    title: "Sleep Monitoring",
+    desc: "Improve sleep quality with smart AI insights.",
+    icon: Moon,
+    wide: false,
+  },
+  {
+    title: "Preventive Care",
+    desc: "Early detection and risk alerts using AI.",
+    icon: ShieldCheck,
+    wide: false,
+  },
+  {
+    title: "Clinical Insights",
+    desc: "Data-driven reports for better decisions.",
+    icon: Stethoscope,
+    wide: false,
+  },
+  {
+    title: "Heart Health",
+    desc: "Track cardiovascular health and vital signals.",
+    icon: HeartPulse,
+    wide: false,
+  },
 ];
 
-// ── 3-D photo card with tilt + parallax inner zoom ───────────────────────────
-function PhotoCard({
-  src,
-  alt,
-  badge,
-  badgeLabel,
-  badgeSub,
-  tall = false,
-  delay = 0,
+function FeatureCard({
+  item,
+  index,
 }: {
-  src: string;
-  alt: string;
-  badge?: boolean;
-  badgeLabel?: string;
-  badgeSub?: string;
-  tall?: boolean;
-  delay?: number;
+  item: (typeof features)[0];
+  index: number;
 }) {
+  const Icon = item.icon;
+  const num = String(index + 1).padStart(2, "0");
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 22 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-      className={tall ? "row-span-2" : ""}
+      transition={{
+        delay: index * 0.05,
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className={`wc${item.wide ? " wc--wide" : ""}`}
+      style={{
+        position: "relative",
+        background: "#ffffff",
+        border: "1.5px solid #EDE5F8",
+        borderRadius: 20,
+        padding: item.wide ? "34px 30px" : "26px 22px",
+        overflow: "hidden",
+        cursor: "default",
+        display: "flex",
+        flexDirection: item.wide ? "row" : "column",
+        alignItems: item.wide ? "center" : "flex-start",
+        gap: item.wide ? 28 : 0,
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        transition: "border-color 0.3s, box-shadow 0.3s, transform 0.3s",
+        boxShadow: "0 2px 12px rgba(123,0,204,0.05)",
+      }}
     >
-      <TiltCard
-        intensity={8}
-        glowColor="rgba(139,0,220,0.14)"
-        className={`relative rounded-3xl overflow-hidden border border-[#E8E0F5] shadow-xl shadow-[#8B00DC]/[0.07] group ${tall ? "h-full" : ""}`}
-        style={{ aspectRatio: tall ? "3/5" : "1" }}
+      {/* Top accent bar */}
+      <div
+        className="wc-topbar"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: "linear-gradient(90deg,#7B00CC,#CC00FF)",
+          opacity: 0.15,
+          transition: "opacity 0.3s",
+        }}
+      />
+
+      {/* Ambient glow blob */}
+      <div
+        style={{
+          position: "absolute",
+          top: item.wide ? "50%" : -20,
+          left: item.wide ? "unset" : "unset",
+          right: item.wide ? -20 : -20,
+          transform: item.wide ? "translateY(-50%)" : "none",
+          width: 160,
+          height: 160,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle,rgba(139,0,220,0.07) 0%,transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Index number */}
+      <span
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 18,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          color: "rgba(139,0,220,0.18)",
+          fontVariantNumeric: "tabular-nums",
+        }}
       >
-        {/* Image with inner parallax on hover */}
-        <motion.img
-          src={src}
-          alt={alt}
-          className="w-full h-full object-cover transition-transform duration-700"
-          whileHover={{ scale: 1.08 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        {num}
+      </span>
+
+      {/* Icon box */}
+      <div
+        style={{
+          width: item.wide ? 56 : 46,
+          height: item.wide ? 56 : 46,
+          borderRadius: 14,
+          background: item.wide
+            ? "linear-gradient(135deg,#7B00CC,#CC00FF)"
+            : "#F3EEFF",
+          border: item.wide ? "none" : "1px solid #E8D9FF",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          marginBottom: item.wide ? 0 : 18,
+          transition: "all 0.3s ease",
+          boxShadow: item.wide ? "0 6px 20px rgba(123,0,204,0.3)" : "none",
+        }}
+        className="wc-icon"
+      >
+        <Icon
+          style={{
+            color: item.wide ? "#fff" : "#8B00DC",
+            width: item.wide ? 26 : 22,
+            height: item.wide ? 26 : 22,
+          }}
+          strokeWidth={1.6}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1a0030]/65 via-[#1a0030]/10 to-transparent" />
+      </div>
 
-        {badge && (
-          <motion.div
-            className="absolute bottom-4 left-4 right-4"
-            initial={{ y: 8, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: delay + 0.3, duration: 0.5 }}
-          >
-            <div className="bg-white/90 backdrop-blur-md border border-[#8B00DC]/15 rounded-2xl px-4 py-3 shadow-lg">
-              <motion.div
-                className="font-bold text-sm"
-                style={{ color: "#8B00DC" }}
-                whileHover={{ letterSpacing: "0.03em" }}
-                transition={{ duration: 0.2 }}
-              >
-                {badgeLabel}
-              </motion.div>
-              {badgeSub && (
-                <div className="text-[#9898A8] text-xs mt-0.5">{badgeSub}</div>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Corner accent that appears on hover */}
-        <motion.div
-          className="absolute top-3 right-3 w-7 h-7 rounded-xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #7B00CC, #CC00FF)" }}
-          initial={{ opacity: 0, scale: 0.5 }}
-          whileHover={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.25 }}
+      {/* Text */}
+      <div style={{ flex: 1 }}>
+        <h3
+          style={{
+            fontSize: item.wide ? 20 : 15,
+            fontWeight: 800,
+            color: "#0D0D0D",
+            lineHeight: 1.25,
+            marginBottom: 8,
+            letterSpacing: item.wide ? -0.5 : -0.1,
+          }}
         >
-          <ArrowUpRight className="w-3.5 h-3.5 text-white" />
-        </motion.div>
-      </TiltCard>
+          {item.title}
+        </h3>
+        <p
+          style={{
+            fontSize: 13,
+            color: "#6B6B85",
+            lineHeight: 1.72,
+            fontWeight: 400,
+            maxWidth: item.wide ? 400 : "none",
+          }}
+        >
+          {item.desc}
+        </p>
+      </div>
+
+      {/* Bottom accent line */}
+      <div
+        className="wc-line"
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "linear-gradient(90deg,transparent,#8B00DC,transparent)",
+          opacity: 0,
+          transition: "opacity 0.3s",
+        }}
+      />
     </motion.div>
   );
 }
 
-export function Services() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const go = () => {
-    const el = document.querySelector("#contact") as HTMLElement | null;
-    if (!el) return;
-    window.scrollTo({
-      top: el.getBoundingClientRect().top + window.scrollY - 80,
-      behavior: "smooth",
-    });
-  };
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-  const orbY = useSpring(useTransform(scrollYProgress, [0, 1], [-60, 60]), {
-    damping: 30,
-    stiffness: 100,
-  });
-
+export function Service() {
   return (
     <section
-      id="solutions"
-      ref={sectionRef}
-      className="bg-white py-20 lg:py-36 relative overflow-hidden"
+      id="service"
+      style={{
+        background: "#FAF7FF",
+        padding: "96px 24px 120px",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+      }}
     >
-      {/* Parallax background orb */}
-      <motion.div
-        style={{ y: orbY }}
-        className="absolute top-1/2 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.06] blur-[120px] pointer-events-none"
-        aria-hidden
-      >
-        <div
-          className="w-full h-full rounded-full"
-          style={{
-            background: "radial-gradient(circle, #AA00FF, transparent 70%)",
-          }}
-        />
-      </motion.div>
+      {/* Background orbs */}
+      <div
+        style={{
+          position: "absolute",
+          top: -180,
+          right: -180,
+          width: 560,
+          height: 560,
+          borderRadius: "50%",
+          background: "radial-gradient(circle,#E9D5FF 0%,transparent 65%)",
+          opacity: 0.45,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: -120,
+          left: -100,
+          width: 440,
+          height: 440,
+          borderRadius: "50%",
+          background: "radial-gradient(circle,#DDD6FE 0%,transparent 65%)",
+          opacity: 0.3,
+          pointerEvents: "none",
+        }}
+      />
+      {/* Dot grid texture */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          opacity: 0.018,
+          backgroundImage:
+            "radial-gradient(circle,#8B00DC 1px,transparent 1px)",
+          backgroundSize: "38px 38px",
+          pointerEvents: "none",
+        }}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
-        {/* Header */}
+      <div
+        style={{
+          maxWidth: 1120,
+          margin: "0 auto",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {/* ── Header ── */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-14"
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          style={{ marginBottom: 56 }}
         >
-          <div className="flex items-center gap-3 mb-6">
-            <motion.div
-              className="h-0.5 rounded"
-              style={{ background: "linear-gradient(90deg, #7B00CC, #CC00FF)" }}
-              initial={{ width: 0 }}
-              whileInView={{ width: 24 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+          {/* Eyebrow badge */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 2.2,
+              textTransform: "uppercase",
+              color: "#7B00CC",
+              background: "#f3e8ff",
+              border: "1px solid #D8B4FE",
+              padding: "5px 16px",
+              borderRadius: 100,
+              marginBottom: 24,
+            }}
+          >
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#7B00CC,#CC00FF)",
+                display: "inline-block",
+                flexShrink: 0,
+              }}
             />
-            <span className="text-[#8B00DC] text-xs uppercase tracking-widest font-semibold">
-              Our Solutions
-            </span>
+            Platform Features
           </div>
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-[#0D0D0D] max-w-lg leading-tight">
-              Clinical Solutions
+
+          {/* Title + description split */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: 20,
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "clamp(2.2rem,5vw,3.8rem)",
+                fontWeight: 900,
+                color: "#0D0D0D",
+                lineHeight: 1.08,
+                letterSpacing: -1.5,
+                margin: 0,
+              }}
+            >
+              Your Smart
               <br />
-              That Scale
+              <span
+                style={{
+                  background: "linear-gradient(135deg,#7B00CC 0%,#CC00FF 60%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Health Advisory
+              </span>
             </h2>
-            <p className="text-[#5A5A72] text-sm max-w-xs leading-relaxed lg:pb-2">
-              Real-time patient intelligence powering smarter care decisions at
-              population scale.
+
+            <p
+              style={{
+                fontSize: 14,
+                color: "#5A5A72",
+                maxWidth: 320,
+                lineHeight: 1.78,
+                fontWeight: 400,
+                margin: 0,
+              }}
+            >
+              Personalized care powered by AI and expert guidance to improve
+              your daily health and wellness.
             </p>
           </div>
         </motion.div>
 
-        {/* ── Wellness Widget Dashboard replaces old service cards ── */}
-        <WellnessWidgetDashboard />
-
-        {/* Bridge section */}
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center pt-20 border-t border-[#8B00DC]/[0.08]">
-          <motion.div
-            initial={{ opacity: 0, x: -28 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div
-                className="w-6 h-0.5 rounded"
-                style={{
-                  background: "linear-gradient(90deg, #7B00CC, #CC00FF)",
-                }}
-              />
-              <span className="text-[#8B00DC] text-xs uppercase tracking-widest font-semibold">
-                How We Help
-              </span>
-            </div>
-            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#0D0D0D] mb-14 leading-tight">
-              Datalet bridges
-              <br />
-              this gap by:
-            </h3>
-            <div className="space-y-7">
-              {bridgePoints.map((pt, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    delay: 0.1 + i * 0.12,
-                    duration: 0.55,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  className="flex items-start gap-5 group/item"
-                >
-                  <motion.div
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 shadow-lg shadow-[#8B00DC]/15"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #7B00CC 0%, #CC00FF 100%)",
-                    }}
-                    whileHover={{
-                      scale: 1.15,
-                      rotate: 8,
-                      boxShadow: "0 12px 32px rgba(139,0,220,0.30)",
-                    }}
-                    transition={{ type: "spring", stiffness: 280 }}
-                  >
-                    <span className="text-white font-bold text-sm">
-                      0{i + 1}
-                    </span>
-                  </motion.div>
-                  <div>
-                    <div className="font-semibold text-[#0D0D0D] group-hover/item:text-[#8B00DC] transition-colors mb-0.5">
-                      {pt.label}
-                    </div>
-                    <div className="text-[#9898A8] text-sm">{pt.sub}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Right photo grid */}
-          <motion.div
-            initial={{ opacity: 0, x: 28 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="relative"
-          >
-            <div
-              className="absolute -inset-8 rounded-3xl opacity-20 blur-3xl -z-10"
-              style={{
-                background: "radial-gradient(circle, #AA00FF, transparent 70%)",
-              }}
-            />
-
-            {/* Mobile: single column stack */}
-            <div className="flex flex-col gap-4 md:hidden">
-              <PhotoCard
-                src={imgDoctorTablet}
-                alt="Doctor reviewing health data"
-                badge
-                badgeLabel="AI Health Coach"
-                badgeSub="24/7 Clinical Support"
-                delay={0}
-              />
-              <PhotoCard
-                src={imgMedTeam}
-                alt="Medical team collaboration"
-                delay={0.1}
-              />
-              <PhotoCard
-                src={imgDataViz}
-                alt="Health data analytics dashboard"
-                badge
-                badgeLabel="Live Analytics"
-                badgeSub="Real-time insights"
-                delay={0.2}
-              />
-            </div>
-
-            {/* Desktop: 2-column grid with row-span */}
-            <div className="hidden md:grid grid-cols-2 gap-4">
-              <ParallaxLayer speed={-0.12} className="row-span-2">
-                <PhotoCard
-                  src={imgDoctorTablet}
-                  alt="Doctor reviewing health data"
-                  badge
-                  badgeLabel="AI Health Coach"
-                  badgeSub="24/7 Clinical Support"
-                  tall
-                  delay={0}
-                />
-              </ParallaxLayer>
-              <ParallaxLayer speed={0.08}>
-                <PhotoCard
-                  src={imgMedTeam}
-                  alt="Medical team collaboration"
-                  delay={0.1}
-                />
-              </ParallaxLayer>
-              <ParallaxLayer speed={0.18}>
-                <PhotoCard
-                  src={imgDataViz}
-                  alt="Health data analytics dashboard"
-                  badge
-                  badgeLabel="Live Analytics"
-                  badgeSub="Real-time insights"
-                  delay={0.2}
-                />
-              </ParallaxLayer>
-            </div>
-          </motion.div>
+        {/* ── Bento grid ── */}
+        <div className="well-grid">
+          {features.map((item, i) => (
+            <FeatureCard key={item.title} item={item} index={i} />
+          ))}
         </div>
+
+        {/* ── Tagline ── */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          style={{
+            textAlign: "center",
+            marginTop: 48,
+            fontSize: 14,
+            color: "#9898A8",
+            fontStyle: "italic",
+            letterSpacing: 0.3,
+          }}
+        >
+          "Transforming everyday habits into lifelong wellness."
+        </motion.p>
       </div>
+
+      <style>{`
+        /* ── Card hover ── */
+        .wc:hover {
+          border-color: rgba(139,0,220,0.5) !important;
+          box-shadow: 0 16px 48px rgba(123,0,204,0.13),
+                      0 0 0 1px rgba(139,0,220,0.12) !important;
+          transform: translateY(-5px) !important;
+        }
+        .wc:hover .wc-topbar {
+          opacity: 1 !important;
+        }
+        .wc:hover .wc-line {
+          opacity: 0.5 !important;
+        }
+        .wc:hover .wc-icon {
+          background: linear-gradient(135deg,#7B00CC,#CC00FF) !important;
+          border-color: transparent !important;
+          box-shadow: 0 4px 16px rgba(123,0,204,0.28) !important;
+        }
+        .wc:hover .wc-icon svg {
+          color: #fff !important;
+        }
+
+        /* ── Grid ── */
+        .well-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 14px;
+          align-items: stretch;
+        }
+        .wc--wide {
+          grid-column: span 2;
+        }
+        @media (max-width: 900px) {
+          .well-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .wc--wide {
+            grid-column: span 2;
+          }
+        }
+        @media (max-width: 560px) {
+          .well-grid {
+            grid-template-columns: 1fr;
+          }
+          .wc--wide {
+            grid-column: span 1;
+          }
+        }
+      `}</style>
     </section>
   );
 }

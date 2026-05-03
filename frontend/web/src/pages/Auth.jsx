@@ -492,7 +492,7 @@ export default function Auth({ isLoginDefault = true }) {
             {isLogin ? "View our " : "By signing up, you agree to our "}
             <button
               type="button"
-              onClick={() => navigate("/privacy-policy")}
+              onClick={() => window.open("/privacy-policy.html", "_blank")}
               style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", textDecoration: "underline", fontSize: "13px", padding: 0 }}
             >
               Privacy Policy

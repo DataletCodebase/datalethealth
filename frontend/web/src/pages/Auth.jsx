@@ -477,17 +477,28 @@ export default function Auth({ isLoginDefault = true }) {
           </button>
         </form>
 
-        {isLogin && (
-          <div className="auth-footer" style={{ marginTop: "15px", textAlign: "center" }}>
+        <div className="auth-footer" style={{ marginTop: "15px", textAlign: "center", display: "flex", flexDirection: "column", gap: "10px" }}>
+          {isLogin && (
             <button
+              type="button"
               onClick={() => navigate("/reset-password")}
               className="text-btn"
               style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", textDecoration: "underline", fontSize: "14px" }}
             >
               Forget Password
             </button>
-          </div>
-        )}
+          )}
+          <p style={{ fontSize: "13px", color: "#9898A8", margin: 0 }}>
+            {isLogin ? "View our " : "By signing up, you agree to our "}
+            <button
+              type="button"
+              onClick={() => navigate("/privacy-policy")}
+              style={{ background: "none", border: "none", color: "#38bdf8", cursor: "pointer", textDecoration: "underline", fontSize: "13px", padding: 0 }}
+            >
+              Privacy Policy
+            </button>
+          </p>
+        </div>
 
         {/* 🔥 REQUIRED FOR FIREBASE */}
         <div id="recaptcha-container"></div>

@@ -264,7 +264,9 @@ export function Footer() {
                   <li key={link}>
                     <motion.a
                       href={
-                        title === "Quick Links"
+                        link === "Privacy Policy"
+                          ? "/privacy-policy"
+                          : title === "Quick Links"
                           ? "#" + link.toLowerCase().replace(/\s/g, "")
                           : "#"
                       }
@@ -297,7 +299,7 @@ export function Footer() {
             {["Privacy", "Terms", "HIPAA", "Cookies"].map((l) => (
               <motion.a
                 key={l}
-                href="#"
+                href={l === "Privacy" ? "/privacy-policy" : "#"}
                 whileHover={{ color: "#8B00DC" }}
                 className="font-medium transition-colors"
               >

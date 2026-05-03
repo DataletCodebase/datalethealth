@@ -3,5 +3,10 @@
   import App from "./app/App.tsx";
   import "./styles/index.css";
 
-  createRoot(document.getElementById("root")!).render(<App />);
+  if (window.location.pathname === '/privacy-policy') {
+    window.location.href = '/privacy-policy.html';
+  } else {
+    createRoot(document.getElementById("root")!).render(<App />);
+  }
+
   

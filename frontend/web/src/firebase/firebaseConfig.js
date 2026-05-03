@@ -12,6 +12,11 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+let analytics;
+try {
+  analytics = getAnalytics(app);
+} catch (err) {
+  console.warn("Firebase Analytics could not be initialized:", err);
+}
 
 export default app;

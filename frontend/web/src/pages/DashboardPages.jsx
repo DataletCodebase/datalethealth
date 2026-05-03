@@ -12,6 +12,9 @@ import { useLanguage } from "../contexts/LanguageContext";
 import AutoText from "../components/AutoText";
 
 
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+
 import { API_BASE } from "../apiConfig";
 
 // Helper: post with fallback across multiple urls
@@ -78,6 +81,25 @@ function DashboardContent() {
 
     const { language, setLanguage, t } = useLanguage();
     const { logout } = useAuth();
+
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
+    useEffect(() => {
+        if (location.pathname === "/privacy-policy") {
+            setShowPrivacyModal(true);
+        } else {
+            setShowPrivacyModal(false);
+        }
+    }, [location.pathname]);
+
+    const closePrivacyModal = () => {
+        setShowPrivacyModal(false);
+        if (location.pathname === "/privacy-policy") {
+            navigate("/dashboard");
+        }
+    };
 
 
     // useEffect(() => {
@@ -704,9 +726,30 @@ function DashboardContent() {
                     {/* <p>{t('copyright')}</p> */}
                     <p>
                         <AutoText>© 2026 Datalet Healthcare. All rights reserved.</AutoText>
+                        <span style={{ margin: "0 8px", opacity: 0.5 }}>|</span>
+                        <Link to="/privacy-policy" className="privacy-link">Privacy Policy</Link>
                     </p>
                 </footer>
+
             </main>
+
+            {showPrivacyModal && (
+                <div className="privacy-overlay" onClick={closePrivacyModal}>
+                    <div className="privacy-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="privacy-header">
+                            <h2>Privacy Policy</h2>
+                            <button className="privacy-close" onClick={closePrivacyModal}>&times;</button>
+                        </div>
+                        <div className="privacy-body">
+                            <iframe 
+                                src="/privacy-policy.html" 
+                                className="privacy-iframe"
+                                title="Privacy Policy"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

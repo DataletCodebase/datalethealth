@@ -337,6 +337,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
+      <Route path="/privacy-policy" element={<Dashboard />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/patients/:id/history" element={<ChatHistory />} />
       <Route path="/admin/login" element={<AdminLogin />} />
